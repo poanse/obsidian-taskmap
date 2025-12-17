@@ -48,7 +48,7 @@ npm run build
   ```
   src/
     main.ts           # Plugin entry point, lifecycle management
-    settings.ts       # Settings interface and defaults
+    PluginSettings.ts       # Settings interface and defaults
     commands/         # Command implementations
       command1.ts
       command2.ts
@@ -177,7 +177,7 @@ export default class MyPlugin extends Plugin {
 }
 ```
 
-**settings.ts**:
+**PluginSettings.ts**:
 ```ts
 export interface MySettings {
   enabled: boolean;
