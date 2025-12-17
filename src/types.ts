@@ -23,11 +23,20 @@ export enum StatusCode {
 	DONE,
 }
 
+export interface Vector2 {
+	x: number;
+	y: number;
+}
+export type TaskId = number;
+
 export type TaskData = {
 	name: string;
-	taskId: number;
+	taskId: TaskId;
 	status: StatusCode;
 	deleted: boolean;
+	parentId: TaskId;
+	depth: number;
+	priority: number;
 };
 
 export type Context = {

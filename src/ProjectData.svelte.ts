@@ -1,9 +1,9 @@
-﻿import { StatusCode, type TaskData } from "./types";
-import TaskmapPlugin from "./main";
+﻿import { StatusCode, type TaskData, type TaskId } from "./types";
+import { NoNodeId, RootNodeId } from "./NodePositionsCalculator";
 
 export class ProjectData {
 	tasks = $state(new Array<TaskData>());
-	curTaskId = 0;
+	curTaskId = RootNodeId;
 
 	public static getDefault(): ProjectData {
 		return new ProjectData({
@@ -24,19 +24,35 @@ export class ProjectData {
 		this.tasks = obj.tasks;
 		this.curTaskId = obj.curTaskId;
 		if (this.tasks.length == 0) {
-			this.addTask();
+			this.addRootTask();
 		}
 	}
 
-	public addTask() {
+	public addRootTask() {
+		this.tasks.push({
+			taskId: this.curTaskId,
+			parentId: NoNodeId,
+			status: StatusCode.IN_PROGRESS,
+			name: "root",
+			priority: 0,
+			depth: 0,
+			deleted: false,
+		});
+		this.curTaskId++;
+	}
+
+	public addTask(parentId: TaskId) {
 		const id = this.curTaskId;
 		this.tasks.push({
 			taskId: id,
+			parentId: parentId,
 			status: StatusCode.DRAFT,
 			name: "default",
 			deleted: false,
+			priority: 0, // TODO: change to amount of siblings
+			depth: this.getTask(parentId).depth + 1,
 		});
-		this.curTaskId += 1;
+		this.curTaskId++;
 		return id;
 	}
 

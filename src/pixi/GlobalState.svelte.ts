@@ -1,19 +1,22 @@
 ﻿import TaskmapPlugin from "../main";
 import type { ProjectData } from "../ProjectData.svelte";
-import { StatusCode } from "../types";
+import { StatusCode, type TaskId } from "../types";
 import { Spring } from "svelte/motion";
 import type { App } from "obsidian";
 import type { TaskmapView } from "../TaskmapView";
+import type { NodePositionsCalculator } from "../NodePositionsCalculator";
 
 export class UIState {
 	app: App;
+	view: TaskmapView;
+	nodePositionsCalculator: NodePositionsCalculator;
 	pressedButtonIndex = $state(-1);
 	selectedTaskId = $state(-1);
 	toolbarStatus = $state(StatusCode.DRAFT);
 	projectData: ProjectData;
 	taskPositions: Array<{
-		taskId: number;
-		tween: Spring<{ x: number; y: number }>;
+		taskId: TaskId;
+		tween: Spring<{ x: number; y: number }> | null;
 	}>;
 	// svg elements are pixelated zooming from scale < 1 to scale > 1, so we force a redraw manually
 	updateOnZoomCounter = $state(0);
@@ -22,19 +25,26 @@ export class UIState {
 	private tweenOptions = { duration: 300 };
 	private springOptions = { stiffness: 0.07, damping: 0.7 };
 
-	constructor(projectData: ProjectData, app: App) {
+	constructor(
+		view: TaskmapView,
+		projectData: ProjectData,
+		app: App,
+		nodePositionsCalculator: NodePositionsCalculator,
+	) {
+		this.view = view;
+		this.nodePositionsCalculator = nodePositionsCalculator;
 		this.app = app;
 		this.projectData = projectData;
-		const posArray = projectData.tasks
+
+		this.taskPositions = projectData.tasks
 			.filter((t) => !t.deleted)
 			.map((task) => {
-				const t = new Spring(
-					this.calcTaskPosition(task.taskId),
-					this.springOptions,
-				);
-				return { taskId: task.taskId, tween: t };
+				return {
+					taskId: task.taskId,
+					tween: null,
+				};
 			});
-		this.taskPositions = posArray;
+		this.updateTaskPositions();
 	}
 
 	public incrementUpdateOnZoomCounter(): void {
@@ -42,8 +52,20 @@ export class UIState {
 	}
 
 	public updateTaskPositions() {
+		const positions =
+			this.nodePositionsCalculator.CalculatePositionsInGlobalFrame(
+				this.projectData.tasks.filter((t) => !t.deleted),
+				{ x: 0, y: 0 },
+			);
 		this.taskPositions.forEach((taskPos) => {
-			taskPos.tween.target = this.calcTaskPosition(taskPos.taskId);
+			const newPos = positions.get(taskPos.taskId);
+			if (newPos === undefined) {
+				throw new Error();
+			}
+			if (taskPos.tween === null) {
+				taskPos.tween = new Spring(newPos, this.springOptions);
+			}
+			taskPos.tween.target = newPos;
 		});
 	}
 
@@ -68,26 +90,29 @@ export class UIState {
 	}
 
 	public getActiveView(): TaskmapView {
-		const x = TaskmapPlugin.getActiveView();
-		if (x) {
-			return x;
-		} else {
-			throw new Error("Unable to get active view");
-		}
+		return this.view;
+		// const x = TaskmapPlugin.getActiveView();
+		// if (x) {
+		// 	return x;
+		// } else {
+		// 	throw new Error("Unable to get active view");
+		// }
 	}
 
-	public addTask() {
-		const id = this.projectData.addTask();
+	public addTask(parentId: TaskId): void {
+		const id = this.projectData.addTask(parentId);
+		this.save();
 		this.taskPositions.push({
 			taskId: id,
-			tween: new Spring(this.calcTaskPosition(id), this.springOptions),
+			tween: null,
 		});
-		this.save();
+		this.updateTaskPositions();
 	}
 
 	public removeTask(id: number) {
 		this.setSelectedTaskId(-1);
 		this.projectData.removeTask(id);
+		this.taskPositions = this.taskPositions.filter((t) => t.taskId !== id);
 		this.updateTaskPositions();
 		this.save();
 	}
@@ -106,19 +131,8 @@ export class UIState {
 		// change its status
 	}
 
-	private calcTaskPosition(taskId: number) {
-		const base_position = { x: 200, y: 500 };
-		const idx = this.projectData.tasks
-			.filter((t) => !t.deleted)
-			.findIndex((t) => t.taskId == taskId);
-		return {
-			x: base_position.x + 200 * idx,
-			y: base_position.y + 200 * idx,
-		};
-	}
-
 	public getCurrentTaskPosition(taskId: number) {
-		const pos = this.taskPositions.find((t) => t.taskId === taskId)!.tween
+		const pos = this.taskPositions.find((t) => t.taskId === taskId)!.tween!
 			.current;
 		if (taskId == 5) {
 			console.log(JSON.stringify(pos));

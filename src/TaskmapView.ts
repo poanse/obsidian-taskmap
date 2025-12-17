@@ -3,6 +3,7 @@ import { mount } from "svelte";
 import { DEFAULT_DATA, ProjectData } from "./ProjectData.svelte";
 import pixi from "./components/pixi.svelte";
 import { UIState } from "./pixi/GlobalState.svelte";
+import { NodePositionsCalculator } from "./NodePositionsCalculator";
 
 export const VIEW_TYPE_EXAMPLE = "example";
 
@@ -47,7 +48,12 @@ export class TaskmapView extends TextFileView {
 		this.pixiComponent = mount(pixi, {
 			target: this.contentEl,
 			props: {
-				uiState: new UIState(this.projectData, this.app),
+				uiState: new UIState(
+					this,
+					this.projectData,
+					this.app,
+					new NodePositionsCalculator(),
+				),
 				projectData: this.projectData,
 			},
 		});

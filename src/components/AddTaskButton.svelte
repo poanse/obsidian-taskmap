@@ -27,7 +27,7 @@
 	}
 	function addButtonPressed (event: MouseEvent) {
 		console.log('add icon clicked')
-		uiState.addTask();
+		uiState.addTask(taskId);
 		event.stopPropagation();
 	}
 	
@@ -47,30 +47,37 @@
 		"
 >
 </div>
+
 {#if entered}
-	<svg
-		class="button-add"
-		class:draft={taskData.status === StatusCode.DRAFT}
-		class:ready={taskData.status === StatusCode.READY}
-		class:in-progress={taskData.status === StatusCode.IN_PROGRESS}
-		class:done={taskData.status === StatusCode.DONE}
-		onmouseenter={onEnter}
-		onmouseleave={onLeave}
-		onclick={addButtonPressed}
-		viewBox="0 0 24 24"
-		xmlns="http://www.w3.org/2000/svg"
-		fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
-		style="
-				position: absolute;
-				left: {TASK_SIZE.width - 41/2 - 1}px;
-				top: {TASK_SIZE.height/2 - 41/2}px;
-				width: 41;
-				height: 41;
-			"
-	>
-		<circle
-			cx="12" cy="12" r="10"
-		/>
-		<path d="M5 12h14"/><path d="M12 5v14"/>
-	</svg>
+		<svg
+			class="button-add"
+			class:draft={taskData.status === StatusCode.DRAFT}
+			class:ready={taskData.status === StatusCode.READY}
+			class:in-progress={taskData.status === StatusCode.IN_PROGRESS}
+			class:done={taskData.status === StatusCode.DONE}
+			onmouseenter={onEnter}
+			onmouseleave={onLeave}
+			onclick={addButtonPressed}
+			viewBox="0 0 24 24"
+			xmlns="http://www.w3.org/2000/svg"
+			fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+			style="
+					position: absolute;
+					left: {TASK_SIZE.width - 41/2 - 1}px;
+					top: {TASK_SIZE.height/2 - 41/2}px;
+					width: 41;
+					height: 41;
+				"
+		>
+			<circle
+				cx="12" cy="12" r="10"
+			/>
+			<path 
+				stroke-width="1.5"
+				d="M5 12h14"
+			/><path
+				stroke-width="1.5"
+				d="M12 5v14"
+			/>
+		</svg>
 {/if}

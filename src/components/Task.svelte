@@ -103,6 +103,7 @@
 
 
 {#if !projectData.isTaskDeleted(taskId)}
+{#key uiState.updateOnZoomCounter}
 <div
 	class="task-container"
 	style="
@@ -159,6 +160,7 @@
 	</div>
 	<AddTaskButton {uiState} {projectData} {taskId} />
 </div>
+{/key}
 {/if}
 
 <!--top: {coords.y}px;-->
