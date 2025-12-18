@@ -3,9 +3,9 @@
 	import Toolbar from "./Toolbar.svelte";
 	import Task from "./Task.svelte";
 	import Panzoom, {type PanzoomObject} from '@panzoom/panzoom'
-	import type {Context} from "../types";
+	import type {Context} from "../Context.svelte.js";
 
-	let {uiState, projectData}: Context = $props();
+	let {context}: {context: Context} = $props();
 	
 	let viewportEl: HTMLDivElement | null = null;
 	let sceneEl: HTMLDivElement | null = null;
@@ -48,7 +48,7 @@
 			(ev) => {
 				getPanzoom().zoomWithWheel(ev);
 				if (getPanzoom().getScale() > 1) {
-					uiState.incrementUpdateOnZoomCounter();
+					context.incrementUpdateOnZoomCounter();
 				}
 			}
 		);
@@ -68,7 +68,7 @@
 	function handleKey(e: KeyboardEvent) {
 		console.log('handleKey ', e.key);
 		if (e.key === "Escape") {
-			uiState.setSelectedTaskId(-1);
+			context.setSelectedTaskId(-1);
 			e.stopPropagation();
 		}
 	}
@@ -93,10 +93,10 @@
 			return
 		}
 		mouseDown = false;
-		console.log(`Window clicked + ${uiState.serializeForDebugging()}`);
-		console.log('selectedTaskId ' + uiState.selectedTaskId);
-		uiState.pressedButtonIndex = -1;
-		uiState.setSelectedTaskId(-1);
+		console.log(`Window clicked + ${context.serializeForDebugging()}`);
+		console.log('selectedTaskId ' + context.selectedTaskId);
+		context.pressedButtonIndex = -1;
+		context.setSelectedTaskId(-1);
 		sceneEl!.focus();
 	}
 	function getPanzoom() {
@@ -115,7 +115,7 @@
 	style="width: 100%; height: 100vh; overflow: hidden; position: relative; background: #1C1C1C;"
 >
 	<div
-		class="pixi-container"
+		class="task-container"
 		bind:this={sceneEl}
 		onpointerdown={() => mouseDown = true}
 		onclick={handleCanvasClick}
@@ -124,13 +124,13 @@
 		style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"
 		role="presentation"
 	>
-		{#each projectData.tasks.filter(t => !t.deleted) as task}
-			<Task taskId={task.taskId} {uiState} {projectData} coords={uiState.getCurrentTaskPosition(task.taskId)} />
+		{#each context.projectData.tasks.filter(t => !t.deleted) as task}
+			<Task taskId={task.taskId} {context} coords={context.getCurrentTaskPosition(task.taskId)} />
 		{/each}
 
-		{#if uiState.selectedTaskId !== -1}
+		{#if context.selectedTaskId !== -1}
 			<Toolbar
-				uiState={uiState}
+				context={context}
 			/>
 		{/if}
 	</div>

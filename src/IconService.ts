@@ -1,4 +1,4 @@
-﻿import { IconCode, StatusCode } from "../types";
+﻿import { IconCode, StatusCode } from "./types";
 
 export const LOGO_NAME = "TaskmapLogo";
 export const LOGO_CONTENT = `

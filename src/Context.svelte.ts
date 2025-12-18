@@ -1,12 +1,12 @@
-﻿import TaskmapPlugin from "../main";
-import type { ProjectData } from "../ProjectData.svelte";
-import { StatusCode, type TaskId } from "../types";
+﻿import TaskmapPlugin from "./main";
+import type { ProjectData } from "./ProjectData.svelte.js";
+import { StatusCode, type TaskId } from "./types";
 import { Spring } from "svelte/motion";
 import type { App } from "obsidian";
-import type { TaskmapView } from "../TaskmapView";
-import type { NodePositionsCalculator } from "../NodePositionsCalculator";
+import type { TaskmapView } from "./TaskmapView";
+import type { NodePositionsCalculator } from "./NodePositionsCalculator";
 
-export class UIState {
+export class Context {
 	app: App;
 	view: TaskmapView;
 	nodePositionsCalculator: NodePositionsCalculator;
@@ -132,12 +132,8 @@ export class UIState {
 	}
 
 	public getCurrentTaskPosition(taskId: number) {
-		const pos = this.taskPositions.find((t) => t.taskId === taskId)!.tween!
+		return this.taskPositions.find((t) => t.taskId === taskId)!.tween!
 			.current;
-		if (taskId == 5) {
-			console.log(JSON.stringify(pos));
-		}
-		return pos;
 	}
 
 	public serializeForDebugging() {
