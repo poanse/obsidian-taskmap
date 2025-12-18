@@ -1,6 +1,4 @@
-﻿import type { ProjectData } from "./ProjectData.svelte";
-import { UIState } from "./pixi/GlobalState.svelte";
-import type { EasingFunction } from "svelte/transition";
+﻿import type { EasingFunction } from "svelte/transition";
 
 export enum IconCode {
 	TRASH,
@@ -39,14 +37,15 @@ export type TaskData = {
 	priority: number;
 };
 
-export type Context = {
-	uiState: UIState;
-	projectData: ProjectData;
-};
-
 export interface SlideParamsCustom {
 	delay?: number;
 	duration?: number;
 	easing?: EasingFunction;
 	axis?: "x" | "y" | "-x" | "-y";
+}
+export enum MouseDown {
+	NONE = -1,
+	LEFT = 0,
+	MIDDLE = 1,
+	RIGHT = 2,
 }

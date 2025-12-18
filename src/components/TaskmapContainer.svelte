@@ -1,9 +1,10 @@
 ﻿<script lang="ts">
-	import {onDestroy, onMount} from "svelte";
+	import {onMount} from "svelte";
 	import Toolbar from "./Toolbar.svelte";
 	import Task from "./Task.svelte";
 	import Panzoom, {type PanzoomObject} from '@panzoom/panzoom'
 	import type {Context} from "../Context.svelte.js";
+	import {MouseDown} from "../types";
 
 	let {context}: {context: Context} = $props();
 	
@@ -11,18 +12,12 @@
 	let sceneEl: HTMLDivElement | null = null;
 	let panzoom: PanzoomObject | null = null;
 	let isDragging = false;
-	let mouseDown = $state(false);
+	let mouseDown = $state(MouseDown.NONE); // -1 
 	let startX = 0;
 	let startY = 0;
+	let panStartX = 0;
+	let panStartY = 0;
 	
-
-	// Cleanup listeners to prevent memory leaks
-	onDestroy(() => {
-		if (viewportEl && panzoom) {
-			viewportEl.removeEventListener('wheel', panzoom.zoomWithWheel);
-		}
-	});
-
 	onMount(async () => {
 		if (!sceneEl) {
 			throw new Error('No mount element');
@@ -31,37 +26,14 @@
 			throw new Error('No viewport');
 		}
 		
-		// 1. Initialize Panzoom on the child (scene), NOT the wrapper
 		panzoom = Panzoom(sceneEl, {
-			maxScale: 3, // not higher than 1 to avoid lowRes svg rendering
+			maxScale: 3,
 			minScale: 0.1,
-			// Important: Use the wrapper as the bounds for event handling
-			// This fixes the "Infinite" panning issue because the parent catches the events
 			canvas: true,
 			excludeClass: 'no-pan',
 			cursor: 'default',
 			// animate: true,
-		});
-
-		// 2. Fix Zoom: Manually bind the wheel event to the viewport
-		viewportEl.addEventListener('wheel', 
-			(ev) => {
-				getPanzoom().zoomWithWheel(ev);
-				if (getPanzoom().getScale() > 1) {
-					context.incrementUpdateOnZoomCounter();
-				}
-			}
-		);
-
-		// 3. Fix Panning from "empty space": Bind down event to viewport
-		// This ensures you can drag even if the element is off-center
-		viewportEl.addEventListener('pointerdown', (e) => {
-			getPanzoom().handleDown(e);
-
-			// Track click vs drag
-			isDragging = false;
-			startX = e.clientX;
-			startY = e.clientY;
+			noBind: true
 		});
 	});
 
@@ -72,32 +44,66 @@
 			e.stopPropagation();
 		}
 	}
-	function handlePointerUp(e: PointerEvent) {
-		// Calculate distance moved
-		const dist = Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2);
-		// If moved more than 5 pixels, it's a drag, not a click
-		const thrDist = 5;
-		if (dist > Math.pow(thrDist,2)) {
-			isDragging = true;
+	function onwheel(e: WheelEvent) {
+		getPanzoom().zoomWithWheel(e);
+		if (getPanzoom().getScale() > 1) {
+			context.incrementUpdateOnZoomCounter();
 		}
+		e.stopPropagation();
 	}
-
-	function handleCanvasClick(e: MouseEvent) {
-		// 4. Fix Click: Only trigger logic if we haven't dragged
+	function onpointerdown(e: PointerEvent) {
+		console.log('handlePointerDown', e.pointerId, e.button);
+		mouseDown = e.button as MouseDown;
+		if (e.button == 1) {
+			e.preventDefault(); // prevent auto-scroll
+			// Capture the pointer so move events continue even if 
+			// the mouse leaves the element during a fast drag
+			(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+			startX = e.clientX;
+			startY = e.clientY;
+		}
+		e.stopPropagation();
+	}
+	function onpointermove(e: PointerEvent) {
+		console.log('handlePointerMove', e.pointerId, e.button);
+		const deltaX = e.clientX - startX;
+		const deltaY = e.clientY - startY;
+		if (mouseDown == MouseDown.MIDDLE && !isDragging) {
+			// Calculate distance moved
+			const dist = Math.pow(deltaX, 2) + Math.pow(deltaY, 2);
+			// If moved more than 5 pixels, it's a drag, not a click
+			const thrDist = 5;
+			if (dist > Math.pow(thrDist,2)) {
+				isDragging = true;
+				const pan = getPanzoom().getPan();
+				panStartX = pan.x;
+				panStartY = pan.y;
+				// getPanzoom().handleMove(e);
+			}
+		}
 		if (isDragging) {
-			e.stopPropagation(); // Stop propagation if it was a drag
-			return;
+			e.preventDefault();
+			const scale = getPanzoom().getScale();
+			getPanzoom().pan(panStartX+deltaX/scale, panStartY+deltaY/scale);
 		}
-		console.log('Canvas clicked!', e);
-		if (!mouseDown) {
-			return
+		e.stopPropagation();
+	}
+	function onpointerup(e: PointerEvent) {
+		console.log('handlePointerUp', e.pointerId, e.button);
+		if (e.button as MouseDown == MouseDown.MIDDLE && isDragging) {
+			// Release the pointer capture
+			(e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
 		}
-		mouseDown = false;
-		console.log(`Window clicked + ${context.serializeForDebugging()}`);
-		console.log('selectedTaskId ' + context.selectedTaskId);
-		context.pressedButtonIndex = -1;
-		context.setSelectedTaskId(-1);
-		sceneEl!.focus();
+		mouseDown = MouseDown.NONE;
+		isDragging = false;
+		if (e.button as MouseDown == MouseDown.LEFT) {
+			console.log(`Window clicked + ${context.serializeForDebugging()}`);
+			console.log('selectedTaskId ' + context.selectedTaskId);
+			context.pressedButtonIndex = -1;
+			context.setSelectedTaskId(-1);
+			viewportEl!.focus();
+			e.stopPropagation();
+		}
 	}
 	function getPanzoom() {
 		if (panzoom) {
@@ -110,15 +116,17 @@
 
 <div
 	class="viewport"
+	class:is-panning={mouseDown === MouseDown.MIDDLE}
 	bind:this={viewportEl}
-	onpointerup={handlePointerUp}
+	{onwheel}
+	{onpointerdown}
+	{onpointermove}
+	{onpointerup}
 	style="width: 100%; height: 100vh; overflow: hidden; position: relative; background: #1C1C1C;"
 >
 	<div
 		class="task-container"
 		bind:this={sceneEl}
-		onpointerdown={() => mouseDown = true}
-		onclick={handleCanvasClick}
 		tabindex="-1"
 		onkeydown={handleKey}
 		style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"
@@ -135,3 +143,25 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	.task-container {
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+
+		background-color: #1C1C1C;
+
+		transform: translateZ(0);
+		will-change: transform;
+	}
+	.viewport {
+		touch-action: none; /* Prevents mobile browser interference */
+	}
+	.viewport.is-panning {
+		cursor: grabbing !important;
+	}
+	.viewport:not(.is-panning) {
+		cursor: default;
+	}
+</style>

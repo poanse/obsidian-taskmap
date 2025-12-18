@@ -3,10 +3,10 @@ import { TaskmapView } from "./TaskmapView";
 import { type PluginSettings, DEFAULT_SETTINGS } from "./PluginSettings";
 import { TaskmapSettingTab } from "./TaskmapSettingTab";
 import { DEFAULT_DATA } from "./ProjectData.svelte";
-import { LOGO_CONTENT, LOGO_NAME } from "./pixi/IconService";
+import { LOGO_CONTENT, LOGO_NAME } from "./IconService";
 
 export const FILE_EXTENSION = "taskmap";
-export const VIEW_TYPE_EXAMPLE = "example";
+export const VIEW_TYPE = "taskmap-view";
 
 export default class TaskmapPlugin extends Plugin {
 	static instance: TaskmapPlugin;
@@ -15,8 +15,8 @@ export default class TaskmapPlugin extends Plugin {
 	async onload() {
 		TaskmapPlugin.instance = this;
 		await this.loadSettings();
-		this.registerView(VIEW_TYPE_EXAMPLE, (leaf) => new TaskmapView(leaf));
-		this.registerExtensions([FILE_EXTENSION], VIEW_TYPE_EXAMPLE);
+		this.registerView(VIEW_TYPE, (leaf) => new TaskmapView(leaf));
+		this.registerExtensions([FILE_EXTENSION], VIEW_TYPE);
 
 		// This creates an icon in the left ribbon.
 		addIcon(LOGO_NAME, LOGO_CONTENT);
@@ -44,7 +44,7 @@ export default class TaskmapPlugin extends Plugin {
 	}
 
 	public async createAndOpenDrawing(): Promise<string> {
-		this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
+		this.app.workspace.detachLeavesOfType(VIEW_TYPE);
 
 		const file = await this.app.vault.create(
 			`Example ${window.moment().format("YY-MM-DD hh.mm.ss")}.${FILE_EXTENSION}`,
@@ -56,12 +56,12 @@ export default class TaskmapPlugin extends Plugin {
 		await leaf.openFile(file, { active: true });
 
 		leaf.setViewState({
-			type: VIEW_TYPE_EXAMPLE,
+			type: VIEW_TYPE,
 			state: leaf.view.getState(),
 		});
 
 		this.app.workspace.revealLeaf(
-			this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE)[0],
+			this.app.workspace.getLeavesOfType(VIEW_TYPE)[0],
 		);
 
 		return file.path;

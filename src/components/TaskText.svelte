@@ -2,19 +2,19 @@
 	import { onMount, tick } from "svelte";
 	import {MarkdownRenderer, Component, App} from "obsidian";
 	import {LinkSuggest} from "../LinkSuggest";
-	import type {UIState} from "../pixi/GlobalState.svelte";
+	import type {Context} from "../Context.svelte.js";
 
 	// PROPS
 	let {
 		taskId,
-		uiState,
+		context,
 		app,
 		content,
 		sourcePath,
 		onSave
 	}: {
 		taskId: number,
-		uiState: UIState,
+		context: Context,
 		app: App;
 		content: string;
 		sourcePath: string;
@@ -22,6 +22,8 @@
 	} = $props();
 
 	// STATE
+
+	let isSelected = $derived(context.isSelected(taskId));
 	let isEditing = $state(false);
 	let suggest: LinkSuggest | null = null;
 	let textPreviewEl: HTMLElement;
@@ -71,7 +73,7 @@
 			return;
 		}
 		
-		if (uiState.isSelected(taskId)) {
+		if (context.isSelected(taskId)) {
 			toggleEdit();
 			e.stopPropagation();
 		}
@@ -129,9 +131,16 @@
 			textEditEl.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
 		}
 	}
+	
 </script>
 
-<div class="task-text-container" onclick={handlePreviewClick}>
+
+<div
+	class="task-text-container"
+	class:selected={isSelected}
+	class:not-selected={!isSelected}
+	onclick={handlePreviewClick}
+>
 	{#if isEditing}
 		<textarea
 			class="text-edit tasktext"
@@ -153,3 +162,77 @@
 	{/if}
 </div>
 <!--onkeydown={(e) => e.key === 'Enter' && toggleEdit()}-->
+
+<style>
+	.task-text-container {
+		width: 160px;
+		height: 60px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		position: absolute;
+		padding: 0;
+		gap: 0;
+	}
+	.tasktext {
+		margin: 0;
+		padding: 0;
+		gap: 0;
+		border: none;
+		/*transform: translate3d(0,20px,0);*/
+		width: 160px;
+		/*height: 60px;*/
+		/*width: 100%;*/
+		/*height: 100%;*/
+		background: transparent;
+		resize: none;
+		font-size: 20px;
+		font-family: "Segoe UI";
+		line-height: 1.5;
+		/*border: 4px solid #707070;*/
+		/*border-radius: 22px;*/
+		outline: none;
+		box-shadow: none;
+		/*padding: 35px;*/
+		position: absolute;
+		text-align: center;
+		justify-content: center;
+		align-items: center;
+		color: white;
+		overflow: hidden;
+	}
+	.task-text-container.selected .tasktext:hover {
+		cursor: text;
+	}
+	.task-text-container.not-selected .tasktext:hover {
+		cursor: default;
+	}
+
+	.text-edit {
+		display: flex;
+		align-items: center;
+		field-sizing: content;
+	}
+	.text-edit:hover {
+		background-color: transparent;
+	}
+	.text-edit:focus {
+		border: none;
+		outline: none;
+		box-shadow: none;
+	}
+	.text-preview p {
+		top: 50%;
+		line-height: 1.5;
+		margin: 0;
+		padding: 0;
+		gap: 0;
+		border: none;
+		text-align: center;
+		justify-content: center;
+		align-items: center;
+		white-space: pre-wrap;
+		word-wrap: break-word;
+		overflow: visible;
+	}
+</style>

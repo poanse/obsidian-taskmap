@@ -1,19 +1,14 @@
 import { debounce, TextFileView, TFile, WorkspaceLeaf } from "obsidian";
 import { mount } from "svelte";
 import { DEFAULT_DATA, ProjectData } from "./ProjectData.svelte";
-import pixi from "./components/pixi.svelte";
-import { UIState } from "./pixi/GlobalState.svelte";
+import { Context } from "./Context.svelte.js";
 import { NodePositionsCalculator } from "./NodePositionsCalculator";
+import TaskmapContainer from "./components/TaskmapContainer.svelte";
 
 export const VIEW_TYPE_EXAMPLE = "example";
 
 export class TaskmapView extends TextFileView {
-	// raw svelte/html
-	// taskMapViewComponent: ReturnType<typeof TaskmapViewComponent> | undefined;
-	// pixi
-	pixiComponent: ReturnType<typeof pixi> | undefined;
-	// canvas
-	// canvasComponent: ReturnType<typeof DemoApp> | undefined;
+	taskmapContainer: ReturnType<typeof TaskmapContainer> | undefined;
 
 	constructor(leaf: WorkspaceLeaf) {
 		super(leaf);
@@ -31,30 +26,16 @@ export class TaskmapView extends TextFileView {
 	async onLoadFile(file: TFile): Promise<void> {
 		this.file = file;
 		this.setViewData(await this.app.vault.read(file));
-		let projectData = new ProjectData(JSON.parse(this.data));
-		this.projectData = projectData;
-		// this.taskMapViewComponent = mount(TaskmapViewComponent, {
-		// 	target: this.contentEl,
-		// 	props: {
-		// 		taskmapView: this,
-		// 	},
-		// });
-		// this.canvasComponent = mount(DemoApp, {
-		// 	target: this.contentEl,
-		// 	props: {
-		// 		taskmapView: this,
-		// },
-		// });
-		this.pixiComponent = mount(pixi, {
+		this.projectData = new ProjectData(JSON.parse(this.data));
+		this.taskmapContainer = mount(TaskmapContainer, {
 			target: this.contentEl,
 			props: {
-				uiState: new UIState(
+				context: new Context(
 					this,
 					this.projectData,
 					this.app,
 					new NodePositionsCalculator(),
 				),
-				projectData: this.projectData,
 			},
 		});
 	}

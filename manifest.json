@@ -1,5 +1,5 @@
 {
-	"id": "obsidian-taskmap-plugin",
+	"id": "obsidian-taskmap",
 	"name": "Obsidian Taskmap Plugin",
 	"version": "0.0.1",
 	"minAppVersion": "0.15.0",

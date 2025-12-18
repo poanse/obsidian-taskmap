@@ -1,20 +1,17 @@
 ﻿<script lang="ts">
-	import {TASK_SIZE} from "../pixi/Constants";
+	import {TASK_SIZE} from "../Constants";
 	import {StatusCode} from "../types";
-	import {UIState} from "../pixi/GlobalState.svelte";
-	import type {ProjectData} from "../ProjectData.svelte";
+	import {Context} from "../Context.svelte.js";
 
 	const {
 		taskId,
-		uiState,
-		projectData,
+		context,
 	}: {
 		taskId: number,
-		uiState: UIState,
-		projectData: ProjectData,
+		context: Context,
 	} = $props();
 
-	let taskData = $derived(projectData.getTask(taskId));
+	let taskData = $derived(context.projectData.getTask(taskId));
 	
 	let entered = $state(false);
 	function onEnter() {
@@ -27,7 +24,7 @@
 	}
 	function addButtonPressed (event: MouseEvent) {
 		console.log('add icon clicked')
-		uiState.addTask(taskId);
+		context.addTask(taskId);
 		event.stopPropagation();
 	}
 	

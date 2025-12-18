@@ -6,18 +6,18 @@
 		TOOLBAR_GAP,
 		BUTTON_SIZE,
 		TOOLBAR_SIZE, TASK_SIZE, TOOLBAR_SHIFT, SUBTOOLBAR_SHIFT
-	} from "../pixi/Constants";
+	} from "../Constants";
 	// 1. Import the transition you want
 	import {quintOut} from 'svelte/easing';
-	import {slideCustom} from '../pixi/Custom';
-	import type {UIState} from "../pixi/GlobalState.svelte.js";
+	import {slideCustom} from '../Custom';
+	import type {Context} from "../Context.svelte.js";
 	import {IconCode} from "../types";
 	
 	let {
-		uiState
-	}: {uiState: UIState} = $props();
+		context
+	}: {context: Context} = $props();
 
-	let position = $derived(uiState.getCurrentTaskPosition(uiState.selectedTaskId));
+	let position = $derived(context.getCurrentTaskPosition(context.selectedTaskId));
 	
 	function getTop() {
 		return position.y - TOOLBAR_SIZE.height - TOOLBAR_SHIFT;
@@ -38,15 +38,15 @@
 		left: {getLeft()}px;
 	"
 >
-	{#key uiState.updateOnZoomCounter}
-		<Button iconCode={IconCode.TRASH} {uiState}/>
-		<Button iconCode={IconCode.KEY} {uiState} />
-		<Button iconCode={IconCode.LOCK} {uiState} />
-		<Button iconCode={IconCode.FOCUS} {uiState} />
-		<Button iconCode={IconCode.STATUS} {uiState} />
+	{#key context.updateOnZoomCounter}
+		<Button iconCode={IconCode.TRASH} {context}/>
+		<Button iconCode={IconCode.KEY} {context} />
+		<Button iconCode={IconCode.LOCK} {context} />
+		<Button iconCode={IconCode.FOCUS} {context} />
+		<Button iconCode={IconCode.STATUS} {context} />
 	{/key}
 </div>
-{#if uiState.pressedButtonIndex === IconCode.TRASH}
+{#if context.pressedButtonIndex === IconCode.TRASH}
 	<div
 		class="subtoolbar"
 		transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
@@ -55,13 +55,13 @@
 			left: {getLeft()}px;
 		"
 	>
-		{#key uiState.updateOnZoomCounter}
-			<Button iconCode={IconCode.TRASH_SINGLE} {uiState} />
-			<Button iconCode={IconCode.TRASH_MULTIPLE} {uiState} />
+		{#key context.updateOnZoomCounter}
+			<Button iconCode={IconCode.TRASH_SINGLE} {context} />
+			<Button iconCode={IconCode.TRASH_MULTIPLE} {context} />
 		{/key}
 	</div>
 {/if}
-{#if uiState.pressedButtonIndex === IconCode.STATUS}
+{#if context.pressedButtonIndex === IconCode.STATUS}
 	<div
 		class="subtoolbar"
 		transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
@@ -70,11 +70,53 @@
 			left: {getLeft() + 4 * (BUTTON_SIZE + TOOLBAR_GAP)}px;
 		"
 	>
-		{#key uiState.updateOnZoomCounter}
-			<Button iconCode={IconCode.STATUS_DRAFT} {uiState} />
-			<Button iconCode={IconCode.STATUS_READY} {uiState} />
-			<Button iconCode={IconCode.STATUS_IN_PROGRESS} {uiState} />
-			<Button iconCode={IconCode.STATUS_DONE} {uiState} />
+		{#key context.updateOnZoomCounter}
+			<Button iconCode={IconCode.STATUS_DRAFT} {context} />
+			<Button iconCode={IconCode.STATUS_READY} {context} />
+			<Button iconCode={IconCode.STATUS_IN_PROGRESS} {context} />
+			<Button iconCode={IconCode.STATUS_DONE} {context} />
 		{/key}
 	</div>
 {/if}
+
+<style>
+
+	.toolbar {
+		gap: 2px;
+		padding: 2px 2px;
+		/*background: #181818;*/
+		background: #0f0f0fff;
+		/*background-color: #1E1E1E;*/
+		border-radius: 8px;
+		border-color: #343434;
+		border-style: solid;
+		border-width: 2px;
+		display: flex;
+		flex-direction: row;
+		justify-content: center;
+		align-items: center;
+		position: absolute;
+		transform: translate3d(-2px,-2px,0);
+		will-change: transform,scale,translate;
+		min-width: 98px;
+		min-height: 22px;
+		/*transform: translate(-50%, -50%);*/
+	}
+	.subtoolbar {
+		/*margin-top: 10px;*/
+		/*border: 1px solid #ccc;*/
+		/*background: #181818;*/
+
+		background: #0f0f0fff;
+		/*background-color: #1E1E1E;*/
+		overflow: hidden; /* Important for slide animations to look clean */
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: 4px;
+		border-radius: 8px 4px;
+		justify-content: center;
+		align-items: center;
+		position: absolute;
+	}
+</style>

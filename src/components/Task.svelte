@@ -1,28 +1,25 @@
 ﻿<script lang="ts">
-	import {UIState} from "../pixi/GlobalState.svelte.js";
-	import type {ProjectData} from "../ProjectData.svelte.js";
+	import {Context} from "../Context.svelte.js";
 	import {StatusCode} from "../types";
 	import TaskText from "./TaskText.svelte";
 	import AddTaskButton from "./AddTaskButton.svelte";
 
 	const {
 		taskId,
-		uiState,
-		projectData,
+		context,
 		coords
 	}: {
 		taskId: number,
-		uiState: UIState,
-		projectData: ProjectData,
+		context: Context,
 		coords: {x: number, y: number}
 	} = $props();
 	
-	let taskData = $derived(projectData.getTask(taskId));
-	// let coords = $derived(uiState.getTaskPosition(taskId));
+	let taskData = $derived(context.projectData.getTask(taskId));
+	// let coords = $derived(context.getTaskPosition(taskId));
 	
 	let isHovered = $state(false);
 	// derived here is a must
-	let isSelected = $derived(uiState.isSelected(taskData.taskId));
+	let isSelected = $derived(context.isSelected(taskId));
 	let editing = $state(false);
 	let inputValue = $state(taskData.name);
 	const useNewTextElement = true;
@@ -36,7 +33,7 @@
 		if (!useNewTextElement) {
 			if (success && inputValue.trim() !== "") {
 				taskData.name = inputValue.trim();
-				uiState.save();
+				context.save();
 			}
 			inputValue = taskData.name;
 			editing = false;
@@ -78,7 +75,7 @@
 		if (editing) {
 			finishEditing(true);
 		} else {
-			uiState.setSelectedTaskId(taskData.taskId);
+			context.setSelectedTaskId(taskData.taskId);
 			// const input = (document.getElementById('titleInput') as HTMLInputElement);
 			// input.disabled = false;
 		}
@@ -88,7 +85,7 @@
 	function onTextClick(event: Event) {
 		console.log('TextClicked');
 		if (!isSelected) {
-			uiState.setSelectedTaskId(taskData.taskId);
+			context.setSelectedTaskId(taskData.taskId);
 			// const input = (document.getElementById('titleInput') as HTMLInputElement);
 			// input.disabled = false;
 		} else if (editing == false) {
@@ -102,8 +99,8 @@
 </script>
 
 
-{#if !projectData.isTaskDeleted(taskId)}
-{#key uiState.updateOnZoomCounter}
+{#if !context.projectData.isTaskDeleted(taskId)}
+{#key context.updateOnZoomCounter}
 <div
 	class="task-container"
 	style="
@@ -133,14 +130,14 @@
 		{#if useNewTextElement}
 			<TaskText
 				{taskId}
-				{uiState}
-				app={uiState.app}
+				{context}
+				app={context.app}
 				content={taskData.name}
 				onSave={(newContent)=> {
 					taskData.name = newContent;
-					uiState.save();
+					context.save();
 				}}
-				sourcePath={uiState.getActiveView().getFilePath()}
+				sourcePath={context.getActiveView().getFilePath()}
 			/>
 		{:else}
 		<input
@@ -158,49 +155,57 @@
 		/>
 		{/if}
 	</div>
-	<AddTaskButton {uiState} {projectData} {taskId} />
+	<AddTaskButton {context} {taskId} />
 </div>
 {/key}
 {/if}
 
-<!--top: {coords.y}px;-->
-<!--left: {coords.x}px;-->
+<style>
 
-<!--style="-->
-<!--position: absolute;-->
-<!--top: {coords.y + task.shiftY + task.height /2 - fontSize/2 - 7}px;-->
-<!--left: {coords.x + task.shiftX + task.strokeWidthSelected-2}px;-->
-<!--"-->
-
-<!--onclick={onTextClick}-->
-
-
-<!--<div-->
-<!--	class="taskText"-->
-<!--	onclick={onTextClick}-->
-<!--	onblur={() => finishEditing(true)}-->
-<!--	role="presentation"-->
-<!--&gt;-->
-<!--	<input-->
-<!--		class="textInput"-->
-<!--		type="text"-->
-<!--		id="titleInput"-->
-<!--		bind:value={inputValue}-->
-<!--		onkeydown={textInputHandleKey}-->
-<!--		disabled={!isSelected}-->
-<!--		style='{ !isSelected? "pointer-events: none;": ""}'-->
-<!--	/>-->
-<!--</div>-->
-
-
-<!--{#if isSelected}-->
-<!--	<input-->
-<!--		class="textInput"-->
-<!--		type="text"-->
-<!--		id="titleInput"-->
-<!--		bind:value={inputValue}-->
-<!--		onkeydown={handleKey}-->
-<!--	/>-->
-<!--{:else}-->
-<!--	{taskData.name}-->
-<!--{/if}-->
+	.task {
+		/*background: #111;*/
+		/*background-color: #1E1E1E;*/
+		/*background: #0f0f0fff;*/
+		border-style: solid;
+		border-width: 2px;
+		/*border-color: #7e7e7e;*/
+		border-radius: 20px;
+		/*padding: 35px;*/
+		text-align: center;
+		color: white;
+		font-size: 20px;
+		font-family: "Segoe UI";
+		line-height: 1.5;
+		width: 280px;
+		height: 80px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		position: absolute;
+		transition: background-color 0.3s, border-color 0.3s;
+		transform: translateZ(0);
+		will-change: transform;
+	}
+	.task.hovered {
+		width: 284px;
+		height: 84px;
+		border-width: 4px;
+		transform: translate3d(-2px,-2px,0);
+	}
+	.task.draft {
+		border-color: #7E7E7E;
+		background-color: #1E1E1E;
+	}
+	.task.ready {
+		border-color: #A1383D;
+		background-color: #2E2122;
+	}
+	.task.in-progress {
+		border-color: #A6A45D;
+		background-color: #2C2C24;
+	}
+	.task.done {
+		border-color: #3E9959;
+		background-color: #212B24;
+	}
+</style>
