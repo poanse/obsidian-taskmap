@@ -29,19 +29,16 @@
 	}
 	
 </script>
+
 <div class="hover-area"
 	 onmouseenter={onEnter}
 	 onmouseleave={onLeave}
 	 style="
-			position: absolute;
-		 	left: {TASK_SIZE.width - 50/2}px;
-		 	top: {TASK_SIZE.height/2 - 50/2}px;
-			width: 50px;
-			height: 50px;
-			border: 2px dashed #888;
-			background: transparent;
-			pointer-events: auto;
-		"
+		left: {TASK_SIZE.width - 50/2}px;
+		top: {TASK_SIZE.height/2 - 50/2}px;
+		width: 50px;
+		height: 50px;
+	"
 >
 </div>
 
@@ -80,6 +77,14 @@
 {/if}
 
 <style>
+	.hover-area {
+		position: absolute;
+		/*border: 2px dashed #888;*/
+		border: none;
+		background: transparent;
+		pointer-events: auto;
+	}
+	
 	:global(svg.draft) {
 		stroke: #7E7E7E;
 		fill: #1E1E1E;
