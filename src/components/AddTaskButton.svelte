@@ -59,12 +59,12 @@
 			xmlns="http://www.w3.org/2000/svg"
 			fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
 			style="
-					position: absolute;
-					left: {TASK_SIZE.width - 41/2 - 1}px;
-					top: {TASK_SIZE.height/2 - 41/2}px;
-					width: 41;
-					height: 41;
-				"
+				position: absolute;
+				left: {TASK_SIZE.width - 41/2 - 1}px;
+				top: {TASK_SIZE.height/2 - 41/2}px;
+				width: 41;
+				height: 41;
+			"
 		>
 			<circle
 				cx="12" cy="12" r="10"
@@ -78,3 +78,22 @@
 			/>
 		</svg>
 {/if}
+
+<style>
+	:global(svg.draft) {
+		stroke: #7E7E7E;
+		fill: #1E1E1E;
+	}
+	:global(svg.ready) {
+		stroke: #A1383D;
+		fill: #2E2122;
+	}
+	:global(svg.in-progress) {
+		stroke: #A6A45D;
+		fill: #2C2C24;
+	}
+	:global(svg.done) {
+		stroke: #3E9959;
+		fill: #212B24;
+	}
+</style>
