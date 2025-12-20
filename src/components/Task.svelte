@@ -161,7 +161,9 @@
 {/if}
 
 <style>
-
+	.task-container {
+		z-index: 3; /* over lines*/
+	}
 	.task {
 		/*background: #111;*/
 		/*background-color: #1E1E1E;*/

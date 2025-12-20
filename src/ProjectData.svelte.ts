@@ -1,9 +1,9 @@
 ﻿import { StatusCode, type TaskData, type TaskId } from "./types";
-import { NoNodeId, RootNodeId } from "./NodePositionsCalculator";
+import { NoTaskId, RootTaskId } from "./NodePositionsCalculator";
 
 export class ProjectData {
 	tasks = $state(new Array<TaskData>());
-	curTaskId = RootNodeId;
+	curTaskId = RootTaskId;
 
 	public static getDefault(): ProjectData {
 		return new ProjectData({
@@ -31,7 +31,7 @@ export class ProjectData {
 	public addRootTask() {
 		this.tasks.push({
 			taskId: this.curTaskId,
-			parentId: NoNodeId,
+			parentId: NoTaskId,
 			status: StatusCode.IN_PROGRESS,
 			name: "root",
 			priority: 0,

@@ -1,11 +1,11 @@
 ﻿// Assumed types and constants based on usage
 import type { TaskData, TaskId, Vector2 } from "./types";
 
-export const NoNodeId = -1 as TaskId;
-export const RootNodeId = 0 as TaskId;
+export const NoTaskId = -1 as TaskId;
+export const RootTaskId = 0 as TaskId;
 
 // Helper for Vector2 operations since TS doesn't support operator overloading
-const V2 = {
+export const V2 = {
 	Zero: { x: 0, y: 0 },
 	One: { x: 1, y: 1 },
 	add: (v1: Vector2, v2: Vector2): Vector2 => ({
@@ -65,7 +65,7 @@ export class NodePositionsCalculator {
 		const parentFramePositions =
 			this.CalculatePositionsInParentFrame(tasks);
 		const positions: Map<TaskId, Vector2> = new Map<TaskId, Vector2>();
-		positions.set(NoNodeId, V2.Zero);
+		positions.set(NoTaskId, V2.Zero);
 
 		tasks.forEach((t) => {
 			const parentPos = positions.get(t.parentId)!;
@@ -125,7 +125,7 @@ export class NodePositionsCalculator {
 			Vector2
 		>();
 
-		const allIdsToProcess = [...sortedTasks.map((t) => t.taskId), NoNodeId];
+		const allIdsToProcess = [...sortedTasks.map((t) => t.taskId), NoTaskId];
 
 		allIdsToProcess.forEach((id) => {
 			if (childrenIdsByParentId.has(id)) {
@@ -229,7 +229,7 @@ export class NodePositionsCalculator {
 		});
 
 		const rootTaskHasMultipleVisibleChildren =
-			(childrenIdsByParentId.get(RootNodeId)! || []).length > 1;
+			(childrenIdsByParentId.get(RootTaskId)! || []).length > 1;
 
 		if (
 			rootTaskHasMultipleVisibleChildren &&
@@ -296,7 +296,7 @@ export class NodePositionsCalculator {
 					TaskId
 				>;
 				const rootChildren =
-					childrenIdsByParentId.get(RootNodeId) ?? [];
+					childrenIdsByParentId.get(RootTaskId) ?? [];
 				rootChildren.forEach((id, idx) => {
 					// reenumerate priorities based on index
 					rootChildrenByPriority.set(idx, id);

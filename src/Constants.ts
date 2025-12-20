@@ -1,7 +1,7 @@
 ﻿export const BUTTON_SIZE = 18 * 2;
 export const TOOLBAR_GAP = 2;
 export const TOOLBAR_PADDING = { x: 4, y: 4 };
-export const TOOLBAR_SHIFT = 4 * 2;
+export const TOOLBAR_SHIFT = 4;
 export const SUBTOOLBAR_SHIFT = 2;
 
 export const TOOLBAR_SIZE = {

@@ -5,11 +5,15 @@
 	import Panzoom, {type PanzoomObject} from '@panzoom/panzoom'
 	import type {Context} from "../Context.svelte.js";
 	import {MouseDown} from "../types";
+	import Connection from "./Connection.svelte";
+	import {RootTaskId, V2} from "../NodePositionsCalculator";
+	import {TASK_SIZE} from "../Constants";
 
 	let {context}: {context: Context} = $props();
 	
 	let viewportEl: HTMLDivElement | null = null;
 	let sceneEl: HTMLDivElement | null = null;
+	let svgGroupEl: SVGGElement | null = null;
 	let panzoom: PanzoomObject | null = null;
 	let isDragging = false;
 	let mouseDown = $state(MouseDown.NONE); // -1 
@@ -17,10 +21,16 @@
 	let startY = 0;
 	let panStartX = 0;
 	let panStartY = 0;
+	// let cssTransform = $derived(`translate(${transformState.x}px, ${transformState.y}px) scale(${transformState.scale})`);
+	// let svgTransform = $derived(`translate(${transformState.x} ${transformState.y}) scale(${transformState.scale})`);
+	
 	
 	onMount(async () => {
 		if (!sceneEl) {
-			throw new Error('No mount element');
+			throw new Error('No scene element');
+		}
+		if (!svgGroupEl) {
+			throw new Error('No svg group element');
 		}
 		if (!viewportEl) {
 			throw new Error('No viewport');
@@ -122,20 +132,32 @@
 	{onpointerdown}
 	{onpointermove}
 	{onpointerup}
-	style="width: 100%; height: 100vh; overflow: hidden; position: relative; background: #1C1C1C;"
 >
 	<div
-		class="task-container"
+		class="scene"
 		bind:this={sceneEl}
-		tabindex="-1"
-		onkeydown={handleKey}
-		style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"
-		role="presentation"
 	>
-		{#each context.projectData.tasks.filter(t => !t.deleted) as task}
-			<Task taskId={task.taskId} {context} coords={context.getCurrentTaskPosition(task.taskId)} />
-		{/each}
+		<svg class="svg-layer" overflow="visible">
+			<g class="svg-group" bind:this={svgGroupEl}>
+				{#each context.projectData.tasks.filter(t => !t.deleted).filter(t => t.taskId !== RootTaskId) as task (task.taskId)}
+					<Connection
+						startPoint={V2.add(context.getCurrentTaskPosition(task.parentId), {x: TASK_SIZE.width, y: TASK_SIZE.height/2})}
+						endPoint={V2.add(context.getCurrentTaskPosition(task.taskId), {x: 0, y: TASK_SIZE.height/2})}
+					/>
+				{/each}
+			</g>
+		</svg>
+		<div
+			class="task-layer"
+			tabindex="-1"
+			onkeydown={handleKey}
+			role="presentation"
+		>
+			{#each context.projectData.tasks.filter(t => !t.deleted) as task (task.taskId)}
+				<Task taskId={task.taskId} {context} coords={context.getCurrentTaskPosition(task.taskId)}/>
+			{/each}
 
+		</div>
 		{#if context.selectedTaskId !== -1}
 			<Toolbar
 				context={context}
@@ -145,17 +167,12 @@
 </div>
 
 <style>
-	.task-container {
+	.viewport {
 		width: 100%;
 		height: 100%;
-		overflow: visible;
-
-		background-color: #1C1C1C;
-
-		transform: translateZ(0);
-		will-change: transform;
-	}
-	.viewport {
+		overflow: hidden;
+		position: relative;
+		background: #1C1C1C;
 		touch-action: none; /* Prevents mobile browser interference */
 	}
 	.viewport.is-panning {
@@ -163,5 +180,57 @@
 	}
 	.viewport:not(.is-panning) {
 		cursor: default;
+	}
+	.scene {
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+		/* Do NOT use flex centering here; it breaks coordinate math */
+		transform-origin: 0 0;
+	}
+	.svg-layer {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+	}
+	.svg-group {
+		display: flex;
+		transform-style: preserve-3d;
+		position: absolute;
+		align-items: center;
+		justify-content: center;
+	}
+	.task-layer {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		/*transform-origin: 0;*/
+		/*align-items: center;*/
+		/*justify-content: center;*/
+		/*background-color: #1C1C1C;*/
+		/* The 0.1deg rotation is invisible but forces high-res redraws */
+		/*perspective: 1000px;*/
+		/*transform: scale(var(--scale)) rotateX(0.1deg);*/
+		will-change: transform;
+
+		/* Prevents the browser from creating a low-res snapshot */
+		/*backface-visibility: visible;*/
+
+		/* Forces the browser to keep the vector data sharp */
+		/*transform-style: preserve-3d;*/
+
+		/* Ensure no blur filters are accidentally applied */
+		/*filter: blur(0);*/
+	}
+	/* Ensure Tasks themselves have pointer-events: auto */
+	:global(.task-layer > *) {
+		pointer-events: auto;
 	}
 </style>
