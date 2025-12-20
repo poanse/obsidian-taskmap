@@ -33,6 +33,9 @@
 	class:no-pan={true}
 	in:fade={{ duration: 500 }}
 	out:fade={{ duration: 300 }}
+	onclick={(e) => e.stopPropagation()}
+	onpointerdown={(e) => e.stopPropagation()}
+	onpointerup={(e) => e.stopPropagation()}
 	style="
 		top: {getTop()}px;
 		left: {getLeft()}px;
