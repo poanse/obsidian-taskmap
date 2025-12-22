@@ -56,9 +56,40 @@ export class ProjectData {
 		return id;
 	}
 
-	public removeTask(id: number) {
-		const t = this.getTask(id);
-		t.deleted = true;
+	public removeTaskSingle(id: number) {
+		const task = this.getTask(id);
+		task.deleted = true;
+		this.getChildren(id).forEach(
+			(taskId) => (this.getTask(taskId).parentId = task.parentId),
+		);
+	}
+
+	public removeTaskBranch(id: number) {
+		this.getDescendants(id).forEach(
+			(taskId) => (this.getTask(taskId).deleted = true),
+		);
+	}
+
+	public getDescendants(taskId: number, includeDeleted: boolean = false) {
+		const tasks = [taskId];
+		const result: TaskId[] = [];
+		while (tasks.length > 0) {
+			let task = tasks.pop();
+			if (task === undefined) {
+				break;
+			}
+			result.push(task);
+			tasks.push(...this.getChildren(task, includeDeleted));
+		}
+		return result;
+	}
+
+	public getChildren(taskId: number, includeDeleted: boolean = false) {
+		let res = this.tasks.filter((t) => t.parentId === taskId);
+		if (!includeDeleted) {
+			res = res.filter((t) => !t.deleted);
+		}
+		return res.map((t) => t.taskId);
 	}
 
 	public getTask(taskId: number) {

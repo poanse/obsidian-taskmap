@@ -112,6 +112,7 @@
 	<div
 		class="task"
 		class:no-pan={true}
+		class:hovered={isHovered || isSelected}
 		class:draft={taskData.status === StatusCode.DRAFT}
 		class:ready={taskData.status === StatusCode.READY}
 		class:in-progress={taskData.status === StatusCode.IN_PROGRESS}
@@ -122,7 +123,6 @@
 			mouseDown = true;
 			event.stopPropagation();
 		}}
-		class:hovered={isHovered || isSelected}
 		onclick={onTaskClick}
 		onblur={() => finishEditing(true)}
 		role="presentation"
@@ -137,7 +137,7 @@
 					taskData.name = newContent;
 					context.save();
 				}}
-				sourcePath={context.getActiveView().getFilePath()}
+				sourcePath={context.view.getFilePath()}
 			/>
 		{:else}
 		<input

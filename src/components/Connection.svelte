@@ -1,4 +1,5 @@
 ﻿<script lang="ts">
+	import { fade } from 'svelte/transition';
 	import type {Vector2} from "../types";
 
 	let { startPoint, endPoint}: {startPoint: Vector2, endPoint: Vector2} = $props();
@@ -13,6 +14,7 @@
 </script>
 
 <path
+	in:fade={{duration: 500}}
 	d={pathData}
 	fill="transparent"
 	stroke-linecap="round"

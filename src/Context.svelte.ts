@@ -57,6 +57,9 @@ export class Context {
 				this.projectData.tasks.filter((t) => !t.deleted),
 				{ x: 0, y: 0 },
 			);
+		this.taskPositions = this.taskPositions.filter(
+			(t) => !this.projectData.getTask(t.taskId).deleted,
+		);
 		this.taskPositions.forEach((taskPos) => {
 			const newPos = positions.get(taskPos.taskId);
 			if (newPos === undefined) {
@@ -89,16 +92,6 @@ export class Context {
 		}
 	}
 
-	public getActiveView(): TaskmapView {
-		return this.view;
-		// const x = TaskmapPlugin.getActiveView();
-		// if (x) {
-		// 	return x;
-		// } else {
-		// 	throw new Error("Unable to get active view");
-		// }
-	}
-
 	public addTask(parentId: TaskId): void {
 		const id = this.projectData.addTask(parentId);
 		this.save();
@@ -109,10 +102,18 @@ export class Context {
 		this.updateTaskPositions();
 	}
 
-	public removeTask(id: number) {
+	public removeTaskSingle(id: number) {
 		this.setSelectedTaskId(-1);
-		this.projectData.removeTask(id);
-		this.taskPositions = this.taskPositions.filter((t) => t.taskId !== id);
+		this.projectData.removeTaskSingle(id);
+		// this.taskPositions = this.taskPositions.filter((t) => t.taskId !== id);
+		this.updateTaskPositions();
+		this.save();
+	}
+
+	public removeTaskBranch(id: number) {
+		this.setSelectedTaskId(-1);
+		this.projectData.removeTaskBranch(id);
+		// this.taskPositions = this.taskPositions.filter((t) => t.taskId !== id);
 		this.updateTaskPositions();
 		this.save();
 	}

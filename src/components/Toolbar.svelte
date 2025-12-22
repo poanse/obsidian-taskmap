@@ -42,14 +42,14 @@
 	"
 >
 	{#key context.updateOnZoomCounter}
-		<Button iconCode={IconCode.TRASH} {context}/>
+		<Button iconCode={IconCode.REMOVE} {context}/>
 		<Button iconCode={IconCode.KEY} {context} />
 		<Button iconCode={IconCode.LOCK} {context} />
 		<Button iconCode={IconCode.FOCUS} {context} />
 		<Button iconCode={IconCode.STATUS} {context} />
 	{/key}
 </div>
-{#if context.pressedButtonIndex === IconCode.TRASH}
+{#if context.pressedButtonIndex === IconCode.REMOVE}
 	<div
 		class="subtoolbar"
 		transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
@@ -59,8 +59,8 @@
 		"
 	>
 		{#key context.updateOnZoomCounter}
-			<Button iconCode={IconCode.TRASH_SINGLE} {context} />
-			<Button iconCode={IconCode.TRASH_MULTIPLE} {context} />
+			<Button iconCode={IconCode.REMOVE_SINGLE} {context} />
+			<Button iconCode={IconCode.REMOVE_MULTIPLE} {context} />
 		{/key}
 	</div>
 {/if}
