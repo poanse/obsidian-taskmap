@@ -16,11 +16,9 @@
 	let entered = $state(false);
 	function onEnter() {
 		entered = true;
-		console.log('enter');
 	}
 	function onLeave() {
 		entered = false;
-		console.log('leave');
 	}
 	function addButtonPressed (event: MouseEvent) {
 		console.log('add icon clicked')
@@ -33,6 +31,7 @@
 <div class="hover-area"
 	 onmouseenter={onEnter}
 	 onmouseleave={onLeave}
+	 onblur={onLeave}
 	 style="
 		left: {TASK_SIZE.width - 50/2}px;
 		top: {TASK_SIZE.height/2 - 50/2}px;
@@ -52,6 +51,7 @@
 			onmouseenter={onEnter}
 			onmouseleave={onLeave}
 			onclick={addButtonPressed}
+			onblur={onLeave}
 			viewBox="0 0 24 24"
 			xmlns="http://www.w3.org/2000/svg"
 			fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
