@@ -109,7 +109,7 @@
 		if (e.button as MouseDown == MouseDown.LEFT) {
 			console.log(`Window clicked + ${context.serializeForDebugging()}`);
 			console.log('selectedTaskId ' + context.selectedTaskId);
-			context.pressedButtonIndex = -1;
+			context.pressedButtonCode = -1;
 			context.setSelectedTaskId(-1);
 			viewportEl!.focus();
 			e.stopPropagation();
@@ -158,11 +158,7 @@
 			{/each}
 
 		</div>
-		{#if context.selectedTaskId !== -1}
-			<Toolbar
-				context={context}
-			/>
-		{/if}
+		<Toolbar context={context}/>
 	</div>
 </div>
 

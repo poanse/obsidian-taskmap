@@ -10,7 +10,7 @@ export class Context {
 	app: App;
 	view: TaskmapView;
 	nodePositionsCalculator: NodePositionsCalculator;
-	pressedButtonIndex = $state(-1);
+	pressedButtonCode = $state(-1);
 	selectedTaskId = $state(-1);
 	toolbarStatus = $state(StatusCode.DRAFT);
 	projectData: ProjectData;
@@ -139,7 +139,7 @@ export class Context {
 
 	public serializeForDebugging() {
 		return JSON.stringify({
-			pressedButtonIndex: this.pressedButtonIndex,
+			pressedButtonIndex: this.pressedButtonCode,
 			selectedTaskId: this.selectedTaskId,
 			toolbarStatus: this.toolbarStatus,
 			projectData: this.projectData,

@@ -28,6 +28,7 @@
 
 </script>
 
+{#if context.selectedTaskId !== -1}
 <div
 	class="toolbar"
 	class:no-pan={true}
@@ -49,13 +50,15 @@
 		<Button iconCode={IconCode.STATUS} {context} />
 	{/key}
 </div>
-{#if context.pressedButtonIndex === IconCode.REMOVE}
+{/if}
+
+{#if context.pressedButtonCode === IconCode.REMOVE && context.selectedTaskId !== -1}
 	<div
 		class="subtoolbar"
 		transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
 		style="
 			top: {getTop() - 2 * BUTTON_SIZE - TOOLBAR_GAP - 2 * TOOLBAR_PADDING.y - SUBTOOLBAR_SHIFT}px;
-			left: {getLeft()}px;
+			left: {getLeft() - 2}px;
 		"
 	>
 		{#key context.updateOnZoomCounter}
@@ -64,13 +67,14 @@
 		{/key}
 	</div>
 {/if}
-{#if context.pressedButtonIndex === IconCode.STATUS}
+
+{#if context.pressedButtonCode === IconCode.STATUS && context.selectedTaskId !== -1}
 	<div
 		class="subtoolbar"
 		transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
 		style="
 			top: {getTop() - 4 * BUTTON_SIZE - 3*TOOLBAR_GAP - 2*TOOLBAR_PADDING.y - SUBTOOLBAR_SHIFT}px;
-			left: {getLeft() + 4 * (BUTTON_SIZE + TOOLBAR_GAP)}px;
+			left: {getLeft() + 4 * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
 		"
 	>
 		{#key context.updateOnZoomCounter}
@@ -83,7 +87,6 @@
 {/if}
 
 <style>
-
 	.toolbar {
 		gap: 2px;
 		padding: 2px 2px;

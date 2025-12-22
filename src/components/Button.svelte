@@ -12,7 +12,7 @@
 	} = $props();
 
 	let isPressedDown = $state(false);
-	let isPressed=$derived(context.pressedButtonIndex == iconCode);
+	let isPressed=$derived(context.pressedButtonCode == iconCode);
 	
 	const stateful = iconCode != IconCode.FOCUS;
 	
@@ -32,12 +32,12 @@
 		isPressedDown = false;
 		if (isPressed) {
 			isPressed = false;
-			context.pressedButtonIndex = -1;
+			context.pressedButtonCode = -1;
 		} else if (stateful) {
 			isPressed = true;
-			context.pressedButtonIndex = iconCode;
+			context.pressedButtonCode = iconCode;
 		} else {
-			context.pressedButtonIndex = -1;
+			context.pressedButtonCode = -1;
 		}
 		let newStatus: StatusCode | null = null;
 		if (iconCode == IconCode.STATUS_READY) {
