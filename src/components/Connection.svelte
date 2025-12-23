@@ -28,6 +28,6 @@
 		transition: stroke 0.2s;
 		pointer-events: none; /* Let clicks pass through to nodes below */
 		stroke: #555;
-		stroke-width: 4;
+		stroke-width: 3;
 	}
 </style>

@@ -45,6 +45,7 @@
 		}
 	});
 	function handlePreviewClick(e: MouseEvent) {
+		console.log('task text clicked');
 		const target = e.target as HTMLElement;
 
 		// Check if the clicked element (or its parent) is an internal link
@@ -139,7 +140,7 @@
 	class="task-text-container"
 	class:selected={isSelected}
 	class:not-selected={!isSelected}
-	onclick={handlePreviewClick}
+	onpointerup={handlePreviewClick}
 >
 	{#if isEditing}
 		<textarea
@@ -155,7 +156,7 @@
 			class="text-preview tasktext"
 			tabindex="0"
 			bind:this={textPreviewEl}
-			onclick={handlePreviewClick}
+			onpointerup={handlePreviewClick}
 			onmouseover={handlePreviewMouseOver}
 		>
 		</div>
@@ -205,7 +206,7 @@
 		cursor: text;
 	}
 	.task-text-container.not-selected .tasktext:hover {
-		cursor: default;
+		/*cursor: default;*/
 	}
 
 	.text-edit {
@@ -221,18 +222,25 @@
 		outline: none;
 		box-shadow: none;
 	}
-	.text-preview p {
-		top: 50%;
-		line-height: 1.5;
-		margin: 0;
-		padding: 0;
-		gap: 0;
-		border: none;
-		text-align: center;
-		justify-content: center;
-		align-items: center;
+	.text-preview {
+		overflow: visible;
 		white-space: pre-wrap;
 		word-wrap: break-word;
-		overflow: visible;
+		p {
+			top: 0;
+			width: 160px;
+			height: 60px;
+			line-height: 1.5;
+			margin: 0;
+			padding: 0;
+			gap: 0;
+			border: none;
+			text-align: center;
+			justify-content: center;
+			align-items: center;
+			/*white-space: pre-wrap;*/
+			/*word-wrap: break-word;*/
+			overflow: visible;
+		}
 	}
 </style>

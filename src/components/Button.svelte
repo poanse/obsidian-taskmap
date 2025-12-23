@@ -1,7 +1,7 @@
 ﻿<script lang="ts">
 	import type {Context} from "../Context.svelte.js";
 	import {IconCode, StatusCode} from "../types";
-	import {Circle, KeyRound, LocateFixed, Lock, RectangleHorizontal, Trash2} from 'lucide-svelte';
+	import {Circle, KeyRound, LocateFixed, Lock, RectangleHorizontal, Trash2, Crosshair } from 'lucide-svelte';
 
 	let {
 		iconCode,
@@ -61,8 +61,8 @@
 	}
 	
 	let classString = $derived(`
-		${isPressed ? 'is-pressed-up': ''}
-		${isPressedDown ? 'is-pressed-down': '' }
+		${isPressed ? 'is-pressed-up ': ''}
+		${isPressedDown ? 'is-pressed-down ': '' }
 		${iconCode === IconCode.STATUS ? " " + ["draft", "ready", "in-progress", "done"][context.toolbarStatus]: ""}
 	`);
 </script>
@@ -99,7 +99,7 @@
 	{:else if iconCode === IconCode.LOCK}
 		<Lock class={classString}/>
 	{:else if iconCode === IconCode.FOCUS}
-		<LocateFixed class={classString}/>
+		<LocateFixed class={classString + " focus"}/>
 	{:else if iconCode === IconCode.STATUS}
 		<Circle class={classString}/>
 	{:else if iconCode === IconCode.STATUS_DRAFT}
@@ -147,6 +147,10 @@
 		.custom-svg {
 			stroke-width: 0.083;
 			fill: #bbb;
+		}
+		:global(svg.focus) {
+			width: 21px;
+			height: 21px;
 		}
 		:global(svg.draft) {
 			stroke: #7E7E7E;

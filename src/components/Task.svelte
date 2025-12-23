@@ -123,6 +123,11 @@
 			mouseDown = true;
 			event.stopPropagation();
 		}}
+		onpointerdown={(event: MouseEvent) => {
+			mouseDown = true;
+			event.stopPropagation();
+		}}
+		onpointerup={onTaskClick}
 		onclick={onTaskClick}
 		onblur={() => finishEditing(true)}
 		role="presentation"
@@ -193,6 +198,7 @@
 		height: 84px;
 		border-width: 4px;
 		transform: translate3d(-2px,-2px,0);
+		cursor: pointer;
 	}
 	.task.draft {
 		border-color: #7E7E7E;

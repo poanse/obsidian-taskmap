@@ -64,13 +64,13 @@
 			"
 		>
 			<circle
-				cx="12" cy="12" r="10"
+				cx="12" cy="12" r="11"
 			/>
 			<path 
-				stroke-width="1.5"
+				stroke-width="2"
 				d="M5 12h14"
 			/><path
-				stroke-width="1.5"
+				stroke-width="2"
 				d="M12 5v14"
 			/>
 		</svg>
