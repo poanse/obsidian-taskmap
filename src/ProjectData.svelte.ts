@@ -37,6 +37,7 @@ export class ProjectData {
 			priority: 0,
 			depth: 0,
 			deleted: false,
+			hidden: false,
 		});
 		this.curTaskId++;
 	}
@@ -49,6 +50,7 @@ export class ProjectData {
 			status: StatusCode.DRAFT,
 			name: "default",
 			deleted: false,
+			hidden: false,
 			priority: 0, // TODO: change to amount of siblings
 			depth: this.getTask(parentId).depth + 1,
 		});
@@ -58,10 +60,13 @@ export class ProjectData {
 
 	public removeTaskSingle(id: number) {
 		const task = this.getTask(id);
+		const parentTask = this.getTask(task.parentId);
 		task.deleted = true;
-		this.getChildren(id).forEach(
-			(taskId) => (this.getTask(taskId).parentId = task.parentId),
-		);
+		this.getChildren(id).forEach((taskId) => {
+			const t = this.getTask(taskId);
+			t.parentId = parentTask.taskId;
+			t.depth = parentTask.depth + 1;
+		});
 	}
 
 	public removeTaskBranch(id: number) {
@@ -82,6 +87,16 @@ export class ProjectData {
 			tasks.push(...this.getChildren(task, includeDeleted));
 		}
 		return result;
+	}
+
+	public getAncestors(taskId: number) {
+		const res: TaskData[] = [];
+		let task = this.getTask(taskId);
+		while (task.depth != 0) {
+			task = this.getTask(task.parentId);
+			res.push(task);
+		}
+		return res;
 	}
 
 	public getChildren(taskId: number, includeDeleted: boolean = false) {
@@ -105,18 +120,60 @@ export class ProjectData {
 		return this.getTask(taskId).deleted;
 	}
 
+	public isBranchHidden(id: number) {
+		return this.getAncestors(id).some((t) => t.hidden);
+	}
+
+	public toggleHidden(id: number) {
+		const task = this.getTask(id);
+		task.hidden = !task.hidden;
+	}
+
 	public getTaskStatus(taskId: number) {
 		return this.getTask(taskId)!.status;
 	}
+
 	public getTaskName(taskId: number) {
 		return this.getTask(taskId)!.name;
 	}
+
 	public setTaskStatus(taskId: number, status: StatusCode) {
 		const task = this.getTask(taskId);
-		if (task) {
-			task.status = status;
+		task.status = status;
+		this.recalculateStatusRecursive(task.parentId);
+	}
+
+	public recalculateStatusRecursive(taskId: TaskId) {
+		if (taskId == RootTaskId) {
+			return;
+		}
+		const task = this.getTask(taskId);
+		if (task.status == StatusCode.DRAFT) {
+			return;
+		}
+		task.status = this.calculateStatus(taskId);
+		this.recalculateStatusRecursive(task.parentId);
+	}
+
+	public calculateStatus(taskId: TaskId) {
+		const children = this.getChildren(taskId).map((x) => this.getTask(x));
+		const counts = [0, 0, 0, 0];
+		children.forEach((t) => (counts[t.status] += 1));
+		if (counts[StatusCode.DONE] == children.length) {
+			return StatusCode.DONE;
+		} else if (counts[StatusCode.DONE] > 0) {
+			return StatusCode.IN_PROGRESS;
+		} else if (counts[StatusCode.IN_PROGRESS] > 0) {
+			return StatusCode.IN_PROGRESS;
+		} else if (counts[StatusCode.DRAFT] == children.length) {
+			return StatusCode.DRAFT;
+		} else if (counts[StatusCode.READY] == children.length) {
+			return StatusCode.READY;
+		} else {
+			return StatusCode.READY;
 		}
 	}
+
 	public setTaskName(taskId: number, name: string) {
 		const task = this.getTask(taskId);
 		if (task) {

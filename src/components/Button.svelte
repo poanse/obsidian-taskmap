@@ -1,7 +1,7 @@
 ﻿<script lang="ts">
 	import type {Context} from "../Context.svelte.js";
 	import {IconCode, StatusCode} from "../types";
-	import {Circle, KeyRound, LocateFixed, Lock, RectangleHorizontal, Trash2, Crosshair } from 'lucide-svelte';
+	import {Circle, KeyRound, LocateFixed, Lock, RectangleHorizontal, Trash2, SquareArrowOutUpRight } from 'lucide-svelte';
 
 	let {
 		iconCode,
@@ -51,10 +51,14 @@
 		}
 		if (newStatus != null) {
 			context.changeStatus(newStatus);
+		} else if (iconCode === IconCode.FOCUS) {
+			context.changeFocusedTask(context.selectedTaskId);
 		} else if (iconCode == IconCode.REMOVE_SINGLE) {
 			context.removeTaskSingle(context.selectedTaskId);
 		} else if (iconCode == IconCode.REMOVE_MULTIPLE) {
 			context.removeTaskBranch(context.selectedTaskId);
+		} else if (iconCode ==IconCode.CREATE_LINKED_NOTE) {
+			context.createLinkedNote(context.selectedTaskId);
 		}
 		
 		event.stopPropagation();
@@ -76,9 +80,6 @@
 	 onmouseleave={onBlur}
 	 onclick={(event: MouseEvent) => {
 		 event.stopPropagation();
-		 if (IconCode.FOCUS === iconCode) {
-			 context.setSelectedTaskId(-1);
-		 }
 	 }}
 	 role="presentation"
 	 tabindex="-1"
@@ -100,6 +101,8 @@
 		<Lock class={classString}/>
 	{:else if iconCode === IconCode.FOCUS}
 		<LocateFixed class={classString + " focus"}/>
+	{:else if iconCode === IconCode.CREATE_LINKED_NOTE}
+		<SquareArrowOutUpRight class={classString}/>
 	{:else if iconCode === IconCode.STATUS}
 		<Circle class={classString}/>
 	{:else if iconCode === IconCode.STATUS_DRAFT}
@@ -124,7 +127,7 @@
 		padding: 0;
 		/*background-color: #e0e0e0;*/
 		cursor: pointer;
-		border-radius: 4px;
+		border-radius: 8px;
 		user-select: none;
 
 		background: #0f0f0fff;
@@ -176,7 +179,7 @@
 		border-width: 0;
 		outline: none;
 	}
-
+	
 	.button.is-pressed-down {
 		background-color: #343434;
 		color: white;

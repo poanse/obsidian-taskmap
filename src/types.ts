@@ -5,6 +5,7 @@ export enum IconCode {
 	KEY,
 	LOCK,
 	FOCUS,
+	CREATE_LINKED_NOTE,
 	STATUS,
 	REMOVE_SINGLE,
 	REMOVE_MULTIPLE,
@@ -21,6 +22,10 @@ export enum StatusCode {
 	DONE,
 }
 
+export const toIconCode = (s: StatusCode) => {
+	return (s + IconCode.STATUS_DRAFT) as number as IconCode;
+};
+
 export interface Vector2 {
 	x: number;
 	y: number;
@@ -35,6 +40,7 @@ export type TaskData = {
 	parentId: TaskId;
 	depth: number;
 	priority: number;
+	hidden: boolean;
 };
 
 export interface SlideParamsCustom {

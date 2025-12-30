@@ -1,12 +1,11 @@
 import { addIcon, Plugin } from "obsidian";
-import { TaskmapView } from "./TaskmapView";
+import { TaskmapView, VIEW_TYPE } from "./TaskmapView";
 import { type PluginSettings, DEFAULT_SETTINGS } from "./PluginSettings";
 import { TaskmapSettingTab } from "./TaskmapSettingTab";
 import { DEFAULT_DATA } from "./ProjectData.svelte";
 import { LOGO_CONTENT, LOGO_NAME } from "./IconService";
 
 export const FILE_EXTENSION = "taskmap";
-export const VIEW_TYPE = "taskmap-view";
 
 export default class TaskmapPlugin extends Plugin {
 	static instance: TaskmapPlugin;

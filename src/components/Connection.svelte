@@ -13,8 +13,8 @@
 	});
 </script>
 
+<!--in:fade={{duration: 500}}-->
 <path
-	in:fade={{duration: 500}}
 	d={pathData}
 	fill="transparent"
 	stroke-linecap="round"

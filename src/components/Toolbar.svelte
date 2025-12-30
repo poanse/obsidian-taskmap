@@ -11,7 +11,7 @@
 	import {quintOut} from 'svelte/easing';
 	import {slideCustom} from '../Custom';
 	import type {Context} from "../Context.svelte.js";
-	import {IconCode} from "../types";
+	import {IconCode, toIconCode} from "../types";
 	
 	let {
 		context
@@ -25,6 +25,8 @@
 	function getLeft() {
 		return position.x + TASK_SIZE.width_hovered / 2 - TOOLBAR_SIZE.width / 2;
 	}
+	
+	let isLeafTask = $derived(context.selectedTaskId != -1 && context.projectData.getChildren(context.selectedTaskId).length === 0);
 
 </script>
 
@@ -43,11 +45,14 @@
 	"
 >
 	{#key context.updateOnZoomCounter}
-		<Button iconCode={IconCode.REMOVE} {context}/>
+		{#if context.isRemoveButtonEnabled()}
+			<Button iconCode={IconCode.REMOVE} {context}/>
+		{/if}
 		<Button iconCode={IconCode.KEY} {context} />
 		<Button iconCode={IconCode.LOCK} {context} />
 		<Button iconCode={IconCode.FOCUS} {context} />
 		<Button iconCode={IconCode.STATUS} {context} />
+		<Button iconCode={IconCode.CREATE_LINKED_NOTE} {context} />
 	{/key}
 </div>
 {/if}
@@ -57,7 +62,7 @@
 		class="subtoolbar"
 		transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
 		style="
-			top: {getTop() - 2 * BUTTON_SIZE - TOOLBAR_GAP - 2 * TOOLBAR_PADDING.y - SUBTOOLBAR_SHIFT}px;
+			top: {getTop() - 2 * BUTTON_SIZE - TOOLBAR_GAP - 2 * TOOLBAR_PADDING.y - SUBTOOLBAR_SHIFT - 2}px;
 			left: {getLeft() - 2}px;
 		"
 	>
@@ -73,15 +78,20 @@
 		class="subtoolbar"
 		transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
 		style="
-			top: {getTop() - 4 * BUTTON_SIZE - 3*TOOLBAR_GAP - 2*TOOLBAR_PADDING.y - SUBTOOLBAR_SHIFT}px;
+			top: {getTop() - (isLeafTask ? 2 : 1) * 2 * BUTTON_SIZE - ((isLeafTask ? 2 : 0) + 1)*TOOLBAR_GAP - 2*TOOLBAR_PADDING.y - SUBTOOLBAR_SHIFT - 2}px;
 			left: {getLeft() + 4 * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
 		"
 	>
 		{#key context.updateOnZoomCounter}
-			<Button iconCode={IconCode.STATUS_DRAFT} {context} />
-			<Button iconCode={IconCode.STATUS_READY} {context} />
-			<Button iconCode={IconCode.STATUS_IN_PROGRESS} {context} />
-			<Button iconCode={IconCode.STATUS_DONE} {context} />
+			{#if isLeafTask}
+				<Button iconCode={IconCode.STATUS_DRAFT} {context} />
+				<Button iconCode={IconCode.STATUS_READY} {context} />
+				<Button iconCode={IconCode.STATUS_IN_PROGRESS} {context} />
+				<Button iconCode={IconCode.STATUS_DONE} {context} />
+			{:else}
+				<Button iconCode={IconCode.STATUS_DRAFT} {context} />
+				<Button iconCode={toIconCode(context.projectData.calculateStatus(context.selectedTaskId))} {context} />
+			{/if}
 		{/key}
 	</div>
 {/if}
@@ -113,14 +123,17 @@
 		/*border: 1px solid #ccc;*/
 		/*background: #181818;*/
 
+		border-color: #343434;
+		border-style: solid;
+		border-width: 2px;
 		background: #0f0f0fff;
 		/*background-color: #1E1E1E;*/
 		overflow: hidden; /* Important for slide animations to look clean */
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
-		padding: 4px;
-		border-radius: 8px 4px;
+		padding: 2px;
+		border-radius: 8px;
 		justify-content: center;
 		align-items: center;
 		position: absolute;

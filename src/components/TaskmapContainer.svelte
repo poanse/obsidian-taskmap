@@ -139,7 +139,11 @@
 	>
 		<svg class="svg-layer" overflow="visible">
 			<g class="svg-group" bind:this={svgGroupEl}>
-				{#each context.projectData.tasks.filter(t => !t.deleted).filter(t => t.taskId !== RootTaskId) as task (task.taskId)}
+				{#each (context.projectData.tasks
+						.filter(t => !context.isTaskHidden(t.taskId))
+						.filter(t => t.taskId !== RootTaskId)
+						.filter(t => !context.projectData.isBranchHidden(t.taskId))
+				) as task (task.taskId)}
 					<Connection
 						startPoint={V2.add(context.getCurrentTaskPosition(task.parentId), {x: TASK_SIZE.width, y: TASK_SIZE.height/2})}
 						endPoint={V2.add(context.getCurrentTaskPosition(task.taskId), {x: 0, y: TASK_SIZE.height/2})}
@@ -153,7 +157,7 @@
 			onkeydown={handleKey}
 			role="presentation"
 		>
-			{#each context.projectData.tasks.filter(t => !t.deleted) as task (task.taskId)}
+			{#each context.projectData.tasks.filter(t => !context.isTaskHidden(t.taskId)) as task (task.taskId)}
 				<Task taskId={task.taskId} {context} coords={context.getCurrentTaskPosition(task.taskId)}/>
 			{/each}
 

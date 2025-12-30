@@ -1,12 +1,13 @@
 ﻿<script lang="ts">
 	import { onMount, tick } from "svelte";
-	import {MarkdownRenderer, Component, App} from "obsidian";
+	import {MarkdownRenderer, Component, App, type TFile} from "obsidian";
 	import {LinkSuggest} from "../LinkSuggest";
 	import type {Context} from "../Context.svelte.js";
 
 	// PROPS
 	let {
 		taskId,
+		isUnselected,
 		context,
 		app,
 		content,
@@ -14,6 +15,7 @@
 		onSave
 	}: {
 		taskId: number,
+		isUnselected: boolean,
 		context: Context,
 		app: App;
 		content: string;
@@ -62,9 +64,11 @@
 
 			// Open the link using Obsidian's API
 			// Whether to open in a new tab or in current one
-			const openInNewLeaf = e.ctrlKey || e.metaKey;
-
-			app.workspace.openLinkText(href, sourcePath, openInNewLeaf);
+			// const openInNewLeaf = e.ctrlKey || e.metaKey;
+			// app.workspace.openLinkText(href, sourcePath, openInNewLeaf);
+			const filepath = context.filePathFromTask(taskId);
+			const file = context.app.vault.getAbstractFileByPath(filepath) as TFile;
+			context.openOrFocusNote(file);
 			return;
 		}
 
@@ -145,6 +149,7 @@
 	{#if isEditing}
 		<textarea
 			class="text-edit tasktext"
+			class:unselect={isUnselected}
 			maxlength="28"
 			bind:this={textEditEl}
 			bind:value={content}
@@ -154,6 +159,7 @@
 	{:else}
 		<div
 			class="text-preview tasktext"
+			class:unselect={isUnselected}
 			tabindex="0"
 			bind:this={textPreviewEl}
 			onpointerup={handlePreviewClick}
@@ -201,6 +207,9 @@
 		align-items: center;
 		color: white;
 		overflow: hidden;
+	}
+	.tasktext.unselect {
+		color: color-mix(in srgb, #7E7E7E 100%, #000000 50%);
 	}
 	.task-text-container.selected .tasktext:hover {
 		cursor: text;

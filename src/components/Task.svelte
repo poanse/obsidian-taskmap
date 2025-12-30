@@ -3,6 +3,7 @@
 	import {StatusCode} from "../types";
 	import TaskText from "./TaskText.svelte";
 	import AddTaskButton from "./AddTaskButton.svelte";
+	import HideBranchButton from "./HideBranchButton.svelte";
 
 	const {
 		taskId,
@@ -16,7 +17,7 @@
 	
 	let taskData = $derived(context.projectData.getTask(taskId));
 	// let coords = $derived(context.getTaskPosition(taskId));
-	
+	let isUnselected = $derived(context.isAncestorOfHidden(taskId));
 	let isHovered = $state(false);
 	// derived here is a must
 	let isSelected = $derived(context.isSelected(taskId));
@@ -99,14 +100,13 @@
 </script>
 
 
-{#if !context.projectData.isTaskDeleted(taskId)}
+{#if !context.isTaskHidden(taskId) && !context.projectData.isBranchHidden(taskId)}
 {#key context.updateOnZoomCounter}
 <div
 	class="task-container"
 	style="
 		top: {coords.y}px;
 		left: {coords.x}px;
-		position: absolute;
 	"
 >
 	<div
@@ -117,6 +117,7 @@
 		class:ready={taskData.status === StatusCode.READY}
 		class:in-progress={taskData.status === StatusCode.IN_PROGRESS}
 		class:done={taskData.status === StatusCode.DONE}
+		class:unselect={isUnselected}
 		onmouseenter={() => isHovered = true}
 		onmouseleave={() => isHovered = false}
 		onmousedown={(event: MouseEvent) => {
@@ -135,6 +136,7 @@
 		{#if useNewTextElement}
 			<TaskText
 				{taskId}
+				{isUnselected}
 				{context}
 				app={context.app}
 				content={taskData.name}
@@ -161,6 +163,7 @@
 		{/if}
 	</div>
 	<AddTaskButton {context} {taskId} />
+	<HideBranchButton {context} {taskId} />
 </div>
 {/key}
 {/if}
@@ -168,6 +171,7 @@
 <style>
 	.task-container {
 		z-index: 3; /* over lines*/
+		position: absolute;
 	}
 	.task {
 		/*background: #111;*/
@@ -215,5 +219,9 @@
 	.task.done {
 		border-color: #3E9959;
 		background-color: #212B24;
+	}
+	.task.unselect {
+		border-color: color-mix(in srgb, #7E7E7E 100%, #000000 50%);
+		background-color: color-mix(in srgb, #1E1E1E 100%, #000000 50%);
 	}
 </style>

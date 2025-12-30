@@ -63,8 +63,8 @@ export function slideCustom(
 			`padding-${secondary_properties[1]}: ${t * padding_end_value}px;` +
 			`margin-${secondary_properties[0]}: ${t * margin_start_value}px;` +
 			`margin-${secondary_properties[1]}: ${t * margin_end_value}px;` +
-			`border-${secondary_properties[0]}-width: ${t * border_width_start_value}px;` +
-			`border-${secondary_properties[1]}-width: ${t * border_width_end_value}px;` +
+			// `border-${secondary_properties[0]}-width: ${t * border_width_start_value}px;` +
+			// `border-${secondary_properties[1]}-width: ${t * border_width_end_value}px;` +
 			`min-${primary_property}: 0` +
 			(axis === "-y"
 				? `; top: ${parseFloat(style["top"]) + primary_property_value * (1 - t)}px`

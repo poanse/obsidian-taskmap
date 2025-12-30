@@ -1,10 +1,19 @@
 ﻿import TaskmapPlugin from "./main";
 import type { ProjectData } from "./ProjectData.svelte.js";
-import { StatusCode, type TaskId } from "./types";
+import { StatusCode, type TaskData, type TaskId } from "./types";
 import { Spring } from "svelte/motion";
-import type { App } from "obsidian";
+import {
+	type App,
+	MarkdownView,
+	Notice,
+	TFile,
+	type WorkspaceLeaf,
+} from "obsidian";
 import type { TaskmapView } from "./TaskmapView";
-import type { NodePositionsCalculator } from "./NodePositionsCalculator";
+import {
+	type NodePositionsCalculator,
+	RootTaskId,
+} from "./NodePositionsCalculator";
 
 export class Context {
 	app: App;
@@ -12,6 +21,7 @@ export class Context {
 	nodePositionsCalculator: NodePositionsCalculator;
 	pressedButtonCode = $state(-1);
 	selectedTaskId = $state(-1);
+	focusedTaskId = $state(RootTaskId);
 	toolbarStatus = $state(StatusCode.DRAFT);
 	projectData: ProjectData;
 	taskPositions: Array<{
@@ -51,10 +61,40 @@ export class Context {
 		this.updateOnZoomCounter += 1;
 	}
 
+	public isTaskHidden(taskId: TaskId): boolean {
+		const task = this.projectData.getTask(taskId);
+		const ancestors = this.projectData
+			.getAncestors(this.focusedTaskId)
+			.map((t) => t.taskId);
+		const descendants = this.projectData.getDescendants(this.focusedTaskId);
+		return (
+			task.deleted ||
+			!(
+				task.taskId == this.focusedTaskId ||
+				ancestors.contains(task.taskId) ||
+				descendants.contains(task.taskId)
+			)
+		);
+	}
+
+	public changeFocusedTask(taskId: TaskId): void {
+		this.focusedTaskId = taskId;
+		this.updateTaskPositions();
+	}
+
+	public isAncestorOfHidden(taskId: TaskId): boolean {
+		return this.projectData
+			.getAncestors(this.focusedTaskId)
+			.map((t) => t.taskId)
+			.contains(taskId);
+	}
+
 	public updateTaskPositions() {
 		const positions =
 			this.nodePositionsCalculator.CalculatePositionsInGlobalFrame(
-				this.projectData.tasks.filter((t) => !t.deleted),
+				this.projectData.tasks.filter(
+					(t) => !this.isTaskHidden(t.taskId),
+				),
 				{ x: 0, y: 0 },
 			);
 		this.taskPositions = this.taskPositions.filter(
@@ -63,7 +103,7 @@ export class Context {
 		this.taskPositions.forEach((taskPos) => {
 			const newPos = positions.get(taskPos.taskId);
 			if (newPos === undefined) {
-				throw new Error();
+				return;
 			}
 			if (taskPos.tween === null) {
 				taskPos.tween = new Spring(newPos, this.springOptions);
@@ -132,9 +172,133 @@ export class Context {
 		// change its status
 	}
 
+	public hideTaskBranch(id: number) {
+		this.projectData.getTask(id).hidden = true;
+	}
+
+	public unhideTaskBranch(id: number) {
+		this.projectData.getTask(id).hidden = false;
+	}
+
 	public getCurrentTaskPosition(taskId: number) {
 		return this.taskPositions.find((t) => t.taskId === taskId)!.tween!
 			.current;
+	}
+
+	public isRemoveButtonEnabled() {
+		return this.selectedTaskId != RootTaskId;
+	}
+
+	/**
+	 * Creates note named after task name if not exists already.
+	 * Changes task name to a link to the node.
+	 * Opens the note on the right side.
+	 * @param taskId
+	 */
+	public async createLinkedNote(taskId: TaskId) {
+		const filepath = this.filePathFromTask(taskId);
+
+		try {
+			let abstractFile = this.app.vault.getAbstractFileByPath(filepath);
+			let tfile: TFile =
+				abstractFile instanceof TFile
+					? abstractFile
+					: await this.app.vault.create(
+							filepath,
+							`Created by Taskmap.`,
+						);
+			const task = this.projectData.getTask(taskId);
+			task.name = this.tasknameFromFilePath(filepath);
+			this.save();
+			await this.openOrFocusNote(tfile);
+		} catch (error) {
+			new Notice(
+				"Error creating note. It might already exist or the name is invalid.",
+			);
+			console.error(error);
+		}
+	}
+
+	public filePathFromTask(taskId: TaskId) {
+		const task = this.projectData.getTask(taskId);
+		const taskName = task.name;
+		// Sanitize the name for Obsidian filenames
+		let sanitizedName = taskName.replace(/[\\/:*?"<>|]/g, "-");
+		sanitizedName = this.delink(sanitizedName);
+		return `${sanitizedName}.md`;
+	}
+
+	public tasknameFromFilePath(path: string) {
+		if (path.endsWith(".md")) {
+			path = path.slice(0, path.length - 3);
+		}
+		return `[[${path}]]`;
+	}
+
+	/**
+	 * Opens a file with "Smart Focus":
+	 * 1. If file is already open anywhere -> Focus it.
+	 * 2. If an unpinned tab exists in another pane -> Open it there.
+	 * 3. If everything else is pinned or only one pane exists -> Create a new split.
+	 */
+	public async openOrFocusNote(file: TFile) {
+		const { workspace } = this.app;
+
+		// 1. Check if the file is already open in any leaf (pinned or not)
+		let existingLeaf: WorkspaceLeaf | null = null;
+		workspace.iterateAllLeaves((leaf) => {
+			if (
+				leaf.view instanceof MarkdownView &&
+				leaf.view.file?.path === file.path
+			) {
+				existingLeaf = leaf;
+			}
+		});
+
+		if (existingLeaf) {
+			workspace.setActiveLeaf(existingLeaf, { focus: true });
+			return;
+		}
+
+		// 2. Look for a reusable (unpinned) leaf in the root split
+		const activeLeaf = workspace.getMostRecentLeaf();
+		const rootLeaves: WorkspaceLeaf[] = [];
+		workspace.iterateRootLeaves((leaf) => {
+			rootLeaves.push(leaf);
+		});
+
+		const anotherLeaf = rootLeaves.reverse().find((leaf) => {
+			return leaf !== activeLeaf;
+		});
+		const anotherUnpinnedLeaf = rootLeaves.reverse().find((leaf) => {
+			return leaf !== activeLeaf && !leaf.getViewState().pinned;
+		});
+
+		if (anotherUnpinnedLeaf) {
+			// Reuse the unpinned secondary pane
+			await anotherUnpinnedLeaf.openFile(file);
+			workspace.setActiveLeaf(anotherUnpinnedLeaf, { focus: true });
+		} else if (anotherLeaf) {
+			workspace.setActiveLeaf(anotherLeaf, { focus: true });
+			const newLeaf = workspace.getLeaf("tab");
+			await newLeaf.openFile(file);
+			if (activeLeaf !== null) {
+				workspace.setActiveLeaf(activeLeaf);
+			}
+		} else {
+			// 3. If no reusable leaf exists (all are pinned or only one exists), create a split
+			// This will create a new vertical pane that is unpinned by default
+			const newLeaf = workspace.getLeaf("split", "vertical");
+			await newLeaf.openFile(file);
+		}
+	}
+
+	public isLink(s: string): boolean {
+		return s.startsWith("[[") && s.endsWith("]]");
+	}
+
+	public delink(s: string) {
+		return this.isLink(s) ? s.slice(2, s.length - 2) : s;
 	}
 
 	public serializeForDebugging() {

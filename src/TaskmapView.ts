@@ -1,11 +1,11 @@
 import { debounce, TextFileView, TFile, WorkspaceLeaf } from "obsidian";
-import { mount } from "svelte";
+import { mount, unmount } from "svelte";
 import { DEFAULT_DATA, ProjectData } from "./ProjectData.svelte";
 import { Context } from "./Context.svelte.js";
 import { NodePositionsCalculator } from "./NodePositionsCalculator";
 import TaskmapContainer from "./components/TaskmapContainer.svelte";
 
-export const VIEW_TYPE_EXAMPLE = "example";
+export const VIEW_TYPE = "taskmap-view";
 
 export class TaskmapView extends TextFileView {
 	taskmapContainer: ReturnType<typeof TaskmapContainer> | undefined;
@@ -20,7 +20,7 @@ export class TaskmapView extends TextFileView {
 	projectData: ProjectData;
 
 	getViewType() {
-		return VIEW_TYPE_EXAMPLE;
+		return VIEW_TYPE;
 	}
 
 	async onLoadFile(file: TFile): Promise<void> {
@@ -75,6 +75,12 @@ export class TaskmapView extends TextFileView {
 	clear(): void {
 		this.debouncedSave.cancel();
 		this.setViewData(DEFAULT_DATA);
+		// 3. Proper unmounting in the clear cycle
+		if (this.taskmapContainer) {
+			unmount(this.taskmapContainer);
+			this.taskmapContainer = undefined;
+		}
+		this.contentEl.empty();
 	}
 
 	async onUnloadFile(file: TFile): Promise<void> {
@@ -86,11 +92,6 @@ export class TaskmapView extends TextFileView {
 	}
 
 	async onClose() {
-		this.debouncedSave.cancel();
+		this.clear();
 	}
-
-	// onChange(value: string) {
-	//     this.setViewData(value);
-	// 	this.debouncedSave();
-	// }
 }

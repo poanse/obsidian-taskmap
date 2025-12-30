@@ -28,8 +28,9 @@ export enum AlgorithmEnum {
 	DoubleRow,
 }
 
+export const ParentToChildHorizontalShift = 400;
+
 export class NodePositionsCalculator {
-	public readonly ParentToChildHorizontalShift = 400;
 	public readonly SiblingDelta = 90;
 	public Algorithm: AlgorithmEnum = AlgorithmEnum.DefaultTree;
 	public subtreeWidthByHalfPriority: Map<number, number> = new Map<
@@ -222,7 +223,7 @@ export class NodePositionsCalculator {
 			finalChildShifts.set(
 				t.taskId,
 				V2.add(
-					{ x: this.ParentToChildHorizontalShift, y: 0 },
+					{ x: ParentToChildHorizontalShift, y: 0 },
 					verticalComponent,
 				),
 			);
@@ -281,7 +282,7 @@ export class NodePositionsCalculator {
 						x:
 							finalChildShifts.get(x.taskId)!.x +
 							subtreeRelWidthAccumulator *
-								this.ParentToChildHorizontalShift,
+								ParentToChildHorizontalShift,
 						y: yShiftByRowId.get(this.RowIndex(x))!,
 					});
 					subtreeRelWidthAccumulator +=
@@ -330,7 +331,7 @@ export class NodePositionsCalculator {
 						x:
 							finalChildShifts.get(x.taskId)!.x +
 							(this.xshift + this.xshift * t.length + tSum) *
-								this.ParentToChildHorizontalShift,
+								ParentToChildHorizontalShift,
 						y:
 							this.RowIndex(x) === 0
 								? yShiftByRowId.get(this.RowIndex(x))!
