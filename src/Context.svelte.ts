@@ -1,6 +1,6 @@
 ﻿import TaskmapPlugin from "./main";
 import type { ProjectData } from "./ProjectData.svelte.js";
-import { StatusCode, type TaskData, type TaskId } from "./types";
+import { MouseDown, StatusCode, type TaskId, type Vector2 } from "./types";
 import { Spring } from "svelte/motion";
 import {
 	type App,
@@ -12,24 +12,31 @@ import {
 import type { TaskmapView } from "./TaskmapView";
 import {
 	type NodePositionsCalculator,
+	NoTaskId,
 	RootTaskId,
+	V2,
 } from "./NodePositionsCalculator";
+import { DraggingManager } from "./DraggingManager.svelte";
 
 export class Context {
 	app: App;
 	view: TaskmapView;
 	nodePositionsCalculator: NodePositionsCalculator;
 	pressedButtonCode = $state(-1);
-	selectedTaskId = $state(-1);
+	selectedTaskId = $state(NoTaskId);
 	focusedTaskId = $state(RootTaskId);
 	toolbarStatus = $state(StatusCode.DRAFT);
+	reparentingTaskId = $state(NoTaskId);
 	projectData: ProjectData;
+	positions: Map<TaskId, Vector2>;
 	taskPositions: Array<{
 		taskId: TaskId;
 		tween: Spring<{ x: number; y: number }> | null;
 	}>;
+	taskDraggingManager = new DraggingManager([MouseDown.LEFT]);
 	// svg elements are pixelated zooming from scale < 1 to scale > 1, so we force a redraw manually
 	updateOnZoomCounter = $state(0);
+	scale = $state(1);
 
 	// parameters for animating task movement
 	private tweenOptions = { duration: 300 };
@@ -57,6 +64,10 @@ export class Context {
 		this.updateTaskPositions();
 	}
 
+	public setScale(scale: number) {
+		this.scale = scale;
+	}
+
 	public incrementUpdateOnZoomCounter(): void {
 		this.updateOnZoomCounter += 1;
 	}
@@ -77,8 +88,47 @@ export class Context {
 		);
 	}
 
+	public isReparentingOn() {
+		return this.reparentingTaskId != NoTaskId;
+	}
+
+	public startReparenting(taskId: TaskId) {
+		this.reparentingTaskId = taskId;
+		this.selectedTaskId = NoTaskId;
+	}
+
+	public cancelReparenting() {
+		this.reparentingTaskId = NoTaskId;
+	}
+
+	public isValidReparentingTarget(taskId: TaskId) {
+		if (this.reparentingTaskId == NoTaskId) {
+			throw new Error("Incorrect state: reparentingTaskId expected");
+		}
+		return (
+			taskId != this.reparentingTaskId &&
+			!this.projectData
+				.getDescendants(this.reparentingTaskId)
+				.contains(taskId) &&
+			this.projectData.getTask(this.reparentingTaskId).parentId != taskId
+		);
+	}
+
+	public finishReparenting(newParentId: TaskId) {
+		if (this.reparentingTaskId == NoTaskId) {
+			throw new Error("Incorrect state: reparentingTaskId expected");
+		}
+		this.projectData.changeParent(this.reparentingTaskId, newParentId);
+		this.updateTaskPositions();
+		this.cancelReparenting();
+	}
+
 	public changeFocusedTask(taskId: TaskId): void {
-		this.focusedTaskId = taskId;
+		if (this.focusedTaskId == taskId) {
+			this.focusedTaskId = RootTaskId;
+		} else {
+			this.focusedTaskId = taskId;
+		}
 		this.updateTaskPositions();
 	}
 
@@ -89,27 +139,108 @@ export class Context {
 			.contains(taskId);
 	}
 
-	public updateTaskPositions() {
-		const positions =
-			this.nodePositionsCalculator.CalculatePositionsInGlobalFrame(
-				this.projectData.tasks.filter(
-					(t) => !this.isTaskHidden(t.taskId),
-				),
-				{ x: 0, y: 0 },
+	public updateTaskPositions(draggingOnly = false) {
+		if (!draggingOnly) {
+			const newPositions =
+				this.nodePositionsCalculator.CalculatePositionsInGlobalFrame(
+					this.projectData.tasks.filter(
+						(t) => !this.isTaskHidden(t.taskId),
+					),
+					{ x: 0, y: 0 },
+				);
+			if (this.taskDraggingManager.isDragging) {
+				[
+					this.taskDraggingManager.draggedTaskId,
+					...this.projectData.getDescendants(
+						this.taskDraggingManager.draggedTaskId,
+					),
+				].forEach((t) => {
+					const v = this.positions.get(t);
+					if (v !== undefined) {
+						newPositions.set(t, v);
+					}
+				});
+			}
+			this.positions = newPositions;
+			this.taskPositions = this.taskPositions.filter(
+				(t) => !this.projectData.getTask(t.taskId).deleted,
 			);
-		this.taskPositions = this.taskPositions.filter(
-			(t) => !this.projectData.getTask(t.taskId).deleted,
+			this.taskPositions.forEach((taskPos) => {
+				const newPos = this.positions.get(taskPos.taskId);
+				if (newPos === undefined) {
+					return;
+				}
+				if (taskPos.tween === null) {
+					taskPos.tween = new Spring(newPos, this.springOptions);
+				}
+
+				taskPos.tween.stiffness = this.springOptions.stiffness;
+				taskPos.tween.damping = this.springOptions.damping;
+				taskPos.tween.target = newPos;
+			});
+		}
+
+		// dragging
+		if (this.taskDraggingManager.draggedTaskId !== NoTaskId) {
+			const draggingDelta = V2.mult(
+				{
+					x: this.taskDraggingManager.deltaX,
+					y: this.taskDraggingManager.deltaY,
+				},
+				1 / this.scale,
+			);
+			const draggedTaskIds = this.projectData.getDescendants(
+				this.taskDraggingManager.draggedTaskId,
+			);
+			this.taskPositions
+				.filter((t) => draggedTaskIds.contains(t.taskId))
+				.forEach((t) => {
+					if (t.tween !== null && t.tween !== undefined) {
+						t.tween.stiffness = 1;
+						t.tween.damping = 1;
+						t.tween.set(
+							V2.add(
+								this.positions.get(t.taskId)!,
+								draggingDelta,
+							),
+						);
+					}
+				});
+			const updated = this.updateDraggedTaskPriority();
+			if (updated) {
+				this.updateTaskPositions();
+				this.save();
+			}
+		}
+	}
+
+	private updateDraggedTaskPriority() {
+		// Если порядок тасок по оси Y отличается от приоритетов, то меняем приоритеты и пересчитываем порядок
+		const draggedParentId = this.projectData.getTask(
+			this.taskDraggingManager.draggedTaskId,
+		).parentId;
+		const orderedSiblings = this.taskPositions
+			.filter((t) =>
+				this.projectData
+					.getChildren(draggedParentId)
+					.contains(t.taskId),
+			)
+			.sort((a, b) => a.tween?.target.y! - b.tween?.target.y!)
+			.map((t) => t.taskId);
+		const newPriority = orderedSiblings.findIndex(
+			(t) => t == this.taskDraggingManager.draggedTaskId,
 		);
-		this.taskPositions.forEach((taskPos) => {
-			const newPos = positions.get(taskPos.taskId);
-			if (newPos === undefined) {
-				return;
-			}
-			if (taskPos.tween === null) {
-				taskPos.tween = new Spring(newPos, this.springOptions);
-			}
-			taskPos.tween.target = newPos;
-		});
+		const oldPriority = this.projectData.getTask(
+			this.taskDraggingManager.draggedTaskId,
+		).priority;
+		if (newPriority != oldPriority) {
+			this.projectData.setPriority(
+				this.taskDraggingManager.draggedTaskId,
+				newPriority,
+			);
+			return true;
+		}
+		return false;
 	}
 
 	public isSelected(taskId: number) {
@@ -123,7 +254,6 @@ export class Context {
 		}
 	}
 
-	// can be called from any component
 	public save() {
 		const x = TaskmapPlugin.getActiveView();
 		if (x != null) {
@@ -183,10 +313,6 @@ export class Context {
 	public getCurrentTaskPosition(taskId: number) {
 		return this.taskPositions.find((t) => t.taskId === taskId)!.tween!
 			.current;
-	}
-
-	public isRemoveButtonEnabled() {
-		return this.selectedTaskId != RootTaskId;
 	}
 
 	/**

@@ -17,28 +17,12 @@
 	
 	let taskData = $derived(context.projectData.getTask(taskId));
 	// let coords = $derived(context.getTaskPosition(taskId));
-	let isUnselected = $derived(context.isAncestorOfHidden(taskId));
+	let isUnselected = $derived(context.isAncestorOfHidden(taskId) || (context.isReparentingOn() && !context.isValidReparentingTarget(taskId)));
 	let isHovered = $state(false);
 	// derived here is a must
 	let isSelected = $derived(context.isSelected(taskId));
-	let editing = $state(false);
-	let inputValue = $state(taskData.name);
-	const useNewTextElement = true;
-
-	function startEditing() {
-		editing = true;
-		inputValue = taskData.name;
-	}
 
 	function finishEditing(success: boolean) {
-		if (!useNewTextElement) {
-			if (success && inputValue.trim() !== "") {
-				taskData.name = inputValue.trim();
-				context.save();
-			}
-			inputValue = taskData.name;
-			editing = false;
-		}
 		const selection = window.getSelection();
 		if (selection) {
 			selection.removeAllRanges()
@@ -49,56 +33,24 @@
 		// input.disabled = true;
 	}
 
-	function textInputHandleKey(e: KeyboardEvent) {
-		console.log('textInputHandleKey ', e.key);
-		if (!editing) {
-			return;
-		}
-		console.log('textInputHandleKey handled', e.key);
-		if (e.key === "Enter") {
-			finishEditing(true);
-			e.stopPropagation();
-		}
-		if (e.key === "Escape") {
-			finishEditing(false);
-			e.stopPropagation();
-		}
-	}
-
-
-	let mouseDown = $state(false);
-	function onTaskClick(event: Event) {
+	function onPointerUp(event: PointerEvent) {
 		console.log(`Task clicked ${taskId}`);
-		if (!mouseDown) {
+		if (context.taskDraggingManager.isDragging) {
 			return;
 		}
-		mouseDown = false;
-		if (editing) {
-			finishEditing(true);
+		if (context.isReparentingOn() && context.isValidReparentingTarget(taskId)) {
+			context.finishReparenting(taskId);
 		} else {
 			context.setSelectedTaskId(taskData.taskId);
 			// const input = (document.getElementById('titleInput') as HTMLInputElement);
 			// input.disabled = false;
 		}
+		context.taskDraggingManager.onPointerUp(event);
+		context.updateTaskPositions();
 		event.stopPropagation();
 	}
 	
-	function onTextClick(event: Event) {
-		console.log('TextClicked');
-		if (!isSelected) {
-			context.setSelectedTaskId(taskData.taskId);
-			// const input = (document.getElementById('titleInput') as HTMLInputElement);
-			// input.disabled = false;
-		} else if (editing == false) {
-			startEditing();
-		}
-		// } else if (editing) {
-		// 	finishEditing(true);
-		// }
-		event.stopPropagation();
-	}
 </script>
-
 
 {#if !context.isTaskHidden(taskId) && !context.projectData.isBranchHidden(taskId)}
 {#key context.updateOnZoomCounter}
@@ -107,6 +59,7 @@
 	style="
 		top: {coords.y}px;
 		left: {coords.x}px;
+		pointer-events={context.taskDraggingManager.isDragging ? 'none' : 'auto'}
 	"
 >
 	<div
@@ -120,50 +73,30 @@
 		class:unselect={isUnselected}
 		onmouseenter={() => isHovered = true}
 		onmouseleave={() => isHovered = false}
-		onmousedown={(event: MouseEvent) => {
-			mouseDown = true;
-			event.stopPropagation();
+		onpointerdown={(event: PointerEvent) => {
+			context.taskDraggingManager.setDraggedTaskId(taskId);
 		}}
-		onpointerdown={(event: MouseEvent) => {
-			mouseDown = true;
-			event.stopPropagation();
-		}}
-		onpointerup={onTaskClick}
-		onclick={onTaskClick}
+		onpointerup={onPointerUp}
 		onblur={() => finishEditing(true)}
 		role="presentation"
 	>
-		{#if useNewTextElement}
-			<TaskText
-				{taskId}
-				{isUnselected}
-				{context}
-				app={context.app}
-				content={taskData.name}
-				onSave={(newContent)=> {
-					taskData.name = newContent;
-					context.save();
-				}}
-				sourcePath={context.view.getFilePath()}
-			/>
-		{:else}
-		<input
-			class="textInput"
-			class:no-pan={true}
-			type="text"
-			id="titleInput"
-			bind:value={inputValue}
-			onclick={onTextClick}
-			onblur={() => finishEditing(true)}
-			onmousedown={(e: MouseEvent) => e.stopPropagation()}
-			onkeydown={textInputHandleKey}
-			disabled={!isSelected}
-			style='{ !isSelected? "pointer-events: none;": ""}'
+		<TaskText
+			{taskId}
+			{isUnselected}
+			{context}
+			app={context.app}
+			content={taskData.name}
+			onSave={(newContent)=> {
+				taskData.name = newContent;
+				context.save();
+			}}
+			sourcePath={context.view.getFilePath()}
 		/>
-		{/if}
 	</div>
-	<AddTaskButton {context} {taskId} />
-	<HideBranchButton {context} {taskId} />
+	{#if !context.taskDraggingManager.isDragging}
+		<AddTaskButton {context} {taskId} />
+		<HideBranchButton {context} {taskId} />
+	{/if}
 </div>
 {/key}
 {/if}

@@ -5,6 +5,7 @@ export enum IconCode {
 	KEY,
 	LOCK,
 	FOCUS,
+	REPARENT,
 	CREATE_LINKED_NOTE,
 	STATUS,
 	REMOVE_SINGLE,
@@ -22,8 +23,31 @@ export enum StatusCode {
 	DONE,
 }
 
+export const isStatusCode = (s: IconCode) => {
+	return [
+		IconCode.STATUS_READY,
+		IconCode.STATUS_DRAFT,
+		IconCode.STATUS_DONE,
+		IconCode.STATUS_IN_PROGRESS,
+	].contains(s);
+};
+
 export const toIconCode = (s: StatusCode) => {
 	return (s + IconCode.STATUS_DRAFT) as number as IconCode;
+};
+
+export const toStatusCode = (s: IconCode) => {
+	if (s == IconCode.STATUS_DRAFT) {
+		return StatusCode.DRAFT;
+	} else if (s == IconCode.STATUS_READY) {
+		return StatusCode.READY;
+	} else if (s == IconCode.STATUS_IN_PROGRESS) {
+		return StatusCode.IN_PROGRESS;
+	} else if (s == IconCode.STATUS_DONE) {
+		return StatusCode.DONE;
+	} else {
+		throw new Error(`Incorrect icon code - not a status: ${s}`);
+	}
 };
 
 export interface Vector2 {

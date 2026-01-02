@@ -31,6 +31,7 @@
 	let textPreviewEl: HTMLElement;
 	let textEditEl: HTMLTextAreaElement;
 	let component = new Component(); // Required by Obsidian to manage render lifecycle
+	let isDragging = $derived(context.taskDraggingManager.isDragging);
 
 	onMount(() => {
 		if(!isEditing && textPreviewEl) {
@@ -46,7 +47,22 @@
 			renderMarkdown();
 		}
 	});
-	function handlePreviewClick(e: MouseEvent) {
+	$effect(() => {
+		if (context.taskDraggingManager.isDragging) {
+			document.body.classList.add('is-dragging-task');
+		} else {
+			document.body.classList.remove('is-dragging-task');
+		}
+
+		// Cleanup function for when component is unmounted
+		return () => document.body.classList.remove('is-dragging-task');
+	});
+	
+	function handlePreviewClick(e: PointerEvent) {
+		if (isDragging) {
+			return;
+		}
+		context.taskDraggingManager.onPointerUp(e);
 		console.log('task text clicked');
 		const target = e.target as HTMLElement;
 
@@ -85,6 +101,9 @@
 	}
 
 	function handlePreviewMouseOver(e: MouseEvent) {
+		if (isDragging) {
+			return;
+		}
 		const target = e.target as HTMLElement;
 		const link = target.closest(".internal-link");
 
@@ -109,6 +128,13 @@
 			sourcePath,
 			component
 		);
+		// After rendering, find all links and disable their native dragging
+		const links = textPreviewEl.querySelectorAll('a, .internal-link, .external-link');
+		links.forEach(link => {
+			link.setAttribute('draggable', 'false');
+			// Optional: prevent dragging on the specific link level too
+			(link as HTMLElement).ondragstart = (e) => e.preventDefault();
+		});
 	}
 
 	async function toggleEdit() {

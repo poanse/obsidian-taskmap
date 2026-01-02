@@ -30,7 +30,7 @@
 			class:ready={taskData.status === StatusCode.READY}
 			class:in-progress={taskData.status === StatusCode.IN_PROGRESS}
 			class:done={taskData.status === StatusCode.DONE}
-			onclick={addButtonPressed}
+			onpointerup={addButtonPressed}
 			viewBox="0 0 24 24"
 		>
 			<circle cx="12" cy="12" r="11" />

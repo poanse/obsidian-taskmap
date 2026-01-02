@@ -43,6 +43,7 @@ export class ProjectData {
 	}
 
 	public addTask(parentId: TaskId) {
+		const childrenCount = this.getChildren(parentId).length;
 		const id = this.curTaskId;
 		this.tasks.push({
 			taskId: id,
@@ -51,7 +52,7 @@ export class ProjectData {
 			name: "default",
 			deleted: false,
 			hidden: false,
-			priority: 0, // TODO: change to amount of siblings
+			priority: childrenCount,
 			depth: this.getTask(parentId).depth + 1,
 		});
 		this.curTaskId++;
@@ -67,12 +68,14 @@ export class ProjectData {
 			t.parentId = parentTask.taskId;
 			t.depth = parentTask.depth + 1;
 		});
+		this.recalcPriorities(this.getTask(id).parentId);
 	}
 
 	public removeTaskBranch(id: number) {
 		this.getDescendants(id).forEach(
 			(taskId) => (this.getTask(taskId).deleted = true),
 		);
+		this.recalcPriorities(this.getTask(id).parentId);
 	}
 
 	public getDescendants(taskId: number, includeDeleted: boolean = false) {
@@ -143,6 +146,16 @@ export class ProjectData {
 		this.recalculateStatusRecursive(task.parentId);
 	}
 
+	public changeParent(taskId: TaskId, parentId: TaskId) {
+		const taskData = this.getTask(taskId);
+		taskData.parentId = parentId;
+		this.recalculateStatusRecursive(parentId);
+		[taskId, ...this.getDescendants(taskId)].forEach((taskId) => {
+			const task = this.getTask(taskId);
+			task.depth = this.getTask(task.parentId).depth + 1;
+		});
+	}
+
 	public recalculateStatusRecursive(taskId: TaskId) {
 		if (taskId == RootTaskId) {
 			return;
@@ -179,6 +192,40 @@ export class ProjectData {
 		if (task) {
 			task.name = name;
 		}
+	}
+
+	public setPriority(taskId: TaskId, newPriority: number) {
+		const task = this.getTask(taskId);
+		const oldPriority = task.priority;
+		task.priority = newPriority;
+		this.getChildren(task.parentId)
+			.filter((t) => t != taskId)
+			.forEach((child) => {
+				const childTask = this.getTask(child);
+				const childPriority = childTask.priority;
+				if (
+					newPriority > oldPriority &&
+					childPriority >= oldPriority &&
+					childPriority <= newPriority
+				) {
+					childTask.priority -= 1;
+				} else if (
+					newPriority < oldPriority &&
+					childPriority >= newPriority &&
+					childPriority <= oldPriority
+				) {
+					childTask.priority += 1;
+				}
+			});
+	}
+
+	public recalcPriorities(parentId: TaskId) {
+		this.getChildren(parentId)
+			.map((tId) => this.getTask(tId))
+			.sort((a, b) => a.priority - b.priority)
+			.forEach((t, idx) => {
+				t.priority = idx;
+			});
 	}
 }
 

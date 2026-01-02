@@ -1,7 +1,16 @@
 ﻿<script lang="ts">
 	import type {Context} from "../Context.svelte.js";
-	import {IconCode, StatusCode} from "../types";
-	import {Circle, KeyRound, LocateFixed, Lock, RectangleHorizontal, Trash2, SquareArrowOutUpRight } from 'lucide-svelte';
+	import {IconCode, isStatusCode, toStatusCode} from "../types";
+	import {
+		Circle,
+		KeyRound,
+		LocateFixed,
+		Lock,
+		RectangleHorizontal,
+		SquareArrowOutUpRight,
+		Trash2,
+		Unplug
+	} from 'lucide-svelte';
 
 	let {
 		iconCode,
@@ -12,12 +21,13 @@
 	} = $props();
 
 	let isPressedDown = $state(false);
-	let isPressed=$derived(context.pressedButtonCode == iconCode);
+	let isPressed = $derived(context.pressedButtonCode == iconCode);
 	
-	const stateful = iconCode != IconCode.FOCUS;
+	const stateful = [IconCode.REMOVE, IconCode.STATUS].contains(iconCode);
 	
 	function onpointerdown(event: MouseEvent) {
 		isPressedDown = true;
+		event.preventDefault();
 		event.stopPropagation();
 	}
 	
@@ -39,18 +49,10 @@
 		} else {
 			context.pressedButtonCode = -1;
 		}
-		let newStatus: StatusCode | null = null;
-		if (iconCode == IconCode.STATUS_READY) {
-			newStatus = StatusCode.READY;
-		} else if (iconCode == IconCode.STATUS_DRAFT) {
-			newStatus = StatusCode.DRAFT;
-		} else if (iconCode == IconCode.STATUS_DONE) {
-			newStatus = StatusCode.DONE;
-		} else if (iconCode == IconCode.STATUS_IN_PROGRESS) {
-			newStatus = StatusCode.IN_PROGRESS;
-		}
-		if (newStatus != null) {
-			context.changeStatus(newStatus);
+		if (isStatusCode(iconCode)) {
+			context.changeStatus(toStatusCode(iconCode));
+		}else if (iconCode == IconCode.REPARENT) {
+			context.startReparenting(context.selectedTaskId);
 		} else if (iconCode === IconCode.FOCUS) {
 			context.changeFocusedTask(context.selectedTaskId);
 		} else if (iconCode == IconCode.REMOVE_SINGLE) {
@@ -60,7 +62,6 @@
 		} else if (iconCode ==IconCode.CREATE_LINKED_NOTE) {
 			context.createLinkedNote(context.selectedTaskId);
 		}
-		
 		event.stopPropagation();
 	}
 	
@@ -99,6 +100,8 @@
 		<KeyRound class={classString}/>
 	{:else if iconCode === IconCode.LOCK}
 		<Lock class={classString}/>
+	{:else if iconCode === IconCode.REPARENT}
+		<Unplug class={classString}/>
 	{:else if iconCode === IconCode.FOCUS}
 		<LocateFixed class={classString + " focus"}/>
 	{:else if iconCode === IconCode.CREATE_LINKED_NOTE}

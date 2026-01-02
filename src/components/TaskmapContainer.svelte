@@ -51,20 +51,25 @@
 		console.log('handleKey ', e.key);
 		if (e.key === "Escape") {
 			context.setSelectedTaskId(-1);
+			context.cancelReparenting();
 			e.stopPropagation();
 		}
 	}
+	
 	function onwheel(e: WheelEvent) {
 		getPanzoom().zoomWithWheel(e);
+		context.setScale(getPanzoom().getScale());
 		if (getPanzoom().getScale() > 1) {
 			context.incrementUpdateOnZoomCounter();
 		}
 		e.stopPropagation();
 	}
+	
 	function onpointerdown(e: PointerEvent) {
 		console.log('handlePointerDown', e.pointerId, e.button);
+		context.taskDraggingManager.onPointerDown(e);
 		mouseDown = e.button as MouseDown;
-		if (e.button == 1) {
+		if (mouseDown == MouseDown.MIDDLE) {
 			e.preventDefault(); // prevent auto-scroll
 			// Capture the pointer so move events continue even if 
 			// the mouse leaves the element during a fast drag
@@ -74,8 +79,11 @@
 		}
 		e.stopPropagation();
 	}
+	
 	function onpointermove(e: PointerEvent) {
 		console.log('handlePointerMove', e.pointerId, e.button);
+		context.taskDraggingManager.onPointerMove(e);
+		context.updateTaskPositions(true);
 		const deltaX = e.clientX - startX;
 		const deltaY = e.clientY - startY;
 		if (mouseDown == MouseDown.MIDDLE && !isDragging) {
@@ -98,8 +106,11 @@
 		}
 		e.stopPropagation();
 	}
+	
 	function onpointerup(e: PointerEvent) {
 		console.log('handlePointerUp', e.pointerId, e.button);
+		context.taskDraggingManager.onPointerUp(e);
+		context.updateTaskPositions();
 		if (e.button as MouseDown == MouseDown.MIDDLE && isDragging) {
 			// Release the pointer capture
 			(e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
@@ -111,10 +122,12 @@
 			console.log('selectedTaskId ' + context.selectedTaskId);
 			context.pressedButtonCode = -1;
 			context.setSelectedTaskId(-1);
+			context.cancelReparenting();
 			viewportEl!.focus();
 			e.stopPropagation();
 		}
 	}
+	
 	function getPanzoom() {
 		if (panzoom) {
 			return panzoom;
@@ -128,10 +141,12 @@
 	class="viewport"
 	class:is-panning={mouseDown === MouseDown.MIDDLE}
 	bind:this={viewportEl}
+	tabindex="-1"
 	{onwheel}
 	{onpointerdown}
 	{onpointermove}
 	{onpointerup}
+	onkeydown={handleKey}
 >
 	<div
 		class="scene"
@@ -154,7 +169,6 @@
 		<div
 			class="task-layer"
 			tabindex="-1"
-			onkeydown={handleKey}
 			role="presentation"
 		>
 			{#each context.projectData.tasks.filter(t => !context.isTaskHidden(t.taskId)) as task (task.taskId)}
@@ -232,5 +246,13 @@
 	/* Ensure Tasks themselves have pointer-events: auto */
 	:global(.task-layer > *) {
 		pointer-events: auto;
+	}
+	/* Hide Obsidian popovers and tooltips when the 'is-dragging' class is present */
+	:global(
+		body.is-dragging-task .hover-popover,
+		body.is-dragging-task .tooltip
+	) {
+		display: none !important;
+		pointer-events: none !important;
 	}
 </style>
