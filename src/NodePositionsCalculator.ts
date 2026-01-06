@@ -68,9 +68,28 @@ export class NodePositionsCalculator {
 		const positions: Map<TaskId, Vector2> = new Map<TaskId, Vector2>();
 		positions.set(NoTaskId, V2.Zero);
 
-		tasks.forEach((t) => {
-			const parentPos = positions.get(t.parentId)!;
-			const relativePos = parentFramePositions.get(t.taskId)!;
+		const sortedTasksDepthAsc = [...tasks].sort((a, b) => {
+			if (b.depth !== a.depth) {
+				return a.depth - b.depth;
+			} else if (a.parentId !== b.parentId) {
+				return a.parentId - b.parentId;
+			} else {
+				return a.priority - b.priority;
+			}
+		});
+		sortedTasksDepthAsc.forEach((t) => {
+			const parentPos = positions.get(t.parentId);
+			const relativePos = parentFramePositions.get(t.taskId);
+			if (parentPos == undefined) {
+				throw new Error(
+					`No parent position for task ${t.taskId} with parent ${t.parentId}`,
+				);
+			}
+			if (relativePos == undefined) {
+				throw new Error(
+					`No relative position for task ${t.taskId} with parent ${t.parentId}`,
+				);
+			}
 			positions.set(t.taskId, V2.add(parentPos, relativePos));
 		});
 
@@ -103,7 +122,7 @@ export class NodePositionsCalculator {
 		});
 
 		const taskById = new Map<TaskId, TaskData>();
-		tasks.forEach((t) => taskById.set(t.taskId, t));
+		sortedTasks.forEach((t) => taskById.set(t.taskId, t));
 
 		const childrenIdsByParentId: Map<TaskId, TaskId[]> = new Map<
 			TaskId,

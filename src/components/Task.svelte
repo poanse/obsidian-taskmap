@@ -4,6 +4,7 @@
 	import TaskText from "./TaskText.svelte";
 	import AddTaskButton from "./AddTaskButton.svelte";
 	import HideBranchButton from "./HideBranchButton.svelte";
+	import {NoTaskId} from "../NodePositionsCalculator";
 
 	const {
 		taskId,
@@ -46,6 +47,7 @@
 			// input.disabled = false;
 		}
 		context.taskDraggingManager.onPointerUp(event);
+		context.setDraggedTaskId(NoTaskId);
 		context.updateTaskPositions();
 		event.stopPropagation();
 	}
@@ -74,7 +76,7 @@
 		onmouseenter={() => isHovered = true}
 		onmouseleave={() => isHovered = false}
 		onpointerdown={(event: PointerEvent) => {
-			context.taskDraggingManager.setDraggedTaskId(taskId);
+			context.setDraggedTaskId(taskId);
 		}}
 		onpointerup={onPointerUp}
 		onblur={() => finishEditing(true)}
@@ -95,8 +97,8 @@
 	</div>
 	{#if !context.taskDraggingManager.isDragging}
 		<AddTaskButton {context} {taskId} />
-		<HideBranchButton {context} {taskId} />
 	{/if}
+	<HideBranchButton {context} {taskId} />
 </div>
 {/key}
 {/if}

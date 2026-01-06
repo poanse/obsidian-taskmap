@@ -3,6 +3,7 @@
 	import {MarkdownRenderer, Component, App, type TFile} from "obsidian";
 	import {LinkSuggest} from "../LinkSuggest";
 	import type {Context} from "../Context.svelte.js";
+	import {NoTaskId} from "../NodePositionsCalculator";
 
 	// PROPS
 	let {
@@ -63,6 +64,7 @@
 			return;
 		}
 		context.taskDraggingManager.onPointerUp(e);
+		context.setDraggedTaskId(NoTaskId);
 		console.log('task text clicked');
 		const target = e.target as HTMLElement;
 

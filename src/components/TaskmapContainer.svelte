@@ -6,7 +6,7 @@
 	import type {Context} from "../Context.svelte.js";
 	import {MouseDown} from "../types";
 	import Connection from "./Connection.svelte";
-	import {RootTaskId, V2} from "../NodePositionsCalculator";
+	import {NoTaskId, RootTaskId, V2} from "../NodePositionsCalculator";
 	import {TASK_SIZE} from "../Constants";
 
 	let {context}: {context: Context} = $props();
@@ -110,6 +110,7 @@
 	function onpointerup(e: PointerEvent) {
 		console.log('handlePointerUp', e.pointerId, e.button);
 		context.taskDraggingManager.onPointerUp(e);
+		context.setDraggedTaskId(NoTaskId);
 		context.updateTaskPositions();
 		if (e.button as MouseDown == MouseDown.MIDDLE && isDragging) {
 			// Release the pointer capture

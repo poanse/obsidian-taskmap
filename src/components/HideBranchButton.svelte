@@ -1,7 +1,7 @@
 ﻿<script lang="ts">
 	import { TASK_SIZE } from "../Constants";
 	import { Context } from "../Context.svelte.js";
-	import {ParentToChildHorizontalShift} from "../NodePositionsCalculator";
+	import {NoTaskId, ParentToChildHorizontalShift} from "../NodePositionsCalculator";
 	import { Eye, EyeClosed  } from 'lucide-svelte';
 
 	const { taskId, context }: { taskId: number, context: Context } = $props();
@@ -9,9 +9,12 @@
 	let taskData = $derived(context.projectData.getTask(taskId));
 	let entered = $state(false);
 
-	function hidePressed(event: MouseEvent) {
+	function hidePressed(event: PointerEvent) {
 		context.projectData.toggleHidden(taskId);
 		event.stopPropagation();
+		context.taskDraggingManager.onPointerUp(event);
+		context.setDraggedTaskId(NoTaskId);
+		context.updateTaskPositions();
 	}
 </script>
 
@@ -26,9 +29,15 @@
 		"
 	>
 		{#if taskData.hidden}
-			<EyeClosed onclick={hidePressed}/>
+			<EyeClosed
+				onpointerdown={()=>{}}
+				onpointerup={hidePressed}
+			/>
 		{:else if entered && !taskData.hidden}
-			<Eye onclick={hidePressed}/>
+			<Eye
+				onpointerdown={()=>{}}
+				onpointerup={hidePressed}
+			/>
 		{/if}
 	</div>
 {/if}
@@ -46,7 +55,7 @@
 
 		/* Ensure the transparent area still catches mouse events */
 		background: transparent;
-		pointer-events: auto;
+		pointer-events: visible;
 		cursor: pointer;
 
 		:global(svg) {

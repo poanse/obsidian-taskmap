@@ -1,5 +1,4 @@
 ﻿import { MouseDown } from "./types";
-import { NoTaskId } from "./NodePositionsCalculator";
 
 export class DraggingManager {
 	mouseCodes: MouseDown[];
@@ -9,16 +8,11 @@ export class DraggingManager {
 	startY = 0;
 	deltaX = $state(0);
 	deltaY = $state(0);
-	draggedTaskId = $state(NoTaskId);
 
 	constructor(mouseCodes: MouseDown[]) {
 		this.mouseCodes = [];
 		this.mouseCodes.push(...mouseCodes);
 	}
-
-	public setDraggedTaskId = (id: number) => {
-		this.draggedTaskId = id;
-	};
 
 	public onPointerDown = (e: PointerEvent) => {
 		console.log("DraggingManager pointerDown");
@@ -35,7 +29,6 @@ export class DraggingManager {
 
 	public onPointerUp = (e: PointerEvent) => {
 		console.log(`DraggingManager pointerUp: ${this.deltaX}`);
-		this.setDraggedTaskId(NoTaskId);
 		this.mouseDown = MouseDown.NONE;
 		this.isDragging = false;
 		this.deltaX = 0;

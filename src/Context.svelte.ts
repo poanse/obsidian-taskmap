@@ -23,6 +23,7 @@ export class Context {
 	view: TaskmapView;
 	nodePositionsCalculator: NodePositionsCalculator;
 	pressedButtonCode = $state(-1);
+	draggedTaskId = $state(NoTaskId);
 	selectedTaskId = $state(NoTaskId);
 	focusedTaskId = $state(RootTaskId);
 	toolbarStatus = $state(StatusCode.DRAFT);
@@ -64,6 +65,10 @@ export class Context {
 		this.updateTaskPositions();
 	}
 
+	public setDraggedTaskId = (id: number) => {
+		this.draggedTaskId = id;
+	};
+
 	public setScale(scale: number) {
 		this.scale = scale;
 	}
@@ -74,16 +79,21 @@ export class Context {
 
 	public isTaskHidden(taskId: TaskId): boolean {
 		const task = this.projectData.getTask(taskId);
-		const ancestors = this.projectData
+		const ancestorTasks = this.projectData.getAncestors(taskId);
+
+		const focusedAncestorIds = this.projectData
 			.getAncestors(this.focusedTaskId)
 			.map((t) => t.taskId);
-		const descendants = this.projectData.getDescendants(this.focusedTaskId);
+		const focusedDescendantIds = this.projectData.getDescendants(
+			this.focusedTaskId,
+		);
 		return (
 			task.deleted ||
+			ancestorTasks.some((t) => t.hidden) ||
 			!(
 				task.taskId == this.focusedTaskId ||
-				ancestors.contains(task.taskId) ||
-				descendants.contains(task.taskId)
+				focusedAncestorIds.contains(task.taskId) ||
+				focusedDescendantIds.contains(task.taskId)
 			)
 		);
 	}
@@ -150,10 +160,8 @@ export class Context {
 				);
 			if (this.taskDraggingManager.isDragging) {
 				[
-					this.taskDraggingManager.draggedTaskId,
-					...this.projectData.getDescendants(
-						this.taskDraggingManager.draggedTaskId,
-					),
+					this.draggedTaskId,
+					...this.projectData.getDescendants(this.draggedTaskId),
 				].forEach((t) => {
 					const v = this.positions.get(t);
 					if (v !== undefined) {
@@ -181,7 +189,7 @@ export class Context {
 		}
 
 		// dragging
-		if (this.taskDraggingManager.draggedTaskId !== NoTaskId) {
+		if (this.draggedTaskId !== NoTaskId) {
 			const draggingDelta = V2.mult(
 				{
 					x: this.taskDraggingManager.deltaX,
@@ -190,12 +198,16 @@ export class Context {
 				1 / this.scale,
 			);
 			const draggedTaskIds = this.projectData.getDescendants(
-				this.taskDraggingManager.draggedTaskId,
+				this.draggedTaskId,
 			);
 			this.taskPositions
 				.filter((t) => draggedTaskIds.contains(t.taskId))
 				.forEach((t) => {
-					if (t.tween !== null && t.tween !== undefined) {
+					if (
+						t.tween !== null &&
+						t.tween !== undefined &&
+						this.positions.has(t.taskId)
+					) {
 						t.tween.stiffness = 1;
 						t.tween.damping = 1;
 						t.tween.set(
@@ -217,7 +229,7 @@ export class Context {
 	private updateDraggedTaskPriority() {
 		// Если порядок тасок по оси Y отличается от приоритетов, то меняем приоритеты и пересчитываем порядок
 		const draggedParentId = this.projectData.getTask(
-			this.taskDraggingManager.draggedTaskId,
+			this.draggedTaskId,
 		).parentId;
 		const orderedSiblings = this.taskPositions
 			.filter((t) =>
@@ -228,16 +240,13 @@ export class Context {
 			.sort((a, b) => a.tween?.target.y! - b.tween?.target.y!)
 			.map((t) => t.taskId);
 		const newPriority = orderedSiblings.findIndex(
-			(t) => t == this.taskDraggingManager.draggedTaskId,
+			(t) => t == this.draggedTaskId,
 		);
 		const oldPriority = this.projectData.getTask(
-			this.taskDraggingManager.draggedTaskId,
+			this.draggedTaskId,
 		).priority;
 		if (newPriority != oldPriority) {
-			this.projectData.setPriority(
-				this.taskDraggingManager.draggedTaskId,
-				newPriority,
-			);
+			this.projectData.setPriority(this.draggedTaskId, newPriority);
 			return true;
 		}
 		return false;

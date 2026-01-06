@@ -2,14 +2,17 @@
 	import { TASK_SIZE } from "../Constants";
 	import { StatusCode } from "../types";
 	import { Context } from "../Context.svelte.js";
+	import {NoTaskId} from "../NodePositionsCalculator";
 
 	const { taskId, context }: { taskId: number, context: Context } = $props();
 
 	let taskData = $derived(context.projectData.getTask(taskId));
 	let entered = $state(false);
 
-	function addButtonPressed(event: MouseEvent) {
+	function addButtonPressed(event: PointerEvent) {
 		context.addTask(taskId);
+		context.taskDraggingManager.onPointerUp(event);
+		context.setDraggedTaskId(NoTaskId);
 		event.stopPropagation();
 	}
 </script>
@@ -30,6 +33,7 @@
 			class:ready={taskData.status === StatusCode.READY}
 			class:in-progress={taskData.status === StatusCode.IN_PROGRESS}
 			class:done={taskData.status === StatusCode.DONE}
+			onpointerdown={()=>{}}
 			onpointerup={addButtonPressed}
 			viewBox="0 0 24 24"
 		>

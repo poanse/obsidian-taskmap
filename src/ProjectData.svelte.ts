@@ -48,7 +48,7 @@ export class ProjectData {
 		this.tasks.push({
 			taskId: id,
 			parentId: parentId,
-			status: StatusCode.DRAFT,
+			status: StatusCode.READY,
 			name: "default",
 			deleted: false,
 			hidden: false,
