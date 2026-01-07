@@ -3,7 +3,6 @@
 	import {MarkdownRenderer, Component, App, type TFile} from "obsidian";
 	import {LinkSuggest} from "../LinkSuggest";
 	import type {Context} from "../Context.svelte.js";
-	import {NoTaskId} from "../NodePositionsCalculator";
 
 	// PROPS
 	let {
@@ -12,7 +11,7 @@
 		context,
 		app,
 		content,
-		sourcePath,
+		file,
 		onSave
 	}: {
 		taskId: number,
@@ -20,7 +19,7 @@
 		context: Context,
 		app: App;
 		content: string;
-		sourcePath: string;
+		file: TFile;
 		onSave: (newContent: string) => void
 	} = $props();
 
@@ -63,8 +62,7 @@
 		if (isDragging) {
 			return;
 		}
-		context.taskDraggingManager.onPointerUp(e);
-		context.setDraggedTaskId(NoTaskId);
+		context.finishTaskDragging(e);
 		console.log('task text clicked');
 		const target = e.target as HTMLElement;
 
@@ -117,19 +115,30 @@
 				hoverParent: textPreviewEl,
 				targetEl: link,
 				linktext: link.getAttribute("data-href"),
-				sourcePath: sourcePath
+				sourcePath: ""
 			});
 		}
 	}
 	async function renderMarkdown() {
 		textPreviewEl.empty(); // Clear previous render
-		await MarkdownRenderer.render(
-			app,
-			content,
-			textPreviewEl,
-			sourcePath,
-			component
-		);
+		if (file !== undefined) {
+			await MarkdownRenderer.render(
+				app,
+				`[[${file.path}]]`,
+				textPreviewEl,
+				"",
+				component,
+			);
+		} else {
+			await MarkdownRenderer.render(
+				app,
+				content,
+				textPreviewEl,
+				"",
+				component,
+			);
+			
+		}
 		// After rendering, find all links and disable their native dragging
 		const links = textPreviewEl.querySelectorAll('a, .internal-link, .external-link');
 		links.forEach(link => {
@@ -222,7 +231,7 @@
 		background: transparent;
 		resize: none;
 		font-size: 20px;
-		font-family: "Segoe UI";
+		font-family: var(--font-text);
 		line-height: 1.5;
 		/*border: 4px solid #707070;*/
 		/*border-radius: 22px;*/

@@ -4,10 +4,11 @@
 	import Task from "./Task.svelte";
 	import Panzoom, {type PanzoomObject} from '@panzoom/panzoom'
 	import type {Context} from "../Context.svelte.js";
-	import {MouseDown} from "../types";
+	import {MouseDown, type Vector2} from "../types";
 	import Connection from "./Connection.svelte";
 	import {NoTaskId, RootTaskId, V2} from "../NodePositionsCalculator";
 	import {TASK_SIZE} from "../Constants";
+	import {DraggingManager} from "../DraggingManager.svelte";
 
 	let {context}: {context: Context} = $props();
 	
@@ -15,14 +16,8 @@
 	let sceneEl: HTMLDivElement | null = null;
 	let svgGroupEl: SVGGElement | null = null;
 	let panzoom: PanzoomObject | null = null;
-	let isDragging = false;
-	let mouseDown = $state(MouseDown.NONE); // -1 
-	let startX = 0;
-	let startY = 0;
-	let panStartX = 0;
-	let panStartY = 0;
-	// let cssTransform = $derived(`translate(${transformState.x}px, ${transformState.y}px) scale(${transformState.scale})`);
-	// let svgTransform = $derived(`translate(${transformState.x} ${transformState.y}) scale(${transformState.scale})`);
+	let panstart: Vector2 = {x: 0, y: 0};
+	let draggingManager = new DraggingManager([MouseDown.MIDDLE, MouseDown.LEFT]);
 	
 	
 	onMount(async () => {
@@ -66,59 +61,44 @@
 	}
 	
 	function onpointerdown(e: PointerEvent) {
-		console.log('handlePointerDown', e.pointerId, e.button);
-		context.taskDraggingManager.onPointerDown(e);
-		mouseDown = e.button as MouseDown;
-		if (mouseDown == MouseDown.MIDDLE) {
-			e.preventDefault(); // prevent auto-scroll
-			// Capture the pointer so move events continue even if 
-			// the mouse leaves the element during a fast drag
-			(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-			startX = e.clientX;
-			startY = e.clientY;
-		}
+		// prevent auto-scroll
+		e.preventDefault();
+		draggingManager.onPointerDown(e);
+		panstart = getPanzoom().getPan();
 		e.stopPropagation();
 	}
 	
 	function onpointermove(e: PointerEvent) {
 		console.log('handlePointerMove', e.pointerId, e.button);
-		context.taskDraggingManager.onPointerMove(e);
-		context.updateTaskPositions(true);
-		const deltaX = e.clientX - startX;
-		const deltaY = e.clientY - startY;
-		if (mouseDown == MouseDown.MIDDLE && !isDragging) {
-			// Calculate distance moved
-			const dist = Math.pow(deltaX, 2) + Math.pow(deltaY, 2);
-			// If moved more than 5 pixels, it's a drag, not a click
-			const thrDist = 5;
-			if (dist > Math.pow(thrDist,2)) {
-				isDragging = true;
-				const pan = getPanzoom().getPan();
-				panStartX = pan.x;
-				panStartY = pan.y;
-				// getPanzoom().handleMove(e);
+		if (context.draggedTaskId != NoTaskId) {
+			context.taskDraggingManager.onPointerMove(e);
+			if (context.taskDraggingManager.isDragging) {
+				context.updateTaskPositions(true);
 			}
-		}
-		if (isDragging) {
-			e.preventDefault();
-			const scale = getPanzoom().getScale();
-			getPanzoom().pan(panStartX+deltaX/scale, panStartY+deltaY/scale);
+		} else {
+			draggingManager.onPointerMove(e);
+			if (draggingManager.isDragging) {
+				// prevent auto-scroll
+				e.preventDefault();
+				// Capture the pointer so move events continue even if 
+				// the mouse leaves the element during a fast drag
+				(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+				const scale = getPanzoom().getScale();
+				getPanzoom().pan(
+					panstart.x + draggingManager.deltaX/scale,
+					panstart.y + draggingManager.deltaY/scale
+				);
+			}
 		}
 		e.stopPropagation();
 	}
 	
 	function onpointerup(e: PointerEvent) {
 		console.log('handlePointerUp', e.pointerId, e.button);
-		context.taskDraggingManager.onPointerUp(e);
-		context.setDraggedTaskId(NoTaskId);
-		context.updateTaskPositions();
-		if (e.button as MouseDown == MouseDown.MIDDLE && isDragging) {
+		if (draggingManager.isDragging) {
 			// Release the pointer capture
 			(e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
-		}
-		mouseDown = MouseDown.NONE;
-		isDragging = false;
-		if (e.button as MouseDown == MouseDown.LEFT) {
+		} else if (e.button as MouseDown == MouseDown.LEFT) {
 			console.log(`Window clicked + ${context.serializeForDebugging()}`);
 			console.log('selectedTaskId ' + context.selectedTaskId);
 			context.pressedButtonCode = -1;
@@ -127,6 +107,8 @@
 			viewportEl!.focus();
 			e.stopPropagation();
 		}
+		draggingManager.onPointerUp(e);
+		context.finishTaskDragging(e, true);
 	}
 	
 	function getPanzoom() {
@@ -140,7 +122,7 @@
 
 <div
 	class="viewport"
-	class:is-panning={mouseDown === MouseDown.MIDDLE}
+	class:is-panning={draggingManager.mouseDown === MouseDown.MIDDLE}
 	bind:this={viewportEl}
 	tabindex="-1"
 	{onwheel}

@@ -40,6 +40,14 @@ export class TaskmapView extends TextFileView {
 		});
 	}
 
+	getFile() {
+		if (this.file) {
+			return this.file;
+		} else {
+			throw new Error();
+		}
+	}
+
 	getFilePath(): string {
 		if (this.file) {
 			return this.file.path;

@@ -46,8 +46,7 @@
 			// const input = (document.getElementById('titleInput') as HTMLInputElement);
 			// input.disabled = false;
 		}
-		context.taskDraggingManager.onPointerUp(event);
-		context.setDraggedTaskId(NoTaskId);
+		context.finishTaskDragging(event);
 		context.updateTaskPositions();
 		event.stopPropagation();
 	}
@@ -75,8 +74,9 @@
 		class:unselect={isUnselected}
 		onmouseenter={() => isHovered = true}
 		onmouseleave={() => isHovered = false}
-		onpointerdown={(event: PointerEvent) => {
-			context.setDraggedTaskId(taskId);
+		onpointerdown={(e: PointerEvent) => {
+			context.startTaskDragging(e, taskId);
+			e.stopPropagation();
 		}}
 		onpointerup={onPointerUp}
 		onblur={() => finishEditing(true)}
@@ -92,7 +92,7 @@
 				taskData.name = newContent;
 				context.save();
 			}}
-			sourcePath={context.view.getFilePath()}
+			file={context.view.getFile()}
 		/>
 	</div>
 	{#if !context.taskDraggingManager.isDragging}
@@ -120,7 +120,7 @@
 		text-align: center;
 		color: white;
 		font-size: 20px;
-		font-family: "Segoe UI";
+		font-family: var(--font-text);
 		line-height: 1.5;
 		width: 280px;
 		height: 80px;

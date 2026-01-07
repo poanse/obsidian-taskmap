@@ -12,9 +12,7 @@
 	function hidePressed(event: PointerEvent) {
 		context.projectData.toggleHidden(taskId);
 		event.stopPropagation();
-		context.taskDraggingManager.onPointerUp(event);
-		context.setDraggedTaskId(NoTaskId);
-		context.updateTaskPositions();
+		context.finishTaskDragging(event, true);
 	}
 </script>
 
@@ -30,12 +28,12 @@
 	>
 		{#if taskData.hidden}
 			<EyeClosed
-				onpointerdown={()=>{}}
+				onpointerdown={(e) => e.stopPropagation()}
 				onpointerup={hidePressed}
 			/>
 		{:else if entered && !taskData.hidden}
 			<Eye
-				onpointerdown={()=>{}}
+				onpointerdown={(e) => e.stopPropagation()}
 				onpointerup={hidePressed}
 			/>
 		{/if}

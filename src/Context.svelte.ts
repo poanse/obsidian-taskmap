@@ -65,8 +65,17 @@ export class Context {
 		this.updateTaskPositions();
 	}
 
-	public setDraggedTaskId = (id: number) => {
-		this.draggedTaskId = id;
+	public startTaskDragging = (e: PointerEvent, taskId: TaskId) => {
+		this.draggedTaskId = taskId;
+		this.taskDraggingManager.onPointerDown(e);
+	};
+
+	public finishTaskDragging = (e: PointerEvent, updatePositions = false) => {
+		this.draggedTaskId = NoTaskId;
+		this.taskDraggingManager.onPointerUp(e);
+		if (updatePositions) {
+			this.updateTaskPositions();
+		}
 	};
 
 	public setScale(scale: number) {

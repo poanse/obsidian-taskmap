@@ -10,9 +10,9 @@
 	let entered = $state(false);
 
 	function addButtonPressed(event: PointerEvent) {
+		console.log('addButtonPressed');
 		context.addTask(taskId);
-		context.taskDraggingManager.onPointerUp(event);
-		context.setDraggedTaskId(NoTaskId);
+		context.finishTaskDragging(event);
 		event.stopPropagation();
 	}
 </script>
@@ -33,7 +33,7 @@
 			class:ready={taskData.status === StatusCode.READY}
 			class:in-progress={taskData.status === StatusCode.IN_PROGRESS}
 			class:done={taskData.status === StatusCode.DONE}
-			onpointerdown={()=>{}}
+			onpointerdown={(e: PointerEvent) => e.stopPropagation()}
 			onpointerup={addButtonPressed}
 			viewBox="0 0 24 24"
 		>
