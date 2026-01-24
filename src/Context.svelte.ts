@@ -17,12 +17,15 @@ import {
 	V2,
 } from "./NodePositionsCalculator";
 import { DraggingManager } from "./DraggingManager.svelte";
+import { delink, LinkManager, tasknameFromFilePath } from "./LinkManager";
 
 export class Context {
 	app: App;
 	view: TaskmapView;
 	nodePositionsCalculator: NodePositionsCalculator;
+	linkManager: LinkManager;
 	pressedButtonCode = $state(-1);
+	editingTaskId = $state(NoTaskId);
 	draggedTaskId = $state(NoTaskId);
 	selectedTaskId = $state(NoTaskId);
 	focusedTaskId = $state(RootTaskId);
@@ -53,6 +56,7 @@ export class Context {
 		this.nodePositionsCalculator = nodePositionsCalculator;
 		this.app = app;
 		this.projectData = projectData;
+		this.linkManager = new LinkManager(app);
 
 		this.taskPositions = projectData.tasks
 			.filter((t) => !t.deleted)
@@ -273,11 +277,9 @@ export class Context {
 	}
 
 	public save() {
-		const x = TaskmapPlugin.getActiveView();
-		if (x != null) {
-			x.debouncedSave();
-			console.log("saved");
-		}
+		const x = this.view;
+		x.debouncedSave();
+		console.log("saved");
 	}
 
 	public addTask(parentId: TaskId): void {
@@ -352,7 +354,7 @@ export class Context {
 							`Created by Taskmap.`,
 						);
 			const task = this.projectData.getTask(taskId);
-			task.name = this.tasknameFromFilePath(filepath);
+			task.name = tasknameFromFilePath(filepath);
 			this.save();
 			await this.openOrFocusNote(tfile);
 		} catch (error) {
@@ -368,15 +370,8 @@ export class Context {
 		const taskName = task.name;
 		// Sanitize the name for Obsidian filenames
 		let sanitizedName = taskName.replace(/[\\/:*?"<>|]/g, "-");
-		sanitizedName = this.delink(sanitizedName);
+		sanitizedName = delink(sanitizedName);
 		return `${sanitizedName}.md`;
-	}
-
-	public tasknameFromFilePath(path: string) {
-		if (path.endsWith(".md")) {
-			path = path.slice(0, path.length - 3);
-		}
-		return `[[${path}]]`;
 	}
 
 	/**
@@ -435,14 +430,6 @@ export class Context {
 			const newLeaf = workspace.getLeaf("split", "vertical");
 			await newLeaf.openFile(file);
 		}
-	}
-
-	public isLink(s: string): boolean {
-		return s.startsWith("[[") && s.endsWith("]]");
-	}
-
-	public delink(s: string) {
-		return this.isLink(s) ? s.slice(2, s.length - 2) : s;
 	}
 
 	public serializeForDebugging() {

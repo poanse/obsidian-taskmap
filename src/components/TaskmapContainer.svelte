@@ -159,7 +159,11 @@
 			{/each}
 
 		</div>
-		<Toolbar context={context}/>
+		{#if context.selectedTaskId !== -1}
+			{#key context.selectedTaskId}
+				<Toolbar context={context} taskId={context.selectedTaskId}/>
+			{/key}
+		{/if}
 	</div>
 </div>
 

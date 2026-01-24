@@ -11,6 +11,7 @@
 		Trash2,
 		Unplug
 	} from 'lucide-svelte';
+	import {getTooltipText, tooltip} from "../Tooltip";
 
 	let {
 		iconCode,
@@ -73,6 +74,7 @@
 </script>
 
 <div class="button"
+	 use:tooltip={getTooltipText(iconCode)}
 	 class:no-pan={true}
 	 class:is-pressed-up={isPressed}
 	 class:is-pressed-down={isPressedDown}

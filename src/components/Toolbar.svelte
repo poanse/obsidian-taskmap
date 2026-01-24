@@ -11,14 +11,16 @@
 	import {quintOut} from 'svelte/easing';
 	import {slideCustom} from '../Custom';
 	import type {Context} from "../Context.svelte.js";
-	import {IconCode, toIconCode} from "../types";
+	import {IconCode, StatusCode, type TaskId, toIconCode} from "../types";
 	import {RootTaskId} from "../NodePositionsCalculator";
 	
 	let {
+		taskId,
 		context
-	}: {context: Context} = $props();
+	}: {taskId: TaskId,
+		context: Context} = $props();
 
-	let position = $derived(context.getCurrentTaskPosition(context.selectedTaskId));
+	let position = $derived(context.getCurrentTaskPosition(taskId));
 	
 	function getTop() {
 		return position.y - TOOLBAR_SIZE.height - TOOLBAR_SHIFT;
@@ -26,76 +28,97 @@
 	function getLeft() {
 		return position.x + TASK_SIZE.width_hovered / 2;
 	}
+	let isLeafTask = $derived(context.projectData.getChildren(taskId).length === 0);
 	
-	let isLeafTask = $derived(context.selectedTaskId != -1 && context.projectData.getChildren(context.selectedTaskId).length === 0);
+	let toolbarButtons = $derived(taskId == RootTaskId ? [
+		IconCode.CREATE_LINKED_NOTE,
+		IconCode.FOCUS,
+		IconCode.STATUS
+
+	] : [
+		IconCode.CREATE_LINKED_NOTE,
+		IconCode.REMOVE,
+		IconCode.REPARENT,
+		IconCode.KEY,
+		IconCode.LOCK,
+		IconCode.FOCUS,
+		IconCode.STATUS
+	]);
+	
+	let removeButtons = [
+		IconCode.REMOVE_SINGLE,
+		IconCode.REMOVE_MULTIPLE
+	];
+	
+	let statusButtons = $derived((isLeafTask ? [
+		StatusCode.DRAFT,
+		StatusCode.READY,
+		StatusCode.IN_PROGRESS,
+		StatusCode.DONE,
+	]: [
+		StatusCode.DRAFT,
+		context.projectData.calculateStatus(taskId)
+	]).map(x => toIconCode(x)));
+	
+	let subtoolbarTopShift = (buttons: IconCode[]) => {
+		return - (buttons.length * BUTTON_SIZE + (buttons.length -1)*TOOLBAR_GAP + 2*TOOLBAR_PADDING.y + SUBTOOLBAR_SHIFT);
+	};
 
 </script>
 
-{#if context.selectedTaskId !== -1 && !context.taskDraggingManager.isDragging}
-<div
-	class="toolbar"
-	class:no-pan={true}
-	in:fade={{ duration: 500 }}
-	out:fade={{ duration: 300 }}
-	onclick={(e) => e.stopPropagation()}
-	onpointerdown={(e) => e.stopPropagation()}
-	onpointerup={(e) => e.stopPropagation()}
-	style="
-		top: {getTop()}px;
-		left: {getLeft()}px;
-	"
->
-	{#key context.updateOnZoomCounter}
-		<Button iconCode={IconCode.CREATE_LINKED_NOTE} {context} />
-		{#if context.selectedTaskId != RootTaskId}
-			<Button iconCode={IconCode.REMOVE} {context}/>
-			<Button iconCode={IconCode.REPARENT} {context} />
-			<Button iconCode={IconCode.KEY} {context} />
-			<Button iconCode={IconCode.LOCK} {context} />
+{#if !context.taskDraggingManager.isDragging}
+	<div
+		class="toolbar"
+		class:no-pan={true}
+		in:fade|global={{ duration: 500 }}
+		out:fade|global={{ duration: 300 }}
+		onclick={(e) => e.stopPropagation()}
+		onpointerdown={(e) => e.stopPropagation()}
+		onpointerup={(e) => e.stopPropagation()}
+		style="
+			top: {getTop()}px;
+			left: {getLeft()}px;
+		"
+	>
+		{#key context.updateOnZoomCounter}
+			{#each toolbarButtons as button}
+				<Button iconCode={button} {context} />
+			{/each}
+		{/key}
+
+		{#if context.pressedButtonCode === IconCode.REMOVE}
+			<div
+				class="subtoolbar"
+				transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
+				style="
+				top: {subtoolbarTopShift(removeButtons)}px;
+				left: {toolbarButtons.indexOf(IconCode.REMOVE) * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
+			"
+			>
+				{#key context.updateOnZoomCounter}
+					<Button iconCode={IconCode.REMOVE_SINGLE} {context} />
+					<Button iconCode={IconCode.REMOVE_MULTIPLE} {context} />
+				{/key}
+			</div>
 		{/if}
-		<Button iconCode={IconCode.FOCUS} {context} />
-		<Button iconCode={IconCode.STATUS} {context} />
-	{/key}
 
-	{#if context.pressedButtonCode === IconCode.REMOVE && context.selectedTaskId !== -1}
-		<div
-			class="subtoolbar"
-			transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
-			style="
-			top: {- 2 * BUTTON_SIZE - TOOLBAR_GAP - 2 * TOOLBAR_PADDING.y - SUBTOOLBAR_SHIFT - 2}px;
-			left: {1 * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
-		"
-		>
-			{#key context.updateOnZoomCounter}
-				<Button iconCode={IconCode.REMOVE_SINGLE} {context} />
-				<Button iconCode={IconCode.REMOVE_MULTIPLE} {context} />
-			{/key}
-		</div>
-	{/if}
-
-	{#if context.pressedButtonCode === IconCode.STATUS && context.selectedTaskId !== -1}
-		<div
-			class="subtoolbar"
-			transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
-			style="
-			top: {- (isLeafTask ? 2 : 1) * 2 * BUTTON_SIZE - ((isLeafTask ? 2 : 0) + 1)*TOOLBAR_GAP - 2*TOOLBAR_PADDING.y - SUBTOOLBAR_SHIFT - 2}px;
-			left: {6 * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
-		"
-		>
-			{#key context.updateOnZoomCounter}
-				{#if isLeafTask}
-					<Button iconCode={IconCode.STATUS_DRAFT} {context} />
-					<Button iconCode={IconCode.STATUS_READY} {context} />
-					<Button iconCode={IconCode.STATUS_IN_PROGRESS} {context} />
-					<Button iconCode={IconCode.STATUS_DONE} {context} />
-				{:else}
-					<Button iconCode={IconCode.STATUS_DRAFT} {context} />
-					<Button iconCode={toIconCode(context.projectData.calculateStatus(context.selectedTaskId))} {context} />
-				{/if}
-			{/key}
-		</div>
-	{/if}
-</div>
+		{#if context.pressedButtonCode === IconCode.STATUS}
+			<div
+				class="subtoolbar"
+				transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
+				style="
+				top: {subtoolbarTopShift(statusButtons)}px;
+				left: {toolbarButtons.indexOf(IconCode.STATUS) * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
+			"
+			>
+				{#key context.updateOnZoomCounter}
+					{#each statusButtons as button}
+						<Button iconCode={button} {context} />
+					{/each}
+				{/key}
+			</div>
+		{/if}
+	</div>
 {/if}
 
 

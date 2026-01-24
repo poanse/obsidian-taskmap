@@ -1,9 +1,19 @@
-import { addIcon, Plugin } from "obsidian";
-import { TaskmapView, VIEW_TYPE } from "./TaskmapView";
-import { type PluginSettings, DEFAULT_SETTINGS } from "./PluginSettings";
+import {
+	addIcon,
+	type App,
+	Plugin,
+	TAbstractFile,
+	TFile,
+	TFolder,
+} from "obsidian";
+import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
+import { DEFAULT_SETTINGS, type PluginSettings } from "./PluginSettings";
 import { TaskmapSettingTab } from "./TaskmapSettingTab";
 import { DEFAULT_DATA } from "./ProjectData.svelte";
 import { LOGO_CONTENT, LOGO_NAME } from "./IconService";
+import type { TaskData } from "./types";
+import { deserializeProjectData, updateFile } from "./SaveManager";
+import { generateMarkdownLink } from "./LinkManager";
 
 export const FILE_EXTENSION = "taskmap";
 
@@ -14,8 +24,8 @@ export default class TaskmapPlugin extends Plugin {
 	async onload() {
 		TaskmapPlugin.instance = this;
 		await this.loadSettings();
-		this.registerView(VIEW_TYPE, (leaf) => new TaskmapView(leaf));
-		this.registerExtensions([FILE_EXTENSION], VIEW_TYPE);
+		this.registerView(TASKMAP_VIEW_TYPE, (leaf) => new TaskmapView(leaf));
+		this.registerExtensions([FILE_EXTENSION], TASKMAP_VIEW_TYPE);
 
 		// This creates an icon in the left ribbon.
 		addIcon(LOGO_NAME, LOGO_CONTENT);
@@ -34,6 +44,99 @@ export default class TaskmapPlugin extends Plugin {
 
 		// // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		// this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+
+		this.registerEvent(
+			this.app.vault.on(
+				"rename",
+				async (file: TAbstractFile, oldPath: string) => {
+					console.log(`${file.path} renamed`);
+					if (file instanceof TFile) {
+						await this.handleRenameFiles(
+							this.app,
+							[file],
+							oldPath,
+							file.path,
+						);
+					} else if (file instanceof TFolder) {
+						const files = this.app.vault
+							.getMarkdownFiles()
+							.filter((file) =>
+								file.path.startsWith(file.path + "/"),
+							);
+						await this.handleRenameFiles(
+							this.app,
+							files,
+							oldPath,
+							file.path,
+						);
+					}
+				},
+			),
+		);
+	}
+
+	async handleRenameFiles(
+		app: App,
+		changedMdFiles: TFile[],
+		oldPath: string,
+		newPath: string,
+	) {
+		const taskmapFiles = this.app.vault
+			.getFiles()
+			.filter((file) => file.path.endsWith(".taskmap"));
+
+		let updatedTaskMapFilePaths: Set<string> = new Set<string>();
+
+		// update paths in taskmap files
+		for (const taskmapFile of taskmapFiles) {
+			console.log(`handling ${taskmapFile.path}`);
+			const projectDataRaw = await this.app.vault.read(taskmapFile);
+			const projectData = deserializeProjectData(
+				this.app,
+				projectDataRaw,
+			);
+			const mapping = new Map<string, TaskData>();
+			projectData.tasks.forEach((t) => {
+				if (t.path) {
+					if (t.path.startsWith(oldPath)) {
+						t.path = t.path.replace(oldPath, newPath);
+					}
+					mapping.set(t.path, t);
+				}
+			});
+			console.log("mapping " + JSON.stringify(mapping.keys()));
+			let changed = false;
+			changedMdFiles.forEach((mdFile) => {
+				if (mdFile.path.contains("testNote")) {
+					console.log(`testNode filepath ${mdFile.path}`);
+				}
+				if (mapping.has(mdFile.path)) {
+					const t = mapping.get(mdFile.path)!;
+					t.name = generateMarkdownLink(this.app, mdFile);
+					changed = true;
+				}
+			});
+			if (changed) {
+				console.log(`${taskmapFile.path} changed`);
+				// resave file on the file system
+				await updateFile(app, taskmapFile, projectData);
+				updatedTaskMapFilePaths.add(taskmapFile.path);
+			} else {
+				console.log(`${taskmapFile.path} not changed`);
+			}
+		}
+
+		// refresh active views
+		for (const view of app.workspace
+			.getLeavesOfType(TASKMAP_VIEW_TYPE)
+			.map((l) => l.view)
+			.filter((view) => view instanceof TaskmapView)
+			.filter(
+				(view) =>
+					view.file && updatedTaskMapFilePaths.has(view.file.path),
+			)) {
+			await view.refreshUi();
+		}
 	}
 
 	public static getActiveView() {
@@ -43,7 +146,7 @@ export default class TaskmapPlugin extends Plugin {
 	}
 
 	public async createAndOpenDrawing(): Promise<string> {
-		this.app.workspace.detachLeavesOfType(VIEW_TYPE);
+		this.app.workspace.detachLeavesOfType(TASKMAP_VIEW_TYPE);
 
 		const file = await this.app.vault.create(
 			`Example ${window.moment().format("YY-MM-DD hh.mm.ss")}.${FILE_EXTENSION}`,
@@ -54,13 +157,13 @@ export default class TaskmapPlugin extends Plugin {
 
 		await leaf.openFile(file, { active: true });
 
-		leaf.setViewState({
-			type: VIEW_TYPE,
+		await leaf.setViewState({
+			type: TASKMAP_VIEW_TYPE,
 			state: leaf.view.getState(),
 		});
 
-		this.app.workspace.revealLeaf(
-			this.app.workspace.getLeavesOfType(VIEW_TYPE)[0],
+		await this.app.workspace.revealLeaf(
+			this.app.workspace.getLeavesOfType(TASKMAP_VIEW_TYPE)[0],
 		);
 
 		return file.path;

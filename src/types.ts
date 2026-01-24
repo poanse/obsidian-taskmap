@@ -58,6 +58,7 @@ export type TaskId = number;
 
 export type TaskData = {
 	name: string;
+	path?: string | undefined | null;
 	taskId: TaskId;
 	status: StatusCode;
 	deleted: boolean;

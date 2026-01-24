@@ -42,6 +42,7 @@
 		if (context.isReparentingOn() && context.isValidReparentingTarget(taskId)) {
 			context.finishReparenting(taskId);
 		} else {
+			context.pressedButtonCode = -1;
 			context.setSelectedTaskId(taskData.taskId);
 			// const input = (document.getElementById('titleInput') as HTMLInputElement);
 			// input.disabled = false;
@@ -75,7 +76,9 @@
 		onmouseenter={() => isHovered = true}
 		onmouseleave={() => isHovered = false}
 		onpointerdown={(e: PointerEvent) => {
-			context.startTaskDragging(e, taskId);
+			if (context.editingTaskId === NoTaskId) {
+				context.startTaskDragging(e, taskId);
+			}
 			e.stopPropagation();
 		}}
 		onpointerup={onPointerUp}
@@ -87,12 +90,6 @@
 			{isUnselected}
 			{context}
 			app={context.app}
-			content={taskData.name}
-			onSave={(newContent)=> {
-				taskData.name = newContent;
-				context.save();
-			}}
-			file={context.view.getFile()}
 		/>
 	</div>
 	{#if !context.taskDraggingManager.isDragging}

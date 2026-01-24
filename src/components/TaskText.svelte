@@ -1,8 +1,11 @@
 ﻿<script lang="ts">
-	import { onMount, tick } from "svelte";
-	import {MarkdownRenderer, Component, App, type TFile} from "obsidian";
+	import {onMount, tick} from "svelte";
+	import {App, Component, MarkdownRenderer} from "obsidian";
 	import {LinkSuggest} from "../LinkSuggest";
 	import type {Context} from "../Context.svelte.js";
+	import {getFromRelativePath, isLink} from "../LinkManager";
+	import type {TaskData} from "../types";
+	import {NoTaskId} from "../NodePositionsCalculator";
 
 	// PROPS
 	let {
@@ -10,29 +13,22 @@
 		isUnselected,
 		context,
 		app,
-		content,
-		file,
-		onSave
 	}: {
 		taskId: number,
 		isUnselected: boolean,
 		context: Context,
 		app: App;
-		content: string;
-		file: TFile;
-		onSave: (newContent: string) => void
 	} = $props();
 
 	// STATE
-
+	let taskData = context.projectData.getTask(taskId);
 	let isSelected = $derived(context.isSelected(taskId));
-	let isEditing = $state(false);
+	let isEditing = $derived(context.editingTaskId === taskId);
 	let suggest: LinkSuggest | null = null;
 	let textPreviewEl: HTMLElement;
 	let textEditEl: HTMLTextAreaElement;
 	let component = new Component(); // Required by Obsidian to manage render lifecycle
 	let isDragging = $derived(context.taskDraggingManager.isDragging);
-
 	onMount(() => {
 		if(!isEditing && textPreviewEl) {
 			renderMarkdown();
@@ -43,11 +39,9 @@
 		};
 	});
 	$effect(() => {
-		if (!isEditing && textPreviewEl) {
+		if (textPreviewEl) {
 			renderMarkdown();
 		}
-	});
-	$effect(() => {
 		if (context.taskDraggingManager.isDragging) {
 			document.body.classList.add('is-dragging-task');
 		} else {
@@ -64,40 +58,21 @@
 		}
 		context.finishTaskDragging(e);
 		console.log('task text clicked');
-		const target = e.target as HTMLElement;
-
-		// Check if the clicked element (or its parent) is an internal link
-		const internalLink = target.closest(".internal-link");
-		if (internalLink) {
-			// Prevent the default "Swap to Edit" behavior
-			e.preventDefault(); // TODO: is this line needed?
-			e.stopPropagation();
-
-			const href = internalLink.getAttribute("data-href");
-			if (href === null) {
-				throw new Error('href is null');
-			}
-
-			// Open the link using Obsidian's API
-			// Whether to open in a new tab or in current one
-			// const openInNewLeaf = e.ctrlKey || e.metaKey;
-			// app.workspace.openLinkText(href, sourcePath, openInNewLeaf);
-			const filepath = context.filePathFromTask(taskId);
-			const file = context.app.vault.getAbstractFileByPath(filepath) as TFile;
-			context.openOrFocusNote(file);
-			return;
-		}
-
-		const externalLink = target.closest("a.external-link");
-		if (externalLink){
-			e.stopPropagation();
-			return;
-		}
-		
 		if (context.isSelected(taskId)) {
-			toggleEdit();
 			e.stopPropagation();
+			toggleEdit();
+			return;
 		}
+		const target = e.target as HTMLElement;
+		const link = target.closest(".internal-link");
+		if (link && taskData.path) {
+			const file = getFromRelativePath(context.app, taskData.path);
+			if (file) {
+				e.preventDefault(); // TODO: is this line needed?
+				e.stopPropagation();
+				context.openOrFocusNote(file);
+			}
+		} 
 	}
 
 	function handlePreviewMouseOver(e: MouseEvent) {
@@ -119,26 +94,17 @@
 			});
 		}
 	}
+	
 	async function renderMarkdown() {
 		textPreviewEl.empty(); // Clear previous render
-		if (file !== undefined) {
-			await MarkdownRenderer.render(
-				app,
-				`[[${file.path}]]`,
-				textPreviewEl,
-				"",
-				component,
-			);
-		} else {
-			await MarkdownRenderer.render(
-				app,
-				content,
-				textPreviewEl,
-				"",
-				component,
-			);
-			
-		}
+		const content = taskData.name;
+		await MarkdownRenderer.render(
+			app,
+			content,
+			textPreviewEl,
+			"",
+			component,
+		);
 		// After rendering, find all links and disable their native dragging
 		const links = textPreviewEl.querySelectorAll('a, .internal-link, .external-link');
 		links.forEach(link => {
@@ -149,18 +115,13 @@
 	}
 
 	async function toggleEdit() {
-		isEditing = true;
+		context.editingTaskId = taskId;
 		// Wait for DOM update so textarea exists, then focus
 		await tick();
 		if (textEditEl) {
 			textEditEl.focus();
 			suggest = new LinkSuggest(app, textEditEl);
 		}
-	}
-
-	export function handleBlur() {
-		isEditing = false;
-		onSave(content); // Persist changes
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -173,7 +134,31 @@
 			textEditEl.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
 		}
 	}
+
+	async function handleBlur() {
+		// TODO: throws error because text preview doesn't exit when blur on textedit happens
+		context.editingTaskId = NoTaskId;
+		handleInput();
+		await tick(); // Wait for DOM to render preview element
+		await renderMarkdown();
+	}
 	
+	function handleInput() {
+		if (textEditEl === null) {
+			return;
+		}
+		taskData.name = textEditEl.value;
+		if (isLink(taskData.name)) {
+			const file = context.linkManager.getFromLink(taskData.name);
+			if (file === null) {
+				throw new Error(`Link [${taskData.name}] points to a nonexistent file`);
+			}
+			taskData.path = file.path;
+		} else {
+			taskData.path = undefined;
+		}
+		context.save();
+	}
 </script>
 
 
@@ -189,10 +174,10 @@
 			class:unselect={isUnselected}
 			maxlength="28"
 			bind:this={textEditEl}
-			bind:value={content}
 			onblur={handleBlur}
 			onkeydown={handleKeydown}
-		></textarea>
+			oninput={handleInput}
+		>{taskData.name}</textarea>
 	{:else}
 		<div
 			class="text-preview tasktext"

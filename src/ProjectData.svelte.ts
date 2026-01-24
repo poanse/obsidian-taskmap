@@ -1,5 +1,6 @@
 ﻿import { StatusCode, type TaskData, type TaskId } from "./types";
 import { NoTaskId, RootTaskId } from "./NodePositionsCalculator";
+import { serializeProjectData } from "./SaveManager";
 
 export class ProjectData {
 	tasks = $state(new Array<TaskData>());
@@ -10,14 +11,6 @@ export class ProjectData {
 			tasks: new Array<TaskData>(),
 			curTaskId: 0,
 		});
-	}
-
-	public serialize() {
-		return JSON.stringify(
-			{ tasks: this.tasks, curTaskId: this.curTaskId },
-			null,
-			2,
-		);
 	}
 
 	constructor(obj: { tasks: TaskData[]; curTaskId: number }) {
@@ -229,4 +222,4 @@ export class ProjectData {
 	}
 }
 
-export const DEFAULT_DATA = ProjectData.getDefault().serialize();
+export const DEFAULT_DATA = serializeProjectData(ProjectData.getDefault());

@@ -4,8 +4,9 @@ import { DEFAULT_DATA, ProjectData } from "./ProjectData.svelte";
 import { Context } from "./Context.svelte.js";
 import { NodePositionsCalculator } from "./NodePositionsCalculator";
 import TaskmapContainer from "./components/TaskmapContainer.svelte";
+import { deserializeProjectData, updateFile } from "./SaveManager";
 
-export const VIEW_TYPE = "taskmap-view";
+export const TASKMAP_VIEW_TYPE = "taskmap-view";
 
 export class TaskmapView extends TextFileView {
 	taskmapContainer: ReturnType<typeof TaskmapContainer> | undefined;
@@ -18,24 +19,33 @@ export class TaskmapView extends TextFileView {
 
 	data: string = DEFAULT_DATA;
 	projectData: ProjectData;
+	context: Context;
 
 	getViewType() {
-		return VIEW_TYPE;
+		return TASKMAP_VIEW_TYPE;
+	}
+
+	async refreshUi() {
+		const projectFile = this.file!;
+		this.clear();
+		await this.onLoadFile(projectFile);
 	}
 
 	async onLoadFile(file: TFile): Promise<void> {
 		this.file = file;
-		this.setViewData(await this.app.vault.read(file));
-		this.projectData = new ProjectData(JSON.parse(this.data));
+		const data = await this.app.vault.read(file);
+		this.setViewData(data);
+		this.projectData = deserializeProjectData(this.app, this.data);
+		this.context = new Context(
+			this,
+			this.projectData,
+			this.app,
+			new NodePositionsCalculator(),
+		);
 		this.taskmapContainer = mount(TaskmapContainer, {
 			target: this.contentEl,
 			props: {
-				context: new Context(
-					this,
-					this.projectData,
-					this.app,
-					new NodePositionsCalculator(),
-				),
+				context: this.context,
 			},
 		});
 	}
@@ -70,10 +80,7 @@ export class TaskmapView extends TextFileView {
 
 	async save() {
 		try {
-			await this.app.vault.modify(
-				this.file!,
-				this.projectData.serialize(),
-			);
+			await updateFile(this.app, this.file!, this.projectData);
 		} catch (err) {
 			console.error("Save failed:", err);
 			throw new Error(`Save failed. ${err.message}`);
