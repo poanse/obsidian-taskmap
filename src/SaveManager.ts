@@ -5,6 +5,7 @@ export function serializeProjectData(projectData: ProjectData) {
 	return JSON.stringify(
 		{
 			tasks: projectData.tasks,
+			blockerPairs: projectData.blockerPairs,
 			curTaskId: projectData.curTaskId,
 		},
 		null,

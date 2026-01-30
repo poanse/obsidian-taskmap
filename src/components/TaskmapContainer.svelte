@@ -6,8 +6,7 @@
 	import type {Context} from "../Context.svelte.js";
 	import {MouseDown, type Vector2} from "../types";
 	import Connection from "./Connection.svelte";
-	import {NoTaskId, RootTaskId, V2} from "../NodePositionsCalculator";
-	import {TASK_SIZE} from "../Constants";
+	import {NoTaskId, RootTaskId} from "../NodePositionsCalculator";
 	import {DraggingManager} from "../DraggingManager.svelte";
 
 	let {context}: {context: Context} = $props();
@@ -47,6 +46,8 @@
 		if (e.key === "Escape") {
 			context.setSelectedTaskId(-1);
 			context.cancelReparenting();
+			context.chosenBlockerId = NoTaskId;
+			context.chosenBlockedId = NoTaskId;
 			e.stopPropagation();
 		}
 	}
@@ -104,6 +105,8 @@
 			context.pressedButtonCode = -1;
 			context.setSelectedTaskId(-1);
 			context.cancelReparenting();
+			context.chosenBlockerId = NoTaskId;
+			context.chosenBlockedId = NoTaskId;
 			viewportEl!.focus();
 			e.stopPropagation();
 		}
@@ -123,6 +126,7 @@
 <div
 	class="viewport"
 	class:is-panning={draggingManager.mouseDown === MouseDown.MIDDLE}
+	class:unselect={context.chosenBlockerId !== NoTaskId || context.chosenBlockedId !== NoTaskId}
 	bind:this={viewportEl}
 	tabindex="-1"
 	{onwheel}
@@ -136,6 +140,13 @@
 		bind:this={sceneEl}
 	>
 		<svg class="svg-layer" overflow="visible">
+			<defs>
+				<defs>
+					<marker id="arrow" markerWidth="5" markerHeight="10" refX="3" refY="3" orient="auto" markerUnits="strokeWidth">
+						<path d="M-1,0 L-1,6 L4.5,3 z" fill="context-stroke" />
+					</marker>
+				</defs>
+			</defs>
 			<g class="svg-group" bind:this={svgGroupEl}>
 				{#each (context.projectData.tasks
 						.filter(t => !context.isTaskHidden(t.taskId))
@@ -143,10 +154,25 @@
 						.filter(t => !context.projectData.isBranchHidden(t.taskId))
 				) as task (task.taskId)}
 					<Connection
-						startPoint={V2.add(context.getCurrentTaskPosition(task.parentId), {x: TASK_SIZE.width, y: TASK_SIZE.height/2})}
-						endPoint={V2.add(context.getCurrentTaskPosition(task.taskId), {x: 0, y: TASK_SIZE.height/2})}
+						startTaskId={task.parentId}
+						endTaskId={task.taskId}
+						{context}
+						isBlockerConnection={false}
 					/>
 				{/each}
+
+				{#if context.chosenBlockerId !== NoTaskId || context.chosenBlockedId !== NoTaskId}
+					{#each (context.projectData.blockerPairs.filter(
+						p => p.blocker === context.chosenBlockerId || p.blocked === context.chosenBlockedId
+					)) as pair}
+						<Connection
+							startTaskId={pair.blocker}
+							endTaskId={pair.blocked}
+							{context}
+							isBlockerConnection={true}
+						/>
+					{/each}
+				{/if}
 			</g>
 		</svg>
 		<div
@@ -175,6 +201,9 @@
 		position: relative;
 		background: #1C1C1C;
 		touch-action: none; /* Prevents mobile browser interference */
+	}
+	.viewport.unselect {
+		background: #181818;
 	}
 	.viewport.is-panning {
 		cursor: grabbing !important;

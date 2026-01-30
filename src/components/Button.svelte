@@ -1,17 +1,18 @@
 ﻿<script lang="ts">
 	import type {Context} from "../Context.svelte.js";
-	import {IconCode, isStatusCode, toStatusCode} from "../types";
+	import {classStringFromStatusCode, IconCode, isStatusCode, toStatusCode} from "../types";
 	import {
 		Circle,
 		KeyRound,
 		LocateFixed,
-		Lock,
+		LockKeyhole,
 		RectangleHorizontal,
 		SquareArrowOutUpRight,
 		Trash2,
 		Unplug
 	} from 'lucide-svelte';
 	import {getTooltipText, tooltip} from "../Tooltip";
+	import {NoTaskId} from "../NodePositionsCalculator";
 
 	let {
 		iconCode,
@@ -24,7 +25,7 @@
 	let isPressedDown = $state(false);
 	let isPressed = $derived(context.pressedButtonCode == iconCode);
 	
-	const stateful = [IconCode.REMOVE, IconCode.STATUS].contains(iconCode);
+	const stateful = [IconCode.REMOVE, IconCode.STATUS, IconCode.KEY, IconCode.LOCK].contains(iconCode);
 	
 	function onpointerdown(event: MouseEvent) {
 		isPressedDown = true;
@@ -35,10 +36,24 @@
 	function onBlur() {
 		isPressedDown = false;
 	}
+
+	let isButtonDisabled = $derived(
+		(context.isReparentingOn() && [IconCode.LOCK, IconCode.KEY].contains(iconCode))
+		|| (context.chosenBlockerId !== NoTaskId && [IconCode.REPARENT].contains(iconCode))
+		|| (context.chosenBlockedId !== NoTaskId && [IconCode.REPARENT].contains(iconCode))
+	);
 	
 	function onpointerup(event: MouseEvent) {
 		if (!isPressedDown) {
 			return;
+		}
+		if (isButtonDisabled) {
+			return;
+		}
+		if (context.pressedButtonCode !== iconCode) {
+			context.cancelReparenting();
+			context.chosenBlockerId = NoTaskId;
+			context.chosenBlockedId = NoTaskId;
 		}
 		isPressedDown = false;
 		if (isPressed) {
@@ -60,21 +75,26 @@
 			context.removeTaskSingle(context.selectedTaskId);
 		} else if (iconCode == IconCode.REMOVE_MULTIPLE) {
 			context.removeTaskBranch(context.selectedTaskId);
-		} else if (iconCode ==IconCode.CREATE_LINKED_NOTE) {
+		} else if (iconCode == IconCode.CREATE_LINKED_NOTE) {
 			context.createLinkedNote(context.selectedTaskId);
+		} else if (iconCode == IconCode.KEY) {
+			context.chosenBlockedId = context.chosenBlockedId === NoTaskId ? context.selectedTaskId : NoTaskId;
+		} else if (iconCode == IconCode.LOCK) {
+			context.chosenBlockerId = context.chosenBlockerId === NoTaskId ? context.selectedTaskId : NoTaskId;
 		}
 		event.stopPropagation();
 	}
-	
+
 	let classString = $derived(`
-		${isPressed ? 'is-pressed-up ': ''}
-		${isPressedDown ? 'is-pressed-down ': '' }
-		${iconCode === IconCode.STATUS ? " " + ["draft", "ready", "in-progress", "done"][context.toolbarStatus]: ""}
+		${(isPressed && !isButtonDisabled) ? 'is-pressed-up ': ''}
+		${(isPressedDown && !isButtonDisabled) ? 'is-pressed-down ': '' }
+		${iconCode === IconCode.STATUS ? classStringFromStatusCode(context.toolbarStatus) + ' ': ""}
 	`);
 </script>
 
 <div class="button"
 	 use:tooltip={getTooltipText(iconCode)}
+	 class:disabled={isButtonDisabled}
 	 class:no-pan={true}
 	 class:is-pressed-up={isPressed}
 	 class:is-pressed-down={isPressedDown}
@@ -101,7 +121,7 @@
 	{:else if iconCode === IconCode.KEY}
 		<KeyRound class={classString}/>
 	{:else if iconCode === IconCode.LOCK}
-		<Lock class={classString}/>
+		<LockKeyhole class={classString}/>
 	{:else if iconCode === IconCode.REPARENT}
 		<Unplug class={classString}/>
 	{:else if iconCode === IconCode.FOCUS}
@@ -178,21 +198,27 @@
 		}
 	}
 
-	.button:hover {
+	.button.disabled {
+		:global(svg) {
+			stroke: grey;			
+		}
+	}
+	
+	.button:hover:not(.disabled){
 		background-color: #343434;
 		/*border-color: red;*/
 		border-width: 0;
 		outline: none;
 	}
 	
-	.button.is-pressed-down {
+	.button.is-pressed-down:not(.disabled){
 		background-color: #343434;
 		color: white;
 		:global(svg) {
 			stroke: white;
 		}
 	}
-	.button.is-pressed-up {
+	.button.is-pressed-up:not(.disabled){
 		background-color: #343434;
 		color: white;
 		:global(svg) {

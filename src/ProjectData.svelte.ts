@@ -1,20 +1,32 @@
-﻿import { StatusCode, type TaskData, type TaskId } from "./types";
+﻿import {
+	type BlockerPair,
+	StatusCode,
+	type TaskData,
+	type TaskId,
+} from "./types";
 import { NoTaskId, RootTaskId } from "./NodePositionsCalculator";
 import { serializeProjectData } from "./SaveManager";
 
 export class ProjectData {
 	tasks = $state(new Array<TaskData>());
+	blockerPairs = $state(new Array<BlockerPair>());
 	curTaskId = RootTaskId;
 
 	public static getDefault(): ProjectData {
 		return new ProjectData({
 			tasks: new Array<TaskData>(),
+			blockerPairs: new Array<BlockerPair>(),
 			curTaskId: 0,
 		});
 	}
 
-	constructor(obj: { tasks: TaskData[]; curTaskId: number }) {
+	constructor(obj: {
+		tasks: TaskData[];
+		blockerPairs?: BlockerPair[];
+		curTaskId: number;
+	}) {
 		this.tasks = obj.tasks;
+		this.blockerPairs = obj.blockerPairs ?? [];
 		this.curTaskId = obj.curTaskId;
 		if (this.tasks.length == 0) {
 			this.addRootTask();
@@ -65,13 +77,13 @@ export class ProjectData {
 	}
 
 	public removeTaskBranch(id: number) {
-		this.getDescendants(id).forEach(
+		this.getDescendantIds(id).forEach(
 			(taskId) => (this.getTask(taskId).deleted = true),
 		);
 		this.recalcPriorities(this.getTask(id).parentId);
 	}
 
-	public getDescendants(taskId: number, includeDeleted: boolean = false) {
+	public getDescendantIds(taskId: number, includeDeleted: boolean = false) {
 		const tasks = [taskId];
 		const result: TaskId[] = [];
 		while (tasks.length > 0) {
@@ -93,6 +105,16 @@ export class ProjectData {
 			res.push(task);
 		}
 		return res;
+	}
+
+	public isAncestorOf(taskId: TaskId, candidate: TaskId) {
+		return this.getAncestors(taskId)
+			.map((t) => t.taskId)
+			.contains(candidate);
+	}
+
+	public isDescendentOf(taskId: TaskId, candidate: TaskId) {
+		return this.getDescendantIds(taskId).contains(candidate);
 	}
 
 	public getChildren(taskId: number, includeDeleted: boolean = false) {
@@ -143,7 +165,7 @@ export class ProjectData {
 		const taskData = this.getTask(taskId);
 		taskData.parentId = parentId;
 		this.recalculateStatusRecursive(parentId);
-		[taskId, ...this.getDescendants(taskId)].forEach((taskId) => {
+		[taskId, ...this.getDescendantIds(taskId)].forEach((taskId) => {
 			const task = this.getTask(taskId);
 			task.depth = this.getTask(task.parentId).depth + 1;
 		});
@@ -220,6 +242,28 @@ export class ProjectData {
 				t.priority = idx;
 			});
 	}
+
+	public containsBlockerPair = (blockerPair: BlockerPair) => {
+		return this.blockerPairs.some(
+			(p) =>
+				p.blocked === blockerPair.blocked &&
+				p.blocker === blockerPair.blocker,
+		);
+	};
+
+	public removeBlockerPair = (blockerPair: BlockerPair) => {
+		this.blockerPairs = this.blockerPairs.filter(
+			(p) =>
+				!(
+					p.blocker === blockerPair.blocker &&
+					p.blocked === blockerPair.blocked
+				),
+		);
+	};
+
+	public addBlockerPair = (blockerPair: BlockerPair) => {
+		this.blockerPairs.push(blockerPair);
+	};
 }
 
 export const DEFAULT_DATA = serializeProjectData(ProjectData.getDefault());

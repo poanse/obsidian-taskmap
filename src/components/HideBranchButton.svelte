@@ -1,7 +1,7 @@
 ﻿<script lang="ts">
 	import { TASK_SIZE } from "../Constants";
 	import { Context } from "../Context.svelte.js";
-	import {NoTaskId, ParentToChildHorizontalShift} from "../NodePositionsCalculator";
+	import {ParentToChildHorizontalShift} from "../NodePositionsCalculator";
 	import { Eye, EyeClosed  } from 'lucide-svelte';
 
 	const { taskId, context }: { taskId: number, context: Context } = $props();
@@ -16,29 +16,27 @@
 	}
 </script>
 
-{#if context.projectData.getChildren(taskId).length > 0}
-	<div
-		class="hover-container-hide-branch-button"
-		onmouseenter={() => entered = true}
-		onmouseleave={() => entered = false}
-		style="
-			left: {TASK_SIZE.width / 2 + ParentToChildHorizontalShift / 2 - 50/2}px;
-			top: {TASK_SIZE.height / 2 - 50 / 2}px;
-		"
-	>
-		{#if taskData.hidden}
-			<EyeClosed
-				onpointerdown={(e) => e.stopPropagation()}
-				onpointerup={hidePressed}
-			/>
-		{:else if entered && !taskData.hidden}
-			<Eye
-				onpointerdown={(e) => e.stopPropagation()}
-				onpointerup={hidePressed}
-			/>
-		{/if}
-	</div>
-{/if}
+<div
+	class="hover-container-hide-branch-button"
+	onmouseenter={() => entered = true}
+	onmouseleave={() => entered = false}
+	style="
+		left: {TASK_SIZE.width / 2 + ParentToChildHorizontalShift / 2 - 50/2}px;
+		top: {TASK_SIZE.height / 2 - 50 / 2}px;
+	"
+>
+	{#if taskData.hidden}
+		<EyeClosed
+			onpointerdown={(e) => e.stopPropagation()}
+			onpointerup={hidePressed}
+		/>
+	{:else if entered && !taskData.hidden}
+		<Eye
+			onpointerdown={(e) => e.stopPropagation()}
+			onpointerup={hidePressed}
+		/>
+	{/if}
+</div>
 
 <style>
 	.hover-container-hide-branch-button {

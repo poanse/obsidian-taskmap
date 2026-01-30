@@ -32,6 +32,21 @@ export const isStatusCode = (s: IconCode) => {
 	].contains(s);
 };
 
+export const classStringFromStatusCode = (code: StatusCode) => {
+	switch (code) {
+		case StatusCode.READY:
+			return "ready";
+		case StatusCode.IN_PROGRESS:
+			return "in-progress";
+		case StatusCode.DRAFT:
+			return "draft";
+		case StatusCode.DONE:
+			return "done";
+		default:
+			return "";
+	}
+};
+
 export const toIconCode = (s: StatusCode) => {
 	return (s + IconCode.STATUS_DRAFT) as number as IconCode;
 };
@@ -80,3 +95,8 @@ export enum MouseDown {
 	MIDDLE = 1,
 	RIGHT = 2,
 }
+
+export type BlockerPair = {
+	blocker: TaskId;
+	blocked: TaskId;
+};

@@ -1,6 +1,12 @@
 ﻿import TaskmapPlugin from "./main";
 import type { ProjectData } from "./ProjectData.svelte.js";
-import { MouseDown, StatusCode, type TaskId, type Vector2 } from "./types";
+import {
+	type BlockerPair,
+	MouseDown,
+	StatusCode,
+	type TaskId,
+	type Vector2,
+} from "./types";
 import { Spring } from "svelte/motion";
 import {
 	type App,
@@ -29,6 +35,8 @@ export class Context {
 	draggedTaskId = $state(NoTaskId);
 	selectedTaskId = $state(NoTaskId);
 	focusedTaskId = $state(RootTaskId);
+	chosenBlockerId = $state(NoTaskId);
+	chosenBlockedId = $state(NoTaskId);
 	toolbarStatus = $state(StatusCode.DRAFT);
 	reparentingTaskId = $state(NoTaskId);
 	projectData: ProjectData;
@@ -69,6 +77,36 @@ export class Context {
 		this.updateTaskPositions();
 	}
 
+	public isTaskBlocked(taskId: TaskId) {
+		return this.projectData.blockerPairs.some((p) => p.blocked === taskId);
+	}
+
+	public isTaskBlocking(taskId: TaskId) {
+		return this.projectData.blockerPairs.some((p) => p.blocker === taskId);
+	}
+
+	public isBlockerHighlighted = (taskId: TaskId) => {
+		if (this.chosenBlockedId !== NoTaskId) {
+			return (
+				this.chosenBlockedId === taskId ||
+				this.projectData.containsBlockerPair({
+					blocked: this.chosenBlockedId,
+					blocker: taskId,
+				})
+			);
+		} else if (this.chosenBlockerId !== NoTaskId) {
+			return (
+				this.chosenBlockerId === taskId ||
+				this.projectData.containsBlockerPair({
+					blocked: taskId,
+					blocker: this.chosenBlockerId,
+				})
+			);
+		} else {
+			return false;
+		}
+	};
+
 	public startTaskDragging = (e: PointerEvent, taskId: TaskId) => {
 		this.draggedTaskId = taskId;
 		this.taskDraggingManager.onPointerDown(e);
@@ -97,7 +135,7 @@ export class Context {
 		const focusedAncestorIds = this.projectData
 			.getAncestors(this.focusedTaskId)
 			.map((t) => t.taskId);
-		const focusedDescendantIds = this.projectData.getDescendants(
+		const focusedDescendantIds = this.projectData.getDescendantIds(
 			this.focusedTaskId,
 		);
 		return (
@@ -107,6 +145,46 @@ export class Context {
 				task.taskId == this.focusedTaskId ||
 				focusedAncestorIds.contains(task.taskId) ||
 				focusedDescendantIds.contains(task.taskId)
+			)
+		);
+	}
+
+	public isValidBlockerTarget(taskId: TaskId) {
+		if (taskId === NoTaskId || this.chosenBlockedId === NoTaskId) {
+			return false;
+		}
+		if (this.projectData.getTask(taskId).status == StatusCode.DONE) {
+			return false;
+		}
+		return this.isValidBlockerPairTarget({
+			blocker: taskId,
+			blocked: this.chosenBlockedId,
+		});
+	}
+
+	public isValidBlockedTarget(taskId: TaskId) {
+		if (taskId === NoTaskId || this.chosenBlockerId === NoTaskId) {
+			return false;
+		}
+		if (this.projectData.getTask(taskId).status == StatusCode.DONE) {
+			return false;
+		}
+		return this.isValidBlockerPairTarget({
+			blocker: this.chosenBlockerId,
+			blocked: taskId,
+		});
+	}
+
+	private isValidBlockerPairTarget(blockerPair: BlockerPair) {
+		return !(
+			blockerPair.blocked === blockerPair.blocker ||
+			this.projectData.isAncestorOf(
+				blockerPair.blocked,
+				blockerPair.blocker,
+			) ||
+			this.projectData.isDescendentOf(
+				blockerPair.blocked,
+				blockerPair.blocker,
 			)
 		);
 	}
@@ -131,7 +209,7 @@ export class Context {
 		return (
 			taskId != this.reparentingTaskId &&
 			!this.projectData
-				.getDescendants(this.reparentingTaskId)
+				.getDescendantIds(this.reparentingTaskId)
 				.contains(taskId) &&
 			this.projectData.getTask(this.reparentingTaskId).parentId != taskId
 		);
@@ -174,7 +252,7 @@ export class Context {
 			if (this.taskDraggingManager.isDragging) {
 				[
 					this.draggedTaskId,
-					...this.projectData.getDescendants(this.draggedTaskId),
+					...this.projectData.getDescendantIds(this.draggedTaskId),
 				].forEach((t) => {
 					const v = this.positions.get(t);
 					if (v !== undefined) {
@@ -210,7 +288,7 @@ export class Context {
 				},
 				1 / this.scale,
 			);
-			const draggedTaskIds = this.projectData.getDescendants(
+			const draggedTaskIds = this.projectData.getDescendantIds(
 				this.draggedTaskId,
 			);
 			this.taskPositions

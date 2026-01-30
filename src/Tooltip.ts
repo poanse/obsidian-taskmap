@@ -31,9 +31,9 @@ export function getTooltipText(code: IconCode) {
 		case IconCode.REPARENT:
 			return "Reparent";
 		case IconCode.KEY:
-			return "Block another task";
-		case IconCode.LOCK:
 			return "Add blocker task";
+		case IconCode.LOCK:
+			return "Block another task";
 		case IconCode.REMOVE:
 			return "Remove";
 		case IconCode.REMOVE_SINGLE:
