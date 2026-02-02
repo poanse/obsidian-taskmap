@@ -57,24 +57,31 @@
 		if (isButtonDisabled) {
 			return;
 		}
-		if (context.pressedButtonCode !== iconCode) {
+		isPressedDown = false;
+		event.stopPropagation();
+		
+		if (context.pressedButtonCode !== -1) {
+			// cancel all active modes
 			context.cancelReparenting();
 			context.chosenBlockerId = NoTaskId;
 			context.chosenBlockedId = NoTaskId;
 		}
-		isPressedDown = false;
 		if (isPressed) {
+			// pressed the same button a second time
 			isPressed = false;
 			context.pressedButtonCode = -1;
+			return;
 		} else if (stateful) {
+			// pressed a stateful button
 			isPressed = true;
 			context.pressedButtonCode = iconCode;
 		} else {
+			// pressed a stateless button
 			context.pressedButtonCode = -1;
 		}
 		if (isStatusCode(iconCode)) {
 			context.changeStatus(toStatusCode(iconCode));
-		}else if (iconCode == IconCode.REPARENT) {
+		} else if (iconCode == IconCode.REPARENT) {
 			context.startReparenting(context.selectedTaskId);
 		} else if (iconCode === IconCode.FOCUS) {
 			context.changeFocusedTask(context.selectedTaskId);
@@ -89,7 +96,6 @@
 		} else if (iconCode == IconCode.LOCK) {
 			context.chosenBlockerId = context.chosenBlockerId === NoTaskId ? context.selectedTaskId : NoTaskId;
 		}
-		event.stopPropagation();
 	}
 
 	let classString = $derived(`
