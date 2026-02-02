@@ -33,16 +33,16 @@
 	let toolbarButtons = $derived(taskId == RootTaskId ? [
 		IconCode.CREATE_LINKED_NOTE,
 		IconCode.FOCUS,
-		IconCode.STATUS
+		IconCode.STATUS_SUBMENU
 
 	] : [
 		IconCode.CREATE_LINKED_NOTE,
-		IconCode.REMOVE,
+		IconCode.REMOVE_SUBMENU,
 		IconCode.REPARENT,
 		IconCode.KEY,
 		IconCode.LOCK,
 		IconCode.FOCUS,
-		IconCode.STATUS
+		IconCode.STATUS_SUBMENU
 	]);
 	
 	let removeButtons = [
@@ -86,13 +86,13 @@
 			{/each}
 		{/key}
 
-		{#if context.pressedButtonCode === IconCode.REMOVE}
+		{#if context.pressedButtonCode === IconCode.REMOVE_SUBMENU}
 			<div
 				class="subtoolbar"
 				transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
 				style="
 				top: {subtoolbarTopShift(removeButtons)}px;
-				left: {toolbarButtons.indexOf(IconCode.REMOVE) * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
+				left: {toolbarButtons.indexOf(IconCode.REMOVE_SUBMENU) * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
 			"
 			>
 				{#key context.updateOnZoomCounter}
@@ -102,13 +102,13 @@
 			</div>
 		{/if}
 
-		{#if context.pressedButtonCode === IconCode.STATUS}
+		{#if context.pressedButtonCode === IconCode.STATUS_SUBMENU}
 			<div
 				class="subtoolbar"
 				transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
 				style="
 				top: {subtoolbarTopShift(statusButtons)}px;
-				left: {toolbarButtons.indexOf(IconCode.STATUS) * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
+				left: {toolbarButtons.indexOf(IconCode.STATUS_SUBMENU) * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
 			"
 			>
 				{#key context.updateOnZoomCounter}

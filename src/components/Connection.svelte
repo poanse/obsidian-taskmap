@@ -32,7 +32,7 @@
 	let midX = $derived(
 		isBlockerConnection
 		? (context.chosenBlockerId !== NoTaskId
-			? endPoint.x + (isStartTaskDepthLE(startTaskId, endTaskId) ? -1 : 1) * (ParentToChildHorizontalShift - TASK_SIZE.width) / 2
+			? endPoint.x + (isStartTaskDepthLE(endTaskId, startTaskId) ? 1 : -1) * (ParentToChildHorizontalShift - TASK_SIZE.width) / 2
 			: startPoint.x + (isStartTaskDepthLE(startTaskId, endTaskId) ? 1 : -1) * (ParentToChildHorizontalShift - TASK_SIZE.width) / 2
 		)
 		: (startPoint.x + endPoint.x) / 2

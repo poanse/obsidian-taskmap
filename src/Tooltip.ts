@@ -34,13 +34,13 @@ export function getTooltipText(code: IconCode) {
 			return "Add blocker task";
 		case IconCode.LOCK:
 			return "Block another task";
-		case IconCode.REMOVE:
+		case IconCode.REMOVE_SUBMENU:
 			return "Remove";
 		case IconCode.REMOVE_SINGLE:
 			return "Remove single task";
 		case IconCode.REMOVE_MULTIPLE:
 			return "Remove task branch";
-		case IconCode.STATUS:
+		case IconCode.STATUS_SUBMENU:
 			return "Status";
 		case IconCode.STATUS_DRAFT:
 			return "Draft";

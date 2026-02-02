@@ -4,7 +4,7 @@
 	import Task from "./Task.svelte";
 	import Panzoom, {type PanzoomObject} from '@panzoom/panzoom'
 	import type {Context} from "../Context.svelte.js";
-	import {MouseDown, type Vector2} from "../types";
+	import {MouseDown, StatusCode, type Vector2} from "../types";
 	import Connection from "./Connection.svelte";
 	import {NoTaskId, RootTaskId} from "../NodePositionsCalculator";
 	import {DraggingManager} from "../DraggingManager.svelte";
@@ -160,10 +160,34 @@
 						isBlockerConnection={false}
 					/>
 				{/each}
-
+			</g>
+		</svg>
+		
+		<div
+			class="task-layer"
+			tabindex="-1"
+			role="presentation"
+		>
+			{#each context.projectData.tasks.filter(t => !context.isTaskHidden(t.taskId)) as task (task.taskId)}
+				<Task taskId={task.taskId} {context} coords={context.getCurrentTaskPosition(task.taskId)}/>
+			{/each}
+		</div>
+		
+		<svg class="svg-layer" overflow="visible">
+			<defs>
+				<defs>
+					<marker id="arrow" markerWidth="5" markerHeight="10" refX="3" refY="3" orient="auto" markerUnits="strokeWidth">
+						<path d="M-1,0 L-1,6 L4.5,3 z" fill="context-stroke" />
+					</marker>
+				</defs>
+			</defs>
+			<g class="svg-group" bind:this={svgGroupEl}>
 				{#if context.chosenBlockerId !== NoTaskId || context.chosenBlockedId !== NoTaskId}
 					{#each (context.projectData.blockerPairs.filter(
 						p => p.blocker === context.chosenBlockerId || p.blocked === context.chosenBlockedId
+					).filter(
+						p => context.projectData.getTask(p.blocked).status !== StatusCode.DONE
+							&& context.projectData.getTask(p.blocker).status !== StatusCode.DONE
 					)) as pair}
 						<Connection
 							startTaskId={pair.blocker}
@@ -175,16 +199,7 @@
 				{/if}
 			</g>
 		</svg>
-		<div
-			class="task-layer"
-			tabindex="-1"
-			role="presentation"
-		>
-			{#each context.projectData.tasks.filter(t => !context.isTaskHidden(t.taskId)) as task (task.taskId)}
-				<Task taskId={task.taskId} {context} coords={context.getCurrentTaskPosition(task.taskId)}/>
-			{/each}
-
-		</div>
+		
 		{#if context.selectedTaskId !== -1}
 			{#key context.selectedTaskId}
 				<Toolbar context={context} taskId={context.selectedTaskId}/>

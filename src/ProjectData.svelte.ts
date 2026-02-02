@@ -61,6 +61,7 @@ export class ProjectData {
 			depth: this.getTask(parentId).depth + 1,
 		});
 		this.curTaskId++;
+		this.recalculateStatusRecursive(parentId);
 		return id;
 	}
 
@@ -73,14 +74,17 @@ export class ProjectData {
 			t.parentId = parentTask.taskId;
 			t.depth = parentTask.depth + 1;
 		});
-		this.recalcPriorities(this.getTask(id).parentId);
+		this.recalcPriorities(task.parentId);
+		this.recalculateStatusRecursive(task.parentId);
 	}
 
 	public removeTaskBranch(id: number) {
 		this.getDescendantIds(id).forEach(
 			(taskId) => (this.getTask(taskId).deleted = true),
 		);
-		this.recalcPriorities(this.getTask(id).parentId);
+		const parentId = this.getTask(id).parentId;
+		this.recalcPriorities(parentId);
+		this.recalculateStatusRecursive(parentId);
 	}
 
 	public getDescendantIds(taskId: number, includeDeleted: boolean = false) {
@@ -161,10 +165,12 @@ export class ProjectData {
 		this.recalculateStatusRecursive(task.parentId);
 	}
 
-	public changeParent(taskId: TaskId, parentId: TaskId) {
+	public changeParent(taskId: TaskId, newParentId: TaskId) {
 		const taskData = this.getTask(taskId);
-		taskData.parentId = parentId;
-		this.recalculateStatusRecursive(parentId);
+		const oldParentId = taskData.parentId;
+		taskData.parentId = newParentId;
+		this.recalculateStatusRecursive(oldParentId);
+		this.recalculateStatusRecursive(newParentId);
 		[taskId, ...this.getDescendantIds(taskId)].forEach((taskId) => {
 			const task = this.getTask(taskId);
 			task.depth = this.getTask(task.parentId).depth + 1;
@@ -185,6 +191,9 @@ export class ProjectData {
 
 	public calculateStatus(taskId: TaskId) {
 		const children = this.getChildren(taskId).map((x) => this.getTask(x));
+		if (children.length === 0) {
+			return this.getTask(taskId).status;
+		}
 		const counts = [0, 0, 0, 0];
 		children.forEach((t) => (counts[t.status] += 1));
 		if (counts[StatusCode.DONE] == children.length) {

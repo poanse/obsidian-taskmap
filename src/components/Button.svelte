@@ -25,7 +25,13 @@
 	let isPressedDown = $state(false);
 	let isPressed = $derived(context.pressedButtonCode == iconCode);
 	
-	const stateful = [IconCode.REMOVE, IconCode.STATUS, IconCode.KEY, IconCode.LOCK].contains(iconCode);
+	const stateful = [
+		IconCode.REMOVE_SUBMENU,
+		IconCode.STATUS_SUBMENU,
+		IconCode.KEY,
+		IconCode.LOCK,
+		IconCode.REPARENT
+	].contains(iconCode);
 	
 	function onpointerdown(event: MouseEvent) {
 		isPressedDown = true;
@@ -41,6 +47,7 @@
 		(context.isReparentingOn() && [IconCode.LOCK, IconCode.KEY].contains(iconCode))
 		|| (context.chosenBlockerId !== NoTaskId && [IconCode.REPARENT].contains(iconCode))
 		|| (context.chosenBlockedId !== NoTaskId && [IconCode.REPARENT].contains(iconCode))
+		|| (iconCode === IconCode.STATUS_DONE && context.isTaskBlocked(context.selectedTaskId))
 	);
 	
 	function onpointerup(event: MouseEvent) {
@@ -88,7 +95,7 @@
 	let classString = $derived(`
 		${(isPressed && !isButtonDisabled) ? 'is-pressed-up ': ''}
 		${(isPressedDown && !isButtonDisabled) ? 'is-pressed-down ': '' }
-		${iconCode === IconCode.STATUS ? classStringFromStatusCode(context.toolbarStatus) + ' ': ""}
+		${iconCode === IconCode.STATUS_SUBMENU ? classStringFromStatusCode(context.toolbarStatus) + ' ': ""}
 	`);
 </script>
 
@@ -116,10 +123,10 @@
 			<path d="M2.56174 6.15378V3.84616C2.56174 3.07296 3.18893 2.44577 3.96213 2.44577H4.80881V3.24655H3.96213C3.63076 3.24655 3.36252 3.51479 3.36252 3.84616V6.15378C3.36252 6.48515 3.63076 6.75436 3.96213 6.75436H4.80881V7.55417H3.96213C3.18893 7.55417 2.56174 6.92698 2.56174 6.15378Z"/>
 			<path d="M2.96191 4.59954V5.40033H0.5V4.59954H2.96191Z"/>
 		</svg>
-	{:else if iconCode === IconCode.REMOVE}
+	{:else if iconCode === IconCode.REMOVE_SUBMENU}
 		<Trash2 class={classString}/>
 	{:else if iconCode === IconCode.KEY}
-		<KeyRound class={classString}/>
+		<KeyRound class={classString} style="transform: rotate(-90deg) scale(-1, 1);"/>
 	{:else if iconCode === IconCode.LOCK}
 		<LockKeyhole class={classString}/>
 	{:else if iconCode === IconCode.REPARENT}
@@ -128,7 +135,7 @@
 		<LocateFixed class={classString + " focus"}/>
 	{:else if iconCode === IconCode.CREATE_LINKED_NOTE}
 		<SquareArrowOutUpRight class={classString}/>
-	{:else if iconCode === IconCode.STATUS}
+	{:else if iconCode === IconCode.STATUS_SUBMENU}
 		<Circle class={classString}/>
 	{:else if iconCode === IconCode.STATUS_DRAFT}
 		<Circle class={classString + " draft"}/>
@@ -201,6 +208,9 @@
 	.button.disabled {
 		:global(svg) {
 			stroke: grey;			
+		}
+		:global(svg.done) {
+			stroke: color-mix(in srgb, #30623E 100%, #000000 50%);
 		}
 	}
 	

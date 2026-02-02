@@ -1,13 +1,13 @@
 ﻿import type { EasingFunction } from "svelte/transition";
 
 export enum IconCode {
-	REMOVE,
+	REMOVE_SUBMENU,
 	KEY,
 	LOCK,
 	FOCUS,
 	REPARENT,
 	CREATE_LINKED_NOTE,
-	STATUS,
+	STATUS_SUBMENU,
 	REMOVE_SINGLE,
 	REMOVE_MULTIPLE,
 	STATUS_DRAFT,

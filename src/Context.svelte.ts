@@ -78,14 +78,35 @@ export class Context {
 	}
 
 	public isTaskBlocked(taskId: TaskId) {
-		return this.projectData.blockerPairs.some((p) => p.blocked === taskId);
+		if (this.projectData.getTask(taskId).status === StatusCode.DONE) {
+			return false;
+		}
+		return this.projectData.blockerPairs
+			.filter((p) => p.blocked === taskId)
+			.some(
+				(p) =>
+					this.projectData.getTask(p.blocker).status !==
+					StatusCode.DONE,
+			);
 	}
 
 	public isTaskBlocking(taskId: TaskId) {
-		return this.projectData.blockerPairs.some((p) => p.blocker === taskId);
+		if (this.projectData.getTask(taskId).status === StatusCode.DONE) {
+			return false;
+		}
+		return this.projectData.blockerPairs
+			.filter((p) => p.blocker === taskId)
+			.some(
+				(p) =>
+					this.projectData.getTask(p.blocked).status !==
+					StatusCode.DONE,
+			);
 	}
 
 	public isBlockerHighlighted = (taskId: TaskId) => {
+		if (this.projectData.getTask(taskId).status === StatusCode.DONE) {
+			return false;
+		}
 		if (this.chosenBlockedId !== NoTaskId) {
 			return (
 				this.chosenBlockedId === taskId ||
@@ -195,7 +216,6 @@ export class Context {
 
 	public startReparenting(taskId: TaskId) {
 		this.reparentingTaskId = taskId;
-		this.selectedTaskId = NoTaskId;
 	}
 
 	public cancelReparenting() {
@@ -221,7 +241,6 @@ export class Context {
 		}
 		this.projectData.changeParent(this.reparentingTaskId, newParentId);
 		this.updateTaskPositions();
-		this.cancelReparenting();
 	}
 
 	public changeFocusedTask(taskId: TaskId): void {

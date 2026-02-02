@@ -156,21 +156,24 @@
 				 && !(context.chosenBlockerId !== NoTaskId)}
 				<HideBranchButton {context} {taskId} />
 			{/if}
-			{#if context.isTaskBlocking(taskId) && taskData.status !== StatusCode.DONE}
+			{#if context.isTaskBlocking(taskId)}
 				<div
 					class="icon-container"
 					style="
 						top: 4px;
 					"
 				>
-					<KeyRound class={
-						classStringFromStatusCode(taskData.status)
-						+ (isBlockerHighlight ? ' blocker-highlight' : '')
-						+ (isUnselected ? ' unselect' : '')
-					}/>
+					<KeyRound
+						class={
+							classStringFromStatusCode(taskData.status)
+							+ (isBlockerHighlight ? ' blocker-highlight' : '')
+							+ (isUnselected ? ' unselect' : '')
+						}
+						style="transform: rotate(-90deg) scale(-1, 1);"
+					/>
 				</div>
 			{/if}
-			{#if context.isTaskBlocked(taskId) && taskData.status !== StatusCode.DONE}
+			{#if context.isTaskBlocked(taskId)}
 				<div
 					class="icon-container"
 					style="
