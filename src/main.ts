@@ -18,13 +18,14 @@ import { generateMarkdownLink } from "./LinkManager";
 export const FILE_EXTENSION = "taskmap";
 
 export default class TaskmapPlugin extends Plugin {
-	static instance: TaskmapPlugin;
 	settings: PluginSettings;
 
 	async onload() {
-		TaskmapPlugin.instance = this;
 		await this.loadSettings();
-		this.registerView(TASKMAP_VIEW_TYPE, (leaf) => new TaskmapView(leaf));
+		this.registerView(
+			TASKMAP_VIEW_TYPE,
+			(leaf) => new TaskmapView(leaf, this),
+		);
 		this.registerExtensions([FILE_EXTENSION], TASKMAP_VIEW_TYPE);
 
 		// This creates an icon in the left ribbon.
@@ -137,12 +138,6 @@ export default class TaskmapPlugin extends Plugin {
 			)) {
 			await view.refreshUi();
 		}
-	}
-
-	public static getActiveView() {
-		return TaskmapPlugin.instance.app.workspace.getActiveViewOfType(
-			TaskmapView,
-		);
 	}
 
 	public async createAndOpenDrawing(): Promise<string> {

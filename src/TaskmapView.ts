@@ -5,21 +5,23 @@ import { Context } from "./Context.svelte.js";
 import { NodePositionsCalculator } from "./NodePositionsCalculator";
 import TaskmapContainer from "./components/TaskmapContainer.svelte";
 import { deserializeProjectData, updateFile } from "./SaveManager";
+import type TaskmapPlugin from "./main";
 
 export const TASKMAP_VIEW_TYPE = "taskmap-view";
 
 export class TaskmapView extends TextFileView {
 	taskmapContainer: ReturnType<typeof TaskmapContainer> | undefined;
-
-	constructor(leaf: WorkspaceLeaf) {
-		super(leaf);
-	}
-
-	debouncedSave = debounce(() => this.save(), 1000, true);
-
+	plugin: TaskmapPlugin;
 	data: string = DEFAULT_DATA;
 	projectData: ProjectData;
 	context: Context;
+
+	constructor(leaf: WorkspaceLeaf, plugin: TaskmapPlugin) {
+		super(leaf);
+		this.plugin = plugin;
+	}
+
+	debouncedSave = debounce(() => this.save(), 1000, true);
 
 	getViewType() {
 		return TASKMAP_VIEW_TYPE;
@@ -37,6 +39,7 @@ export class TaskmapView extends TextFileView {
 		this.setViewData(data);
 		this.projectData = deserializeProjectData(this.app, this.data);
 		this.context = new Context(
+			this.plugin,
 			this,
 			this.projectData,
 			this.app,

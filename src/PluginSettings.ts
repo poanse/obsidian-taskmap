@@ -1,7 +1,9 @@
 export interface PluginSettings {
-	mySetting: string;
+	zoomSensitivityTouchpad: string;
+	zoomSensitivityMouse: string;
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
-	mySetting: 'default'
-}
+	zoomSensitivityTouchpad: "100",
+	zoomSensitivityMouse: "100",
+};

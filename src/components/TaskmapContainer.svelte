@@ -8,6 +8,7 @@
 	import Connection from "./Connection.svelte";
 	import {NoTaskId, RootTaskId} from "../NodePositionsCalculator";
 	import {DraggingManager} from "../DraggingManager.svelte";
+	import {parseNumber} from "../Constants";
 
 	let {context}: {context: Context} = $props();
 	
@@ -53,29 +54,15 @@
 	}
 	
 	function onwheel(e: WheelEvent) {
-		let scaledEvent: WheelEvent;
+		let scaleConstant: number;
 		const isTouchpad = Math.abs(e.deltaY) < 50;
 		if (isTouchpad) {
-			// Create a modified event with scaled deltaY for touchpad
-			const scaleConstant = 0.2;
-			scaledEvent = new WheelEvent('wheel', {
-				deltaY: e.deltaY * scaleConstant,
-				deltaX: e.deltaX * scaleConstant,
-				deltaMode: e.deltaMode,
-				clientX: e.clientX,
-				clientY: e.clientY,
-				ctrlKey: e.ctrlKey,
-				shiftKey: e.shiftKey,
-				altKey: e.altKey,
-				metaKey: e.metaKey,
-				button: e.button,
-				buttons: e.buttons,
-			});
+			scaleConstant = 0.05 * (parseNumber(context.plugin.settings.zoomSensitivityTouchpad) ?? 100) / 100;
 		} else {
-			scaledEvent = e;
+			scaleConstant = 0.5 * (parseNumber(context.plugin.settings.zoomSensitivityMouse) ?? 100) / 100;
 		}
 
-		getPanzoom().zoomWithWheel(scaledEvent);
+		getPanzoom().zoomWithWheel(e, {step: scaleConstant});
 		context.setScale(getPanzoom().getScale());
 		if (getPanzoom().getScale() > 1) {
 			context.incrementUpdateOnZoomCounter();

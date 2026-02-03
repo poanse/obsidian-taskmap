@@ -11,9 +11,18 @@ export const TOOLBAR_SIZE = {
 	width: 98 * 2,
 	height: 22 * 2,
 };
+
 export const TASK_SIZE = {
 	width: 280,
 	height: 80,
 	width_hovered: 284,
 	height_hovered: 84,
 };
+
+export function parseNumber(value: string | null | undefined): number | null {
+	if (value === null || value === undefined) {
+		return null;
+	}
+	const num = Number(value);
+	return isNaN(num) || value.trim() === "" ? null : num;
+}

@@ -15,14 +15,26 @@ export class TaskmapSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Setting #1")
-			.setDesc("It's a secret")
+			.setName("Zoom sensitivity (touchpad)")
+			.setDesc("In percents")
 			.addText((text) =>
 				text
-					.setPlaceholder("Enter your secret")
-					.setValue(this.plugin.settings.mySetting)
+					.setPlaceholder("100")
+					.setValue(this.plugin.settings.zoomSensitivityTouchpad)
 					.onChange(async (value) => {
-						this.plugin.settings.mySetting = value;
+						this.plugin.settings.zoomSensitivityTouchpad = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
+			.setName("Zoom sensitivity (mouse)")
+			.setDesc("In percents")
+			.addText((text) =>
+				text
+					.setPlaceholder("100")
+					.setValue(this.plugin.settings.zoomSensitivityMouse)
+					.onChange(async (value) => {
+						this.plugin.settings.zoomSensitivityMouse = value;
 						await this.plugin.saveSettings();
 					}),
 			);

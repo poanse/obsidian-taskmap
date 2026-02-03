@@ -27,6 +27,7 @@ import { delink, LinkManager, tasknameFromFilePath } from "./LinkManager";
 
 export class Context {
 	app: App;
+	plugin: TaskmapPlugin;
 	view: TaskmapView;
 	nodePositionsCalculator: NodePositionsCalculator;
 	linkManager: LinkManager;
@@ -55,11 +56,13 @@ export class Context {
 	private springOptions = { stiffness: 0.07, damping: 0.7 };
 
 	constructor(
+		plugin: TaskmapPlugin,
 		view: TaskmapView,
 		projectData: ProjectData,
 		app: App,
 		nodePositionsCalculator: NodePositionsCalculator,
 	) {
+		this.plugin = plugin;
 		this.view = view;
 		this.nodePositionsCalculator = nodePositionsCalculator;
 		this.app = app;
@@ -411,12 +414,7 @@ export class Context {
 		);
 		this.projectData.setTaskStatus(this.selectedTaskId, status);
 		this.toolbarStatus = status;
-		const x = TaskmapPlugin.getActiveView();
-		if (x) {
-			x.debouncedSave();
-		}
-		// get taskdata
-		// change its status
+		this.view.debouncedSave();
 	}
 
 	public hideTaskBranch(id: number) {
