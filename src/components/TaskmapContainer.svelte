@@ -57,7 +57,7 @@
 		let scaleConstant: number;
 		const isTouchpad = Math.abs(e.deltaY) < 50;
 		if (isTouchpad) {
-			scaleConstant = 0.05 * (parseNumber(context.plugin.settings.zoomSensitivityTouchpad) ?? 100) / 100;
+			scaleConstant = 0.1 * (parseNumber(context.plugin.settings.zoomSensitivityTouchpad) ?? 100) / 100;
 		} else {
 			scaleConstant = 0.5 * (parseNumber(context.plugin.settings.zoomSensitivityMouse) ?? 100) / 100;
 		}
