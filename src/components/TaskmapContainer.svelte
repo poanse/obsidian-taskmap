@@ -53,7 +53,29 @@
 	}
 	
 	function onwheel(e: WheelEvent) {
-		getPanzoom().zoomWithWheel(e);
+		let scaledEvent: WheelEvent;
+		const isTouchpad = Math.abs(e.deltaY) < 50;
+		if (isTouchpad) {
+			// Create a modified event with scaled deltaY for touchpad
+			const scaleConstant = 0.2;
+			scaledEvent = new WheelEvent('wheel', {
+				deltaY: e.deltaY * scaleConstant,
+				deltaX: e.deltaX * scaleConstant,
+				deltaMode: e.deltaMode,
+				clientX: e.clientX,
+				clientY: e.clientY,
+				ctrlKey: e.ctrlKey,
+				shiftKey: e.shiftKey,
+				altKey: e.altKey,
+				metaKey: e.metaKey,
+				button: e.button,
+				buttons: e.buttons,
+			});
+		} else {
+			scaledEvent = e;
+		}
+
+		getPanzoom().zoomWithWheel(scaledEvent);
 		context.setScale(getPanzoom().getScale());
 		if (getPanzoom().getScale() > 1) {
 			context.incrementUpdateOnZoomCounter();

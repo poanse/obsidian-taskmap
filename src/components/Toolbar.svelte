@@ -7,7 +7,6 @@
 		TOOLBAR_SIZE, TASK_SIZE, TOOLBAR_SHIFT, SUBTOOLBAR_SHIFT, SUBTOOLBAR_BUTTON_SIZE, SUBTOOLBAR_GAP,
 		SUBTOOLBAR_PADDING
 	} from "../Constants";
-	// 1. Import the transition you want
 	import {quintOut} from 'svelte/easing';
 	import {slideCustom} from '../Custom';
 	import type {Context} from "../Context.svelte.js";
@@ -66,7 +65,6 @@
 	let subtoolbarTopShift = (buttons: IconCode[]) => {
 		return - (buttons.length * SUBTOOLBAR_BUTTON_SIZE + (buttons.length -1)*SUBTOOLBAR_GAP + 2*SUBTOOLBAR_PADDING.y + SUBTOOLBAR_SHIFT);
 	};
-
 </script>
 
 {#if !context.taskDraggingManager.isDragging}
