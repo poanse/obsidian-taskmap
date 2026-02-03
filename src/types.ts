@@ -47,6 +47,25 @@ export const classStringFromStatusCode = (code: StatusCode) => {
 	}
 };
 
+export const buttonTextFromIconCode = (code: IconCode) => {
+	switch (code) {
+		case IconCode.STATUS_READY:
+			return "Ready";
+		case IconCode.STATUS_IN_PROGRESS:
+			return "Progress";
+		case IconCode.STATUS_DRAFT:
+			return "Draft";
+		case IconCode.STATUS_DONE:
+			return "Done";
+		case IconCode.REMOVE_SINGLE:
+			return "Single task";
+		case IconCode.REMOVE_MULTIPLE:
+			return "Task branch";
+		default:
+			return "";
+	}
+};
+
 export const toIconCode = (s: StatusCode) => {
 	return (s + IconCode.STATUS_DRAFT) as number as IconCode;
 };

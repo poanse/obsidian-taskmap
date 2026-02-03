@@ -17,9 +17,11 @@
 	let {
 		iconCode,
 		context,
+		text = ""
 	}: {
 		iconCode: IconCode,
 		context: Context,
+		text: string
 	} = $props();
 
 	let isPressedDown = $state(false);
@@ -107,6 +109,7 @@
 
 <div class="button"
 	 use:tooltip={getTooltipText(iconCode)}
+	 class:with-text={text.length > 0}
 	 class:disabled={isButtonDisabled}
 	 class:no-pan={true}
 	 class:is-pressed-up={isPressed}
@@ -152,6 +155,7 @@
 	{:else if iconCode === IconCode.STATUS_DONE}
 		<Circle class={classString + " done"}/>
 	{/if}
+	{text}
 </div>
 
 <style>
@@ -176,8 +180,8 @@
 		
 		:global(svg) {
 			transition: stroke 0.2s;
-			width: 20px;
-			height: 20px;
+			width: 24px;
+			height: 24px;
 			stroke: #bbb;
 			fill: none;
 			stroke-width: 2;
@@ -190,8 +194,8 @@
 			fill: #bbb;
 		}
 		:global(svg.focus) {
-			width: 21px;
-			height: 21px;
+			width: 24px;
+			height: 24px;
 		}
 		:global(svg.draft) {
 			stroke: #7E7E7E;
@@ -210,8 +214,23 @@
 			fill: #212B24;
 		}
 	}
+	.button.with-text {
+		width: 128px;
+		height: 32px;
+		justify-content: left;
+		gap: 8px;
+		padding: 4px;
+
+		font-size: 16px;
+		font-family: var(--font-text);
+		font-weight: 600;
+		letter-spacing: 0.005em;
+		line-height: 1.5;
+	}
 
 	.button.disabled {
+		color: color-mix(in srgb, #7E7E7E 100%, #000000 50%);
+		
 		:global(svg) {
 			stroke: grey;			
 		}

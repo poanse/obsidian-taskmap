@@ -2,16 +2,19 @@
 	import Button from "./Button.svelte";
 	import { fade } from 'svelte/transition';
 	import {
-		TOOLBAR_PADDING,
 		TOOLBAR_GAP,
-		BUTTON_SIZE,
-		TOOLBAR_SIZE, TASK_SIZE, TOOLBAR_SHIFT, SUBTOOLBAR_SHIFT
+		TOOLBAR_BUTTON_SIZE,
+		TOOLBAR_SIZE, TASK_SIZE, TOOLBAR_SHIFT, SUBTOOLBAR_SHIFT, SUBTOOLBAR_BUTTON_SIZE, SUBTOOLBAR_GAP,
+		SUBTOOLBAR_PADDING
 	} from "../Constants";
 	// 1. Import the transition you want
 	import {quintOut} from 'svelte/easing';
 	import {slideCustom} from '../Custom';
 	import type {Context} from "../Context.svelte.js";
-	import {IconCode, StatusCode, type TaskId, toIconCode} from "../types";
+	import {
+		buttonTextFromIconCode,
+		IconCode, StatusCode, type TaskId, toIconCode
+	} from "../types";
 	import {RootTaskId} from "../NodePositionsCalculator";
 	
 	let {
@@ -61,7 +64,7 @@
 	]).map(x => toIconCode(x)));
 	
 	let subtoolbarTopShift = (buttons: IconCode[]) => {
-		return - (buttons.length * BUTTON_SIZE + (buttons.length -1)*TOOLBAR_GAP + 2*TOOLBAR_PADDING.y + SUBTOOLBAR_SHIFT);
+		return - (buttons.length * SUBTOOLBAR_BUTTON_SIZE + (buttons.length -1)*SUBTOOLBAR_GAP + 2*SUBTOOLBAR_PADDING.y + SUBTOOLBAR_SHIFT);
 	};
 
 </script>
@@ -86,38 +89,40 @@
 			{/each}
 		{/key}
 
-		{#if context.pressedButtonCode === IconCode.REMOVE_SUBMENU}
-			<div
-				class="subtoolbar"
-				transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
-				style="
-				top: {subtoolbarTopShift(removeButtons)}px;
-				left: {toolbarButtons.indexOf(IconCode.REMOVE_SUBMENU) * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
-			"
-			>
-				{#key context.updateOnZoomCounter}
-					<Button iconCode={IconCode.REMOVE_SINGLE} {context} />
-					<Button iconCode={IconCode.REMOVE_MULTIPLE} {context} />
-				{/key}
-			</div>
-		{/if}
+		{#key context.updateOnZoomCounter}
+			{#if context.pressedButtonCode === IconCode.REMOVE_SUBMENU}
+				<div
+					class="subtoolbar"
+					transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
+					style="
+						top: {subtoolbarTopShift(removeButtons)}px;
+						left: {toolbarButtons.indexOf(IconCode.REMOVE_SUBMENU) * (TOOLBAR_BUTTON_SIZE + TOOLBAR_GAP) - 128/2 + TOOLBAR_BUTTON_SIZE / 2}px;
+					"
+				>
+					{#key context.updateOnZoomCounter}
+						<Button iconCode={IconCode.REMOVE_SINGLE} {context} text={buttonTextFromIconCode(IconCode.REMOVE_SINGLE)}/>
+						<Button iconCode={IconCode.REMOVE_MULTIPLE} {context} text={buttonTextFromIconCode(IconCode.REMOVE_MULTIPLE)}/>
+					{/key}
+				</div>
+			{/if}
+		{/key}
 
-		{#if context.pressedButtonCode === IconCode.STATUS_SUBMENU}
-			<div
-				class="subtoolbar"
-				transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
-				style="
-				top: {subtoolbarTopShift(statusButtons)}px;
-				left: {toolbarButtons.indexOf(IconCode.STATUS_SUBMENU) * (BUTTON_SIZE + TOOLBAR_GAP) - 2}px;
-			"
-			>
-				{#key context.updateOnZoomCounter}
+		{#key context.updateOnZoomCounter}
+			{#if context.pressedButtonCode === IconCode.STATUS_SUBMENU}
+				<div
+					class="subtoolbar"
+					transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
+					style="
+						top: {subtoolbarTopShift(statusButtons)}px;
+						left: {toolbarButtons.indexOf(IconCode.STATUS_SUBMENU) * (TOOLBAR_BUTTON_SIZE + TOOLBAR_GAP) - 128/2 + TOOLBAR_BUTTON_SIZE / 2}px;
+					"
+				>
 					{#each statusButtons as button}
-						<Button iconCode={button} {context} />
+						<Button iconCode={button} {context} text={buttonTextFromIconCode(button)}/>
 					{/each}
-				{/key}
-			</div>
-		{/if}
+				</div>
+			{/if}
+		{/key}
 	</div>
 {/if}
 
@@ -152,14 +157,14 @@
 		border-color: #343434;
 		border-style: solid;
 		border-width: 2px;
+		border-radius: 8px;
 		background: #0f0f0fff;
 		/*background-color: #1E1E1E;*/
 		overflow: hidden; /* Important for slide animations to look clean */
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
-		padding: 2px;
-		border-radius: 8px;
+		padding: 4px;
 		justify-content: center;
 		align-items: center;
 		position: absolute;

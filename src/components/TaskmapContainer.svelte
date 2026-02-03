@@ -186,8 +186,11 @@
 					{#each (context.projectData.blockerPairs.filter(
 						p => p.blocker === context.chosenBlockerId || p.blocked === context.chosenBlockedId
 					).filter(
-						p => context.projectData.getTask(p.blocked).status !== StatusCode.DONE
-							&& context.projectData.getTask(p.blocker).status !== StatusCode.DONE
+						p => {
+							const blockedT = context.projectData.getTask(p.blocked);
+							const blockerT = context.projectData.getTask(p.blocker);
+							return blockedT.status !== StatusCode.DONE && blockerT.status !== StatusCode.DONE && !blockerT.deleted && !blockedT.deleted;
+						}
 					)) as pair}
 						<Connection
 							startTaskId={pair.blocker}
