@@ -13,7 +13,8 @@
 	"author": "",
 	"license": "MIT",
 	"devDependencies": {
-		"@eslint/js": "latest",
+		"@eslint/css": "^0.14.1",
+		"@eslint/js": "^9.39.2",
 		"@types/lodash": "^4.17.21",
 		"@types/node": "latest",
 		"@typescript-eslint/eslint-plugin": "latest",
@@ -21,8 +22,9 @@
 		"builtin-modules": "latest",
 		"esbuild": "latest",
 		"esbuild-svelte": "^0.9.3",
-		"eslint": "^8.57.1",
-		"eslint-plugin-svelte": "^3.13.0",
+		"eslint": "^9.39.2",
+		"eslint-plugin-obsidianmd": "^0.1.9",
+		"eslint-plugin-svelte": "^3.14.0",
 		"globals": "^16.5.0",
 		"obsidian": "latest",
 		"rollup-plugin-svelte": "^7.2.3",
@@ -30,7 +32,8 @@
 		"svelte-check": "^4.3.4",
 		"svelte-preprocess": "^6.0.3",
 		"tslib": "latest",
-		"typescript": "latest"
+		"typescript": "latest",
+		"typescript-eslint": "^8.54.0"
 	},
 	"dependencies": {
 		"@napolab/alpha-blend": "^2.0.0",
@@ -44,7 +47,6 @@
 		"prettier": "^3.7.4",
 		"rollup-plugin-css-only": "^4.5.5",
 		"svelte-canvas": "^2.1.0",
-		"ts-pattern": "^5.9.0",
-		"typescript-eslint": "^8.48.1"
+		"ts-pattern": "^5.9.0"
 	}
 }
