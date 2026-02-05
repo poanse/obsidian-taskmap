@@ -43,7 +43,7 @@
 	});
 
 	function handleKey(e: KeyboardEvent) {
-		console.log('handleKey ', e.key);
+		console.debug('handleKey ', e.key);
 		if (e.key === "Escape") {
 			context.setSelectedTaskId(-1);
 			context.cancelReparenting();
@@ -79,7 +79,7 @@
 	}
 	
 	function onpointermove(e: PointerEvent) {
-		console.log('handlePointerMove', e.pointerId, e.button);
+		console.debug('handlePointerMove', e.pointerId, e.button);
 		if (context.draggedTaskId != NoTaskId) {
 			context.taskDraggingManager.onPointerMove(e);
 			if (context.taskDraggingManager.isDragging) {
@@ -104,13 +104,13 @@
 	}
 	
 	function onpointerup(e: PointerEvent) {
-		console.log('handlePointerUp', e.pointerId, e.button);
+		console.debug('handlePointerUp', e.pointerId, e.button);
 		if (draggingManager.isDragging) {
 			// Release the pointer capture
 			(e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
 		} else if (e.button as MouseDown == MouseDown.LEFT) {
-			console.log(`Window clicked + ${context.serializeForDebugging()}`);
-			console.log('selectedTaskId ' + context.selectedTaskId);
+			console.debug(`Window clicked + ${context.serializeForDebugging()}`);
+			console.debug('selectedTaskId ' + context.selectedTaskId);
 			context.pressedButtonCode = -1;
 			context.setSelectedTaskId(-1);
 			context.cancelReparenting();

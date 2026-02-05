@@ -136,9 +136,9 @@ export default class TextInput extends Container {
 	}
 
 	focus() {
-		console.log("focus called");
+		console.debug("focus called");
 		if (this._substituted && !this.dom_visible) {
-			console.log("dom input visible: true");
+			console.debug("dom input visible: true");
 			this._setDOMInputVisible(true);
 		}
 
@@ -302,7 +302,7 @@ export default class TextInput extends Container {
 
 	_updateDOMInput() {
 		if (!this._canvas_bounds) {
-			console.log("No Canvas Bounds");
+			console.debug("No Canvas Bounds");
 			return;
 		}
 
@@ -313,7 +313,7 @@ export default class TextInput extends Container {
 		// transform.tx += 10;
 		// transform.ty += 50;
 		this._dom_input.style.transform = this._pixiMatrixToCSS(transform);
-		console.log(
+		console.debug(
 			JSON.stringify({
 				top: this._dom_input.style.top,
 				left: this._dom_input.style.left,
@@ -321,9 +321,9 @@ export default class TextInput extends Container {
 			}),
 		);
 		this._dom_input.style.opacity = this.worldAlpha;
-		console.log("Alpha", this.worldAlpha);
+		console.debug("Alpha", this.worldAlpha);
 		this._setDOMInputVisible(this.worldVisible && this._dom_visible);
-		console.log("world visible", this.worldVisible);
+		console.debug("world visible", this.worldVisible);
 
 		this._previous.canvas_bounds = this._canvas_bounds;
 		this._previous.world_transform = this.worldTransform.clone();
@@ -600,10 +600,10 @@ export default class TextInput extends Container {
 	}
 
 	_getCanvasBounds() {
-		console.log("getting bounds");
+		console.debug("getting bounds");
 		// let rect = this._last_renderer.view.getBoundingClientRect();
 		let rect = this._last_renderer.view.screen;
-		console.log(`Bounds: ${JSON.stringify(rect)}`);
+		console.debug(`Bounds: ${JSON.stringify(rect)}`);
 		let bounds = {
 			top: rect.top,
 			left: rect.left,
@@ -645,7 +645,7 @@ export default class TextInput extends Container {
 		let canvas_bounds = this._last_renderer.view.screen;
 		let matrix = this.worldTransform.clone();
 
-		console.log(JSON.stringify(matrix));
+		console.debug(JSON.stringify(matrix));
 		matrix.scale(this._resolution, this._resolution);
 		matrix.scale(
 			canvas_bounds.width / this._last_renderer.width,

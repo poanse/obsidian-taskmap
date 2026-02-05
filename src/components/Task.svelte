@@ -50,12 +50,12 @@
 	}
 
 	function onPointerUp(event: PointerEvent) {
-		console.log(`Task clicked ${taskId}`);
+		console.debug(`Task clicked ${taskId}`);
 		if (context.taskDraggingManager.isDragging) {
 			return;
 		}
 		if (context.chosenBlockedId !== NoTaskId) {
-			console.log('Task click add blocker branch');
+			console.debug('Task click add blocker branch');
 			if ( context.isValidBlockerTarget(taskId)){
 				const blockerPair = {blocked: context.chosenBlockedId, blocker: taskId};
 				if (context.projectData.containsBlockerPair(blockerPair)) {
@@ -67,7 +67,7 @@
 			}
 		}
 		else if (context.chosenBlockerId !== NoTaskId) {
-			console.log('Task click add blocked branch');
+			console.debug('Task click add blocked branch');
 			if (context.isValidBlockedTarget(taskId)) {
 				const blockerPair = {blocked: taskId, blocker: context.chosenBlockerId};
 				if (context.projectData.containsBlockerPair(blockerPair)) {

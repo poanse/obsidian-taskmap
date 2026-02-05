@@ -40,17 +40,17 @@ export default class TaskmapPlugin extends Plugin {
 		// // If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// // Using this function will automatically remove the event listener when this plugin is disabled.
 		// this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-		// 	console.log('click', evt);
+		// 	console.debug('click', evt);
 		// });
 
 		// // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		// this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		// this.registerInterval(window.setInterval(() => console.debug('setInterval'), 5 * 60 * 1000));
 
 		this.registerEvent(
 			this.app.vault.on(
 				"rename",
 				async (file: TAbstractFile, oldPath: string) => {
-					console.log(`${file.path} renamed`);
+					console.debug(`${file.path} renamed`);
 					if (file instanceof TFile) {
 						await this.handleRenameFiles(
 							this.app,
@@ -90,7 +90,7 @@ export default class TaskmapPlugin extends Plugin {
 
 		// update paths in taskmap files
 		for (const taskmapFile of taskmapFiles) {
-			console.log(`handling ${taskmapFile.path}`);
+			console.debug(`handling ${taskmapFile.path}`);
 			const projectDataRaw = await this.app.vault.read(taskmapFile);
 			const projectData = deserializeProjectData(
 				this.app,
@@ -105,11 +105,11 @@ export default class TaskmapPlugin extends Plugin {
 					mapping.set(t.path, t);
 				}
 			});
-			console.log("mapping " + JSON.stringify(mapping.keys()));
+			console.debug("mapping " + JSON.stringify(mapping.keys()));
 			let changed = false;
 			changedMdFiles.forEach((mdFile) => {
 				if (mdFile.path.contains("testNote")) {
-					console.log(`testNode filepath ${mdFile.path}`);
+					console.debug(`testNode filepath ${mdFile.path}`);
 				}
 				if (mapping.has(mdFile.path)) {
 					const t = mapping.get(mdFile.path)!;
@@ -118,12 +118,12 @@ export default class TaskmapPlugin extends Plugin {
 				}
 			});
 			if (changed) {
-				console.log(`${taskmapFile.path} changed`);
+				console.debug(`${taskmapFile.path} changed`);
 				// resave file on the file system
 				await updateFile(app, taskmapFile, projectData);
 				updatedTaskMapFilePaths.add(taskmapFile.path);
 			} else {
-				console.log(`${taskmapFile.path} not changed`);
+				console.debug(`${taskmapFile.path} not changed`);
 			}
 		}
 

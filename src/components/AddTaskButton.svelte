@@ -10,7 +10,7 @@
 	let entered = $state(false);
 
 	function addButtonPressed(event: PointerEvent) {
-		console.log('addButtonPressed');
+		console.debug('addButtonPressed');
 		context.addTask(taskId);
 		context.finishTaskDragging(event);
 		event.stopPropagation();

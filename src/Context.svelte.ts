@@ -379,7 +379,7 @@ export class Context {
 	public save() {
 		const x = this.view;
 		x.debouncedSave();
-		console.log("saved");
+		console.debug("saved");
 	}
 
 	public addTask(parentId: TaskId): void {
@@ -409,7 +409,7 @@ export class Context {
 	}
 
 	public changeStatus(status: StatusCode) {
-		console.log(
+		console.debug(
 			`changeStatus from ${this.toolbarStatus} to ${status} for task ${this.selectedTaskId}`,
 		);
 		this.projectData.setTaskStatus(this.selectedTaskId, status);

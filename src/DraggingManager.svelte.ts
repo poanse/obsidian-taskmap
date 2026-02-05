@@ -15,7 +15,7 @@ export class DraggingManager {
 	}
 
 	public onPointerDown = (e: PointerEvent) => {
-		console.log("DraggingManager pointerDown");
+		console.debug("DraggingManager pointerDown");
 		this.mouseDown = e.button as MouseDown;
 		if (this.mouseCodes.contains(this.mouseDown)) {
 			this.startX = e.clientX;
@@ -28,7 +28,7 @@ export class DraggingManager {
 	};
 
 	public onPointerUp = (e: PointerEvent) => {
-		console.log(`DraggingManager pointerUp: ${this.deltaX}`);
+		console.debug(`DraggingManager pointerUp: ${this.deltaX}`);
 		this.mouseDown = MouseDown.NONE;
 		this.isDragging = false;
 		this.deltaX = 0;

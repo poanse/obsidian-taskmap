@@ -57,7 +57,7 @@
 			return;
 		}
 		context.finishTaskDragging(e);
-		console.log('task text clicked');
+		console.debug('task text clicked');
 		if (context.isSelected(taskId)) {
 			e.stopPropagation();
 			toggleEdit();
