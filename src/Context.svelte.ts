@@ -440,8 +440,8 @@ export class Context {
 		const filepath = this.filePathFromTask(taskId);
 
 		try {
-			let abstractFile = this.app.vault.getAbstractFileByPath(filepath);
-			let tfile: TFile =
+			const abstractFile = this.app.vault.getAbstractFileByPath(filepath);
+			const tfile: TFile =
 				abstractFile instanceof TFile
 					? abstractFile
 					: await this.app.vault.create(

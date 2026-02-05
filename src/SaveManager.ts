@@ -22,5 +22,5 @@ export async function updateFile(
 	file: TFile,
 	projectData: ProjectData,
 ) {
-	await app.vault.modify(file!, serializeProjectData(projectData));
+	await app.vault.modify(file, serializeProjectData(projectData));
 }

@@ -40,6 +40,7 @@
 		"@panzoom/panzoom": "^4.6.1",
 		"@rollup/plugin-node-resolve": "^16.0.3",
 		"autobind-decorator": "^2.4.0",
+		"eslint-config-prettier": "^10.1.8",
 		"esm-env": "^1.2.2",
 		"lodash": "^4.17.21",
 		"lucide-svelte": "^0.562.0",

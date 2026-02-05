@@ -91,7 +91,7 @@ export class ProjectData {
 		const tasks = [taskId];
 		const result: TaskId[] = [];
 		while (tasks.length > 0) {
-			let task = tasks.pop();
+			const task = tasks.pop();
 			if (task === undefined) {
 				break;
 			}
@@ -132,7 +132,7 @@ export class ProjectData {
 	public getTask(taskId: number) {
 		const res = this.tasks.find((t) => t.taskId == taskId);
 		if (res) {
-			return res!;
+			return res;
 		} else {
 			throw new Error(`No task found with id ${taskId}`);
 		}
@@ -152,11 +152,11 @@ export class ProjectData {
 	}
 
 	public getTaskStatus(taskId: number) {
-		return this.getTask(taskId)!.status;
+		return this.getTask(taskId).status;
 	}
 
 	public getTaskName(taskId: number) {
-		return this.getTask(taskId)!.name;
+		return this.getTask(taskId).name;
 	}
 
 	public setTaskStatus(taskId: number, status: StatusCode) {

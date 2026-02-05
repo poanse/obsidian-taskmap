@@ -1,6 +1,6 @@
 ﻿<script lang="ts">
 	import {Context} from "../Context.svelte.js";
-	import {classStringFromStatusCode, IconCode, StatusCode} from "../types";
+	import {classStringFromStatusCode} from "../types";
 	import TaskText from "./TaskText.svelte";
 	import AddTaskButton from "./AddTaskButton.svelte";
 	import HideBranchButton from "./HideBranchButton.svelte";
@@ -38,7 +38,7 @@
 	// derived here is a must
 	let isSelected = $derived(context.isSelected(taskId));
 
-	function finishEditing(success: boolean) {
+	function finishEditing() {
 		const selection = window.getSelection();
 		if (selection) {
 			selection.removeAllRanges()
@@ -134,7 +134,7 @@
 					e.stopPropagation();
 				}}
 				onpointerup={onPointerUp}
-				onblur={() => finishEditing(true)}
+				onblur={() => finishEditing()}
 				role="presentation"
 			>
 				<TaskText

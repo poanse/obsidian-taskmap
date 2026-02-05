@@ -7,7 +7,10 @@ import {
 	TFolder,
 } from "obsidian";
 import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
-import { DEFAULT_SETTINGS, type PluginSettings } from "./PluginSettings";
+import {
+	DEFAULT_SETTINGS,
+	type TaskmapPluginSettings,
+} from "./TaskmapPluginSettings";
 import { TaskmapSettingTab } from "./TaskmapSettingTab";
 import { DEFAULT_DATA } from "./ProjectData.svelte";
 import { LOGO_CONTENT, LOGO_NAME } from "./IconService";
@@ -18,7 +21,7 @@ import { generateMarkdownLink } from "./LinkManager";
 export const FILE_EXTENSION = "taskmap";
 
 export default class TaskmapPlugin extends Plugin {
-	settings: PluginSettings;
+	settings: TaskmapPluginSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -30,7 +33,7 @@ export default class TaskmapPlugin extends Plugin {
 
 		// This creates an icon in the left ribbon.
 		addIcon(LOGO_NAME, LOGO_CONTENT);
-		this.addRibbonIcon(LOGO_NAME, "Taskmap Plugin", (_evt: MouseEvent) => {
+		this.addRibbonIcon(LOGO_NAME, "New taskmap", (_evt: MouseEvent) => {
 			this.createAndOpenDrawing();
 		});
 
@@ -86,7 +89,7 @@ export default class TaskmapPlugin extends Plugin {
 			.getFiles()
 			.filter((file) => file.path.endsWith(".taskmap"));
 
-		let updatedTaskMapFilePaths: Set<string> = new Set<string>();
+		const updatedTaskMapFilePaths: Set<string> = new Set<string>();
 
 		// update paths in taskmap files
 		for (const taskmapFile of taskmapFiles) {
@@ -169,7 +172,7 @@ export default class TaskmapPlugin extends Plugin {
 			{},
 			DEFAULT_SETTINGS,
 			await this.loadData(),
-		);
+		) as TaskmapPluginSettings;
 	}
 
 	async saveSettings() {

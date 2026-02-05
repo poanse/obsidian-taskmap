@@ -1,14 +1,22 @@
 // eslint.config.mjs
-import tsparser from "@typescript-eslint/parser";
+import ts from "typescript-eslint";
 import { defineConfig } from "eslint/config";
 import obsidianmd from "eslint-plugin-obsidianmd";
+import svelte from "eslint-plugin-svelte";
+import prettier from "eslint-config-prettier";
+import js from "@eslint/js";
 
 export default defineConfig([
 	...obsidianmd.configs.recommended,
+	js.configs.recommended,
+	...ts.configs.recommended,
+	...svelte.configs["flat/recommended"],
+	prettier,
+	...svelte.configs["flat/prettier"],
 	{
-		files: ["**/*.ts"],
+		files: ["**/*.ts", "**/*.svelte"],
 		languageOptions: {
-			parser: tsparser,
+			parser: ts.parser,
 			parserOptions: { project: "./tsconfig.json" },
 		},
 
