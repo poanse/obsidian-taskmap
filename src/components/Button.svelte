@@ -1,6 +1,6 @@
 ﻿<script lang="ts">
 	import type {Context} from "../Context.svelte.js";
-	import {classStringFromStatusCode, IconCode, isStatusCode, toStatusCode} from "../types";
+	import {classStringFromStatusCode, IconCode, isStatusCode, StatusCode, toStatusCode} from "../types";
 	import {
 		Circle,
 		KeyRound,
@@ -46,9 +46,10 @@
 	}
 
 	let isButtonDisabled = $derived(
-		(context.isReparentingOn() && [IconCode.LOCK, IconCode.KEY].contains(iconCode))
-		|| (context.chosenBlockerId !== NoTaskId && [IconCode.REPARENT].contains(iconCode))
-		|| (context.chosenBlockedId !== NoTaskId && [IconCode.REPARENT].contains(iconCode))
+		[IconCode.LOCK, IconCode.KEY].contains(iconCode) && context.isReparentingOn()
+		|| [IconCode.LOCK, IconCode.KEY].contains(iconCode) && context.versionedData.getTask(context.selectedTaskId).status == StatusCode.DONE
+		|| (iconCode == IconCode.REPARENT && context.chosenBlockerId !== NoTaskId)
+		|| (iconCode == IconCode.REPARENT && context.chosenBlockedId !== NoTaskId)
 		|| (iconCode === IconCode.STATUS_DONE && context.versionedData.isTaskBlocked(context.selectedTaskId))
 	);
 	
