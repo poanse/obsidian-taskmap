@@ -385,7 +385,6 @@ export class Context {
 	}
 
 	public getCurrentTaskPosition(taskId: number) {
-		// TODO: ошибка при реверте удаления таски. Нет таски среди taskPositions. Вызов через Connection
 		return this.taskPositions.find((t) => t.taskId === taskId)!.tween!
 			.current;
 	}
@@ -485,28 +484,15 @@ export class Context {
 			rootLeaves.push(leaf);
 		});
 
-		const anotherLeaf = rootLeaves.reverse().find((leaf) => {
-			return leaf !== activeLeaf;
-		});
 		const anotherUnpinnedLeaf = rootLeaves.reverse().find((leaf) => {
 			return leaf !== activeLeaf && !leaf.getViewState().pinned;
 		});
 
 		if (anotherUnpinnedLeaf) {
-			// Reuse the unpinned secondary pane
 			await anotherUnpinnedLeaf.openFile(file);
 			workspace.setActiveLeaf(anotherUnpinnedLeaf, { focus: true });
-		} else if (anotherLeaf) {
-			workspace.setActiveLeaf(anotherLeaf, { focus: true });
-			const newLeaf = workspace.getLeaf("tab");
-			await newLeaf.openFile(file);
-			if (activeLeaf !== null) {
-				workspace.setActiveLeaf(activeLeaf);
-			}
 		} else {
-			// 3. If no reusable leaf exists (all are pinned or only one exists), create a split
-			// This will create a new vertical pane that is unpinned by default
-			const newLeaf = workspace.getLeaf("split", "vertical");
+			const newLeaf = workspace.getLeaf("tab");
 			await newLeaf.openFile(file);
 		}
 	}
