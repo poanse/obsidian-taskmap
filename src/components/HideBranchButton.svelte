@@ -6,11 +6,11 @@
 
 	const { taskId, context }: { taskId: number, context: Context } = $props();
 
-	let taskData = $derived(context.projectData.getTask(taskId));
+	let taskData = $derived(context.versionedData.getTask(taskId));
 	let entered = $state(false);
 
 	function hidePressed(event: PointerEvent) {
-		context.projectData.toggleHidden(taskId);
+		context.versionedData.toggleHidden(taskId);
 		event.stopPropagation();
 		context.finishTaskDragging(event, true);
 	}

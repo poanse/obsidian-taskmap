@@ -2,11 +2,10 @@
 	import { TASK_SIZE } from "../Constants";
 	import { StatusCode } from "../types";
 	import { Context } from "../Context.svelte.js";
-	import {NoTaskId} from "../NodePositionsCalculator";
 
 	const { taskId, context }: { taskId: number, context: Context } = $props();
 
-	let taskData = $derived(context.projectData.getTask(taskId));
+	let taskData = $derived(context.versionedData.getTask(taskId));
 	let entered = $state(false);
 
 	function addButtonPressed(event: PointerEvent) {

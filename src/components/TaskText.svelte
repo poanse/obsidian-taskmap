@@ -1,10 +1,9 @@
 ﻿<script lang="ts">
 	import {onMount, tick} from "svelte";
-	import {App, Component, MarkdownRenderer} from "obsidian";
+	import {Component, MarkdownRenderer} from "obsidian";
 	import {LinkSuggest} from "../LinkSuggest";
 	import type {Context} from "../Context.svelte.js";
 	import {getFromRelativePath, isLink} from "../LinkManager";
-	import type {TaskData} from "../types";
 	import {NoTaskId} from "../NodePositionsCalculator";
 
 	// PROPS
@@ -12,16 +11,14 @@
 		taskId,
 		isUnselected,
 		context,
-		app,
 	}: {
 		taskId: number,
 		isUnselected: boolean,
 		context: Context,
-		app: App;
 	} = $props();
 
 	// STATE
-	let taskData = context.projectData.getTask(taskId);
+	let taskData = context.versionedData.getTask(taskId);
 	let isSelected = $derived(context.isSelected(taskId));
 	let isEditing = $derived(context.editingTaskId === taskId);
 	let suggest: LinkSuggest | null = null;
@@ -84,7 +81,7 @@
 
 		if (link) {
 			// Trigger the native hover preview
-			app.workspace.trigger("hover-link", {
+			context.app.workspace.trigger("hover-link", {
 				event: e,
 				source: "preview",
 				hoverParent: textPreviewEl,
@@ -99,7 +96,7 @@
 		textPreviewEl.empty(); // Clear previous render
 		const content = taskData.name;
 		await MarkdownRenderer.render(
-			app,
+			context.app,
 			content,
 			textPreviewEl,
 			"",
@@ -120,7 +117,7 @@
 		await tick();
 		if (textEditEl) {
 			textEditEl.focus();
-			suggest = new LinkSuggest(app, textEditEl);
+			suggest = new LinkSuggest(context.app, textEditEl);
 		}
 	}
 
@@ -147,20 +144,20 @@
 		if (textEditEl === null) {
 			return;
 		}
-		taskData.name = textEditEl.value;
+		let path;
 		if (isLink(taskData.name)) {
 			const file = context.linkManager.getFromLink(taskData.name);
 			if (file === null) {
 				throw new Error(`Link [${taskData.name}] points to a nonexistent file`);
 			}
-			taskData.path = file.path;
+			path = file.path;
 		} else {
-			taskData.path = undefined;
+			path = undefined;
 		}
+		context.versionedData.setName(taskId, textEditEl.value, path);
 		context.save();
 	}
 </script>
-
 
 <div
 	class="task-text-container"

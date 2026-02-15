@@ -1,5 +1,5 @@
 ﻿<script lang="ts">
-	import {onMount} from "svelte";
+	import {onMount, tick} from "svelte";
 	import Toolbar from "./Toolbar.svelte";
 	import Task from "./Task.svelte";
 	import Panzoom, {type PanzoomObject} from '@panzoom/panzoom'
@@ -18,7 +18,6 @@
 	let panzoom: PanzoomObject | null = null;
 	let panstart: Vector2 = {x: 0, y: 0};
 	let draggingManager = new DraggingManager([MouseDown.MIDDLE, MouseDown.LEFT]);
-	
 	
 	onMount(async () => {
 		if (!sceneEl) {
@@ -42,15 +41,33 @@
 		});
 	});
 
-	function handleKey(e: KeyboardEvent) {
+	async function handleKey(e: KeyboardEvent) {
 		console.debug('handleKey ', e.key);
 		if (e.key === "Escape") {
-			context.setSelectedTaskId(-1);
+			context.setSelectedTaskId(NoTaskId);
 			context.cancelReparenting();
 			context.chosenBlockerId = NoTaskId;
 			context.chosenBlockedId = NoTaskId;
 			e.stopPropagation();
+			return;
+		} else if (e.key === "Delete") {
+			if (context.selectedTaskId !== NoTaskId) {
+				context.versionedData.removeTaskSingle(context.selectedTaskId);
+				context.selectedTaskId = NoTaskId;
+			}
+		} else if (e.ctrlKey && e.key === "z") {
+			context.versionedData.undo();
+		} else if (e.ctrlKey && e.key === "r") {
+			context.versionedData.redo();
+		} else {
+			return;
 		}
+		context.save();
+		context.incrementUpdateOnZoomCounter();// required for TaskText update
+		context.updateTaskPositions();
+		e.stopPropagation();
+		e.preventDefault();
+		await tick();
 	}
 	
 	function onwheel(e: WheelEvent) {
@@ -157,10 +174,10 @@
 				</defs>
 			</defs>
 			<g class="svg-group" bind:this={svgGroupEl}>
-				{#each (context.projectData.tasks
+				{#each (context.versionedData.getTasks()
 						.filter(t => !context.isTaskHidden(t.taskId))
 						.filter(t => t.taskId !== RootTaskId)
-						.filter(t => !context.projectData.isBranchHidden(t.taskId))
+						.filter(t => !context.versionedData.isBranchHidden(t.taskId))
 				) as task (task.taskId)}
 					<Connection
 						startTaskId={task.parentId}
@@ -177,7 +194,7 @@
 			tabindex="-1"
 			role="presentation"
 		>
-			{#each context.projectData.tasks.filter(t => !context.isTaskHidden(t.taskId)) as task (task.taskId)}
+			{#each context.versionedData.getTasks().filter(t => !context.isTaskHidden(t.taskId)) as task (task.taskId)}
 				<Task taskId={task.taskId} {context} coords={context.getCurrentTaskPosition(task.taskId)}/>
 			{/each}
 		</div>
@@ -192,12 +209,12 @@
 			</defs>
 			<g class="svg-group" bind:this={svgGroupEl}>
 				{#if context.chosenBlockerId !== NoTaskId || context.chosenBlockedId !== NoTaskId}
-					{#each (context.projectData.blockerPairs.filter(
+					{#each (context.versionedData.getBlockerPairs().filter(
 						p => p.blocker === context.chosenBlockerId || p.blocked === context.chosenBlockedId
 					).filter(
 						p => {
-							const blockedT = context.projectData.getTask(p.blocked);
-							const blockerT = context.projectData.getTask(p.blocker);
+							const blockedT = context.versionedData.getTask(p.blocked);
+							const blockerT = context.versionedData.getTask(p.blocker);
 							return blockedT.status !== StatusCode.DONE && blockerT.status !== StatusCode.DONE && !blockerT.deleted && !blockedT.deleted;
 						}
 					)) as pair}

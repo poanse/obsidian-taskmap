@@ -3,9 +3,9 @@
 	StatusCode,
 	type TaskData,
 	type TaskId,
-} from "./types";
-import { NoTaskId, RootTaskId } from "./NodePositionsCalculator";
-import { serializeProjectData } from "./SaveManager";
+} from "../types";
+import { NoTaskId, RootTaskId } from "../NodePositionsCalculator";
+import { serializeProjectData } from "../SaveManager";
 
 export class ProjectData {
 	tasks = $state(new Array<TaskData>());
@@ -45,46 +45,6 @@ export class ProjectData {
 			hidden: false,
 		});
 		this.curTaskId++;
-	}
-
-	public addTask(parentId: TaskId) {
-		const childrenCount = this.getChildren(parentId).length;
-		const id = this.curTaskId;
-		this.tasks.push({
-			taskId: id,
-			parentId: parentId,
-			status: StatusCode.READY,
-			name: "default",
-			deleted: false,
-			hidden: false,
-			priority: childrenCount,
-			depth: this.getTask(parentId).depth + 1,
-		});
-		this.curTaskId++;
-		this.recalculateStatusRecursive(parentId);
-		return id;
-	}
-
-	public removeTaskSingle(id: number) {
-		const task = this.getTask(id);
-		const parentTask = this.getTask(task.parentId);
-		task.deleted = true;
-		this.getChildren(id).forEach((taskId) => {
-			const t = this.getTask(taskId);
-			t.parentId = parentTask.taskId;
-			t.depth = parentTask.depth + 1;
-		});
-		this.recalcPriorities(task.parentId);
-		this.recalculateStatusRecursive(task.parentId);
-	}
-
-	public removeTaskBranch(id: number) {
-		this.getDescendantIds(id).forEach(
-			(taskId) => (this.getTask(taskId).deleted = true),
-		);
-		const parentId = this.getTask(id).parentId;
-		this.recalcPriorities(parentId);
-		this.recalculateStatusRecursive(parentId);
 	}
 
 	public getDescendantIds(taskId: number, includeDeleted: boolean = false) {
@@ -142,42 +102,19 @@ export class ProjectData {
 		return this.getTask(taskId).deleted;
 	}
 
-	public isBranchHidden(id: number) {
-		return this.getAncestors(id).some((t) => t.hidden);
-	}
-
-	public toggleHidden(id: number) {
-		const task = this.getTask(id);
-		task.hidden = !task.hidden;
-	}
-
-	public getTaskStatus(taskId: number) {
-		return this.getTask(taskId).status;
-	}
-
-	public getTaskName(taskId: number) {
-		return this.getTask(taskId).name;
-	}
-
-	public setTaskStatus(taskId: number, status: StatusCode) {
-		const task = this.getTask(taskId);
-		task.status = status;
-		this.recalculateStatusRecursive(task.parentId);
-	}
-
 	public changeParent(taskId: TaskId, newParentId: TaskId) {
 		const taskData = this.getTask(taskId);
 		const oldParentId = taskData.parentId;
 		taskData.parentId = newParentId;
-		this.recalculateStatusRecursive(oldParentId);
-		this.recalculateStatusRecursive(newParentId);
+		this.recalcStatusRecursive(oldParentId);
+		this.recalcStatusRecursive(newParentId);
 		[taskId, ...this.getDescendantIds(taskId)].forEach((taskId) => {
 			const task = this.getTask(taskId);
 			task.depth = this.getTask(task.parentId).depth + 1;
 		});
 	}
 
-	public recalculateStatusRecursive(taskId: TaskId) {
+	public recalcStatusRecursive(taskId: TaskId) {
 		if (taskId == RootTaskId) {
 			return;
 		}
@@ -186,7 +123,7 @@ export class ProjectData {
 			return;
 		}
 		task.status = this.calculateStatus(taskId);
-		this.recalculateStatusRecursive(task.parentId);
+		this.recalcStatusRecursive(task.parentId);
 	}
 
 	public calculateStatus(taskId: TaskId) {
@@ -208,13 +145,6 @@ export class ProjectData {
 			return StatusCode.READY;
 		} else {
 			return StatusCode.READY;
-		}
-	}
-
-	public setTaskName(taskId: number, name: string) {
-		const task = this.getTask(taskId);
-		if (task) {
-			task.name = name;
 		}
 	}
 

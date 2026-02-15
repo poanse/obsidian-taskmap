@@ -12,7 +12,7 @@
 	} = $props();
 
 	function isStartTaskDepthLE(start: TaskId, end: TaskId){
-		return context.projectData.getTask(start).depth <= context.projectData.getTask(end).depth;
+		return context.versionedData.getTask(start).depth <= context.versionedData.getTask(end).depth;
 	}
 
 	function getConnectionPointShift(start: TaskId, end: TaskId) {

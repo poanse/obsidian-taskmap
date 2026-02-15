@@ -21,7 +21,7 @@
 	}: {
 		iconCode: IconCode,
 		context: Context,
-		text: string
+		text?: string
 	} = $props();
 
 	let isPressedDown = $state(false);
@@ -49,7 +49,7 @@
 		(context.isReparentingOn() && [IconCode.LOCK, IconCode.KEY].contains(iconCode))
 		|| (context.chosenBlockerId !== NoTaskId && [IconCode.REPARENT].contains(iconCode))
 		|| (context.chosenBlockedId !== NoTaskId && [IconCode.REPARENT].contains(iconCode))
-		|| (iconCode === IconCode.STATUS_DONE && context.isTaskBlocked(context.selectedTaskId))
+		|| (iconCode === IconCode.STATUS_DONE && context.versionedData.isTaskBlocked(context.selectedTaskId))
 	);
 	
 	function onpointerup(event: MouseEvent) {

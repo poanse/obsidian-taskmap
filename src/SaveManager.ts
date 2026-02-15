@@ -1,4 +1,4 @@
-﻿import { ProjectData } from "./ProjectData.svelte";
+﻿import { ProjectData } from "./data/ProjectData.svelte.js";
 import type { App, TFile } from "obsidian";
 
 export function serializeProjectData(projectData: ProjectData) {

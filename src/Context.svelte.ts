@@ -1,5 +1,4 @@
 ﻿import TaskmapPlugin from "./main";
-import type { ProjectData } from "./ProjectData.svelte.js";
 import {
 	type BlockerPair,
 	MouseDown,
@@ -24,6 +23,7 @@ import {
 } from "./NodePositionsCalculator";
 import { DraggingManager } from "./DraggingManager.svelte";
 import { delink, LinkManager, tasknameFromFilePath } from "./LinkManager";
+import { VersionedData } from "./data/VersionedData";
 
 export class Context {
 	app: App;
@@ -40,7 +40,7 @@ export class Context {
 	chosenBlockedId = $state(NoTaskId);
 	toolbarStatus = $state(StatusCode.DRAFT);
 	reparentingTaskId = $state(NoTaskId);
-	projectData: ProjectData;
+	versionedData: VersionedData;
 	positions: Map<TaskId, Vector2>;
 	taskPositions: Array<{
 		taskId: TaskId;
@@ -58,7 +58,7 @@ export class Context {
 	constructor(
 		plugin: TaskmapPlugin,
 		view: TaskmapView,
-		projectData: ProjectData,
+		projectData: VersionedData,
 		app: App,
 		nodePositionsCalculator: NodePositionsCalculator,
 	) {
@@ -66,54 +66,26 @@ export class Context {
 		this.view = view;
 		this.nodePositionsCalculator = nodePositionsCalculator;
 		this.app = app;
-		this.projectData = projectData;
+		this.versionedData = projectData;
 		this.linkManager = new LinkManager(app);
 
-		this.taskPositions = projectData.tasks
-			.filter((t) => !t.deleted)
-			.map((task) => {
-				return {
-					taskId: task.taskId,
-					tween: null,
-				};
-			});
+		this.taskPositions = projectData.getTasks().map((task) => {
+			return {
+				taskId: task.taskId,
+				tween: null,
+			};
+		});
 		this.updateTaskPositions();
 	}
 
-	public isTaskBlocked(taskId: TaskId) {
-		if (this.projectData.getTask(taskId).status === StatusCode.DONE) {
-			return false;
-		}
-		return this.projectData.blockerPairs
-			.filter((p) => p.blocked === taskId)
-			.some(
-				(p) =>
-					this.projectData.getTask(p.blocker).status !==
-					StatusCode.DONE,
-			);
-	}
-
-	public isTaskBlocking(taskId: TaskId) {
-		if (this.projectData.getTask(taskId).status === StatusCode.DONE) {
-			return false;
-		}
-		return this.projectData.blockerPairs
-			.filter((p) => p.blocker === taskId)
-			.some(
-				(p) =>
-					this.projectData.getTask(p.blocked).status !==
-					StatusCode.DONE,
-			);
-	}
-
 	public isBlockerHighlighted = (taskId: TaskId) => {
-		if (this.projectData.getTask(taskId).status === StatusCode.DONE) {
+		if (this.versionedData.getTask(taskId).status === StatusCode.DONE) {
 			return false;
 		}
 		if (this.chosenBlockedId !== NoTaskId) {
 			return (
 				this.chosenBlockedId === taskId ||
-				this.projectData.containsBlockerPair({
+				this.versionedData.containsBlockerPair({
 					blocked: this.chosenBlockedId,
 					blocker: taskId,
 				})
@@ -121,7 +93,7 @@ export class Context {
 		} else if (this.chosenBlockerId !== NoTaskId) {
 			return (
 				this.chosenBlockerId === taskId ||
-				this.projectData.containsBlockerPair({
+				this.versionedData.containsBlockerPair({
 					blocked: taskId,
 					blocker: this.chosenBlockerId,
 				})
@@ -152,32 +124,11 @@ export class Context {
 		this.updateOnZoomCounter += 1;
 	}
 
-	public isTaskHidden(taskId: TaskId): boolean {
-		const task = this.projectData.getTask(taskId);
-		const ancestorTasks = this.projectData.getAncestors(taskId);
-
-		const focusedAncestorIds = this.projectData
-			.getAncestors(this.focusedTaskId)
-			.map((t) => t.taskId);
-		const focusedDescendantIds = this.projectData.getDescendantIds(
-			this.focusedTaskId,
-		);
-		return (
-			task.deleted ||
-			ancestorTasks.some((t) => t.hidden) ||
-			!(
-				task.taskId == this.focusedTaskId ||
-				focusedAncestorIds.contains(task.taskId) ||
-				focusedDescendantIds.contains(task.taskId)
-			)
-		);
-	}
-
 	public isValidBlockerTarget(taskId: TaskId) {
 		if (taskId === NoTaskId || this.chosenBlockedId === NoTaskId) {
 			return false;
 		}
-		if (this.projectData.getTask(taskId).status == StatusCode.DONE) {
+		if (this.versionedData.getTask(taskId).status == StatusCode.DONE) {
 			return false;
 		}
 		return this.isValidBlockerPairTarget({
@@ -190,7 +141,7 @@ export class Context {
 		if (taskId === NoTaskId || this.chosenBlockerId === NoTaskId) {
 			return false;
 		}
-		if (this.projectData.getTask(taskId).status == StatusCode.DONE) {
+		if (this.versionedData.getTask(taskId).status == StatusCode.DONE) {
 			return false;
 		}
 		return this.isValidBlockerPairTarget({
@@ -202,11 +153,11 @@ export class Context {
 	private isValidBlockerPairTarget(blockerPair: BlockerPair) {
 		return !(
 			blockerPair.blocked === blockerPair.blocker ||
-			this.projectData.isAncestorOf(
+			this.versionedData.isAncestorOf(
 				blockerPair.blocked,
 				blockerPair.blocker,
 			) ||
-			this.projectData.isDescendentOf(
+			this.versionedData.isDescendentOf(
 				blockerPair.blocked,
 				blockerPair.blocker,
 			)
@@ -225,16 +176,17 @@ export class Context {
 		this.reparentingTaskId = NoTaskId;
 	}
 
-	public isValidReparentingTarget(taskId: TaskId) {
+	public isValidReparentingTarget(candidate: TaskId) {
 		if (this.reparentingTaskId == NoTaskId) {
 			throw new Error("Incorrect state: reparentingTaskId expected");
 		}
+		const task = this.versionedData.getTask(this.reparentingTaskId);
 		return (
-			taskId != this.reparentingTaskId &&
-			!this.projectData
+			candidate != this.reparentingTaskId &&
+			candidate != task.parentId &&
+			!this.versionedData
 				.getDescendantIds(this.reparentingTaskId)
-				.contains(taskId) &&
-			this.projectData.getTask(this.reparentingTaskId).parentId != taskId
+				.contains(candidate)
 		);
 	}
 
@@ -242,7 +194,7 @@ export class Context {
 		if (this.reparentingTaskId == NoTaskId) {
 			throw new Error("Incorrect state: reparentingTaskId expected");
 		}
-		this.projectData.changeParent(this.reparentingTaskId, newParentId);
+		this.versionedData.changeParent(this.reparentingTaskId, newParentId);
 		this.updateTaskPositions();
 	}
 
@@ -256,7 +208,7 @@ export class Context {
 	}
 
 	public isAncestorOfHidden(taskId: TaskId): boolean {
-		return this.projectData
+		return this.versionedData
 			.getAncestors(this.focusedTaskId)
 			.map((t) => t.taskId)
 			.contains(taskId);
@@ -266,15 +218,15 @@ export class Context {
 		if (!draggingOnly) {
 			const newPositions =
 				this.nodePositionsCalculator.CalculatePositionsInGlobalFrame(
-					this.projectData.tasks.filter(
-						(t) => !this.isTaskHidden(t.taskId),
-					),
+					this.versionedData
+						.getTasks()
+						.filter((t) => !this.isTaskHidden(t.taskId)),
 					{ x: 0, y: 0 },
 				);
 			if (this.taskDraggingManager.isDragging) {
 				[
 					this.draggedTaskId,
-					...this.projectData.getDescendantIds(this.draggedTaskId),
+					...this.versionedData.getDescendantIds(this.draggedTaskId),
 				].forEach((t) => {
 					const v = this.positions.get(t);
 					if (v !== undefined) {
@@ -283,8 +235,20 @@ export class Context {
 				});
 			}
 			this.positions = newPositions;
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
+			const taskIdSet = new Set<TaskId>(
+				this.taskPositions.map((t) => t.taskId),
+			);
+			this.positions.forEach((v, k) => {
+				if (k != NoTaskId && !taskIdSet.has(k)) {
+					this.taskPositions.push({
+						taskId: k,
+						tween: null,
+					});
+				}
+			});
 			this.taskPositions = this.taskPositions.filter(
-				(t) => !this.projectData.getTask(t.taskId).deleted,
+				(t) => !this.versionedData.getTaskOption(t.taskId)?.deleted,
 			);
 			this.taskPositions.forEach((taskPos) => {
 				const newPos = this.positions.get(taskPos.taskId);
@@ -310,7 +274,7 @@ export class Context {
 				},
 				1 / this.scale,
 			);
-			const draggedTaskIds = this.projectData.getDescendantIds(
+			const draggedTaskIds = this.versionedData.getDescendantIds(
 				this.draggedTaskId,
 			);
 			this.taskPositions
@@ -341,12 +305,12 @@ export class Context {
 
 	private updateDraggedTaskPriority() {
 		// Если порядок тасок по оси Y отличается от приоритетов, то меняем приоритеты и пересчитываем порядок
-		const draggedParentId = this.projectData.getTask(
+		const draggedParentId = this.versionedData.getTask(
 			this.draggedTaskId,
 		).parentId;
 		const orderedSiblings = this.taskPositions
 			.filter((t) =>
-				this.projectData
+				this.versionedData
 					.getChildren(draggedParentId)
 					.contains(t.taskId),
 			)
@@ -355,11 +319,11 @@ export class Context {
 		const newPriority = orderedSiblings.findIndex(
 			(t) => t == this.draggedTaskId,
 		);
-		const oldPriority = this.projectData.getTask(
+		const oldPriority = this.versionedData.getTask(
 			this.draggedTaskId,
 		).priority;
 		if (newPriority != oldPriority) {
-			this.projectData.setPriority(this.draggedTaskId, newPriority);
+			this.versionedData.setPriority(this.draggedTaskId, newPriority);
 			return true;
 		}
 		return false;
@@ -372,7 +336,7 @@ export class Context {
 	public setSelectedTaskId(taskId: number) {
 		this.selectedTaskId = taskId;
 		if (taskId != -1) {
-			this.toolbarStatus = this.projectData.getTaskStatus(taskId);
+			this.toolbarStatus = this.versionedData.getTask(taskId).status;
 		}
 	}
 
@@ -383,26 +347,21 @@ export class Context {
 	}
 
 	public addTask(parentId: TaskId): void {
-		const id = this.projectData.addTask(parentId);
+		this.versionedData.addTask(parentId);
 		this.save();
-		this.taskPositions.push({
-			taskId: id,
-			tween: null,
-		});
 		this.updateTaskPositions();
 	}
 
 	public removeTaskSingle(id: number) {
 		this.setSelectedTaskId(-1);
-		this.projectData.removeTaskSingle(id);
-		// this.taskPositions = this.taskPositions.filter((t) => t.taskId !== id);
+		this.versionedData.removeTaskSingle(id);
 		this.updateTaskPositions();
 		this.save();
 	}
 
 	public removeTaskBranch(id: number) {
 		this.setSelectedTaskId(-1);
-		this.projectData.removeTaskBranch(id);
+		this.versionedData.removeTaskBranch(id);
 		// this.taskPositions = this.taskPositions.filter((t) => t.taskId !== id);
 		this.updateTaskPositions();
 		this.save();
@@ -412,22 +371,44 @@ export class Context {
 		console.debug(
 			`changeStatus from ${this.toolbarStatus} to ${status} for task ${this.selectedTaskId}`,
 		);
-		this.projectData.setTaskStatus(this.selectedTaskId, status);
+		this.versionedData.setStatus(this.selectedTaskId, status);
 		this.toolbarStatus = status;
 		this.view.debouncedSave();
 	}
 
 	public hideTaskBranch(id: number) {
-		this.projectData.getTask(id).hidden = true;
+		this.versionedData.setHidden(id, true);
 	}
 
 	public unhideTaskBranch(id: number) {
-		this.projectData.getTask(id).hidden = false;
+		this.versionedData.setHidden(id, false);
 	}
 
 	public getCurrentTaskPosition(taskId: number) {
+		// TODO: ошибка при реверте удаления таски. Нет таски среди taskPositions. Вызов через Connection
 		return this.taskPositions.find((t) => t.taskId === taskId)!.tween!
 			.current;
+	}
+
+	public isTaskHidden(taskId: TaskId): boolean {
+		const task = this.versionedData.getTask(taskId);
+		const ancestorTasks = this.versionedData.getAncestors(taskId);
+
+		const focusedAncestorIds = this.versionedData
+			.getAncestors(this.focusedTaskId)
+			.map((t) => t.taskId);
+		const focusedDescendantIds = this.versionedData.getDescendantIds(
+			this.focusedTaskId,
+		);
+		return (
+			task.deleted ||
+			ancestorTasks.some((t) => t.hidden) ||
+			!(
+				task.taskId == this.focusedTaskId ||
+				focusedAncestorIds.contains(task.taskId) ||
+				focusedDescendantIds.contains(task.taskId)
+			)
+		);
 	}
 
 	/**
@@ -448,8 +429,11 @@ export class Context {
 							filepath,
 							`Created by Taskmap.`,
 						);
-			const task = this.projectData.getTask(taskId);
-			task.name = tasknameFromFilePath(filepath);
+			this.versionedData.setName(
+				taskId,
+				tasknameFromFilePath(filepath),
+				filepath,
+			);
 			this.save();
 			await this.openOrFocusNote(tfile);
 		} catch (error) {
@@ -461,7 +445,7 @@ export class Context {
 	}
 
 	public filePathFromTask(taskId: TaskId) {
-		const task = this.projectData.getTask(taskId);
+		const task = this.versionedData.getTask(taskId);
 		const taskName = task.name;
 		// Sanitize the name for Obsidian filenames
 		let sanitizedName = taskName.replace(/[\\/:*?"<>|]/g, "-");
@@ -532,7 +516,7 @@ export class Context {
 			pressedButtonIndex: this.pressedButtonCode,
 			selectedTaskId: this.selectedTaskId,
 			toolbarStatus: this.toolbarStatus,
-			projectData: this.projectData,
+			projectData: this.versionedData,
 		});
 	}
 }

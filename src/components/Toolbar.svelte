@@ -15,6 +15,7 @@
 		IconCode, StatusCode, type TaskId, toIconCode
 	} from "../types";
 	import {RootTaskId} from "../NodePositionsCalculator";
+	import {onMount} from "svelte";
 	
 	let {
 		taskId,
@@ -22,6 +23,16 @@
 	}: {taskId: TaskId,
 		context: Context} = $props();
 
+	let self: HTMLElement;
+	let viewport: HTMLElement;
+
+	onMount(() => {
+		viewport = self?.closest('.viewport') as HTMLElement;
+		return () => {
+			viewport.focus();
+		}
+	});
+	
 	let position = $derived(context.getCurrentTaskPosition(taskId));
 	
 	function getTop() {
@@ -30,7 +41,7 @@
 	function getLeft() {
 		return position.x + TASK_SIZE.width_hovered / 2;
 	}
-	let isLeafTask = $derived(context.projectData.getChildren(taskId).length === 0);
+	let isLeafTask = $derived(context.versionedData.getChildren(taskId).length === 0);
 	
 	let toolbarButtons = $derived(taskId == RootTaskId ? [
 		IconCode.CREATE_LINKED_NOTE,
@@ -59,7 +70,7 @@
 		StatusCode.DONE,
 	]: [
 		StatusCode.DRAFT,
-		context.projectData.calculateStatus(taskId)
+		context.versionedData.calculateStatus(taskId)
 	]).map(x => toIconCode(x)));
 	
 	let subtoolbarTopShift = (buttons: IconCode[]) => {
@@ -71,6 +82,7 @@
 	<div
 		class="toolbar"
 		class:no-pan={true}
+		bind:this={self}
 		in:fade|global={{ duration: 500 }}
 		out:fade|global={{ duration: 300 }}
 		onclick={(e) => e.stopPropagation()}

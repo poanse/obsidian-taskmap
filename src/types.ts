@@ -67,7 +67,7 @@ export const buttonTextFromIconCode = (code: IconCode) => {
 };
 
 export const toIconCode = (s: StatusCode) => {
-	return (s + IconCode.STATUS_DRAFT) as number as IconCode;
+	return (s + IconCode.STATUS_DRAFT) as IconCode;
 };
 
 export const toStatusCode = (s: IconCode) => {
@@ -92,7 +92,7 @@ export type TaskId = number;
 
 export type TaskData = {
 	name: string;
-	path?: string | undefined | null;
+	path?: string | undefined;
 	taskId: TaskId;
 	status: StatusCode;
 	deleted: boolean;

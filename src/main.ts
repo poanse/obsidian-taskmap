@@ -12,7 +12,7 @@ import {
 	type TaskmapPluginSettings,
 } from "./TaskmapPluginSettings";
 import { TaskmapSettingTab } from "./TaskmapSettingTab";
-import { DEFAULT_DATA } from "./ProjectData.svelte";
+import { DEFAULT_DATA } from "./data/ProjectData.svelte.js";
 import { LOGO_CONTENT, LOGO_NAME } from "./IconService";
 import type { TaskData } from "./types";
 import { deserializeProjectData, updateFile } from "./SaveManager";

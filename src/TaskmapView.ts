@@ -1,11 +1,13 @@
 import { debounce, TextFileView, TFile, WorkspaceLeaf } from "obsidian";
 import { mount, unmount } from "svelte";
-import { DEFAULT_DATA, ProjectData } from "./ProjectData.svelte";
+import { DEFAULT_DATA, ProjectData } from "./data/ProjectData.svelte.js";
 import { Context } from "./Context.svelte.js";
 import { NodePositionsCalculator } from "./NodePositionsCalculator";
 import TaskmapContainer from "./components/TaskmapContainer.svelte";
 import { deserializeProjectData, updateFile } from "./SaveManager";
 import type TaskmapPlugin from "./main";
+import { VersionedData } from "./data/VersionedData";
+import { HistoryManager } from "./data/HistoryManager";
 
 export const TASKMAP_VIEW_TYPE = "taskmap-view";
 
@@ -41,7 +43,7 @@ export class TaskmapView extends TextFileView {
 		this.context = new Context(
 			this.plugin,
 			this,
-			this.projectData,
+			new VersionedData(this.projectData, new HistoryManager()),
 			this.app,
 			new NodePositionsCalculator(),
 		);

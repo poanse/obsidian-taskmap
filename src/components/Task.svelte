@@ -17,7 +17,8 @@
 		coords: {x: number, y: number}
 	} = $props();
 	
-	let taskData = $derived(context.projectData.getTask(taskId));
+	
+	let taskData = $derived(context.versionedData.getTask(taskId));
 	// let coords = $derived(context.getTaskPosition(taskId));
 	let isHovered = $state(false);
 	let isBlockerHighlighted = $derived(
@@ -58,10 +59,10 @@
 			console.debug('Task click add blocker branch');
 			if ( context.isValidBlockerTarget(taskId)){
 				const blockerPair = {blocked: context.chosenBlockedId, blocker: taskId};
-				if (context.projectData.containsBlockerPair(blockerPair)) {
-					context.projectData.removeBlockerPair(blockerPair);
+				if (context.versionedData.containsBlockerPair(blockerPair)) {
+					context.versionedData.removeBlockerPair(blockerPair);
 				} else {
-					context.projectData.addBlockerPair(blockerPair);
+					context.versionedData.addBlockerPair(blockerPair);
 				}
 				context.save();
 			}
@@ -70,10 +71,10 @@
 			console.debug('Task click add blocked branch');
 			if (context.isValidBlockedTarget(taskId)) {
 				const blockerPair = {blocked: taskId, blocker: context.chosenBlockerId};
-				if (context.projectData.containsBlockerPair(blockerPair)) {
-					context.projectData.removeBlockerPair(blockerPair);
+				if (context.versionedData.containsBlockerPair(blockerPair)) {
+					context.versionedData.removeBlockerPair(blockerPair);
 				} else {
-					context.projectData.addBlockerPair(blockerPair);
+					context.versionedData.addBlockerPair(blockerPair);
 				}
 				context.save();
 			}
@@ -104,7 +105,7 @@
 	);
 </script>
 
-{#if !context.isTaskHidden(taskId) && !context.projectData.isBranchHidden(taskId)}
+{#if !context.isTaskHidden(taskId) && !context.versionedData.isBranchHidden(taskId)}
 	{#key context.updateOnZoomCounter}
 		<div
 			class="task-container"
@@ -141,7 +142,6 @@
 					{taskId}
 					{isUnselected}
 					{context}
-					app={context.app}
 				/>
 			</div>
 			{#if !context.taskDraggingManager.isDragging 
@@ -150,13 +150,13 @@
 				 && !(context.chosenBlockerId !== NoTaskId)}
 				<AddTaskButton {context} {taskId} />
 			{/if}
-			{#if (context.projectData.getChildren(taskId).length > 0)
+			{#if (context.versionedData.getChildren(taskId).length > 0)
 				 && !context.isReparentingOn()
 				 && !(context.chosenBlockedId !== NoTaskId)
 				 && !(context.chosenBlockerId !== NoTaskId)}
 				<HideBranchButton {context} {taskId} />
 			{/if}
-			{#if context.isTaskBlocking(taskId)}
+			{#if context.versionedData.isTaskBlocking(taskId)}
 				<div
 					class="icon-container"
 					style="
@@ -173,7 +173,7 @@
 					/>
 				</div>
 			{/if}
-			{#if context.isTaskBlocked(taskId)}
+			{#if context.versionedData.isTaskBlocked(taskId)}
 				<div
 					class="icon-container"
 					style="
