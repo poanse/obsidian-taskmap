@@ -1,5 +1,5 @@
 ﻿import { setTooltip } from "obsidian";
-import { IconCode } from "./types";
+import { IconCode, SettingsIconCode } from "./types";
 
 /**
  * Svelte Action to add an Obsidian-native tooltip to an element.
@@ -50,6 +50,19 @@ export function getTooltipText(code: IconCode) {
 			return "In progress";
 		case IconCode.STATUS_DONE:
 			return "Done";
+		default:
+			return "placeholder tooltip";
+	}
+}
+
+export function getTooltipTextSettings(code: SettingsIconCode) {
+	switch (code) {
+		case SettingsIconCode.SETTINGS_MENU:
+			return "WIP (Settings)";
+		case SettingsIconCode.SETTINGS_REDO:
+			return "Redo";
+		case SettingsIconCode.SETTINGS_UNDO:
+			return "Undo";
 		default:
 			return "placeholder tooltip";
 	}

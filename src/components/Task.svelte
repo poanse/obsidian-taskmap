@@ -6,6 +6,7 @@
 	import HideBranchButton from "./HideBranchButton.svelte";
 	import {NoTaskId} from "../NodePositionsCalculator";
 	import {KeyRound, LockKeyhole} from "lucide-svelte";
+	import {onMount} from "svelte";
 
 	const {
 		taskId,
@@ -17,6 +18,15 @@
 		coords: {x: number, y: number}
 	} = $props();
 	
+	let self: HTMLElement;
+	let viewport: HTMLElement;
+
+	onMount(() => {
+		viewport = self?.closest('.viewport') as HTMLElement;
+		return () => {
+			viewport.focus();
+		}
+	});
 	
 	let taskData = $derived(context.versionedData.getTask(taskId));
 	// let coords = $derived(context.getTaskPosition(taskId));
@@ -109,6 +119,7 @@
 	{#key context.updateOnZoomCounter}
 		<div
 			class="task-container"
+			bind:this={self}
 			style="
 				top: {coords.y}px;
 				left: {coords.x}px;
@@ -138,11 +149,7 @@
 				onblur={() => finishEditing()}
 				role="presentation"
 			>
-				<TaskText
-					{taskId}
-					{isUnselected}
-					{context}
-				/>
+				<TaskText {taskId} {isUnselected} {context}/>
 			</div>
 			{#if !context.taskDraggingManager.isDragging 
 				 && !context.isReparentingOn()

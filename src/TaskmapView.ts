@@ -7,7 +7,7 @@ import TaskmapContainer from "./components/TaskmapContainer.svelte";
 import { deserializeProjectData, updateFile } from "./SaveManager";
 import type TaskmapPlugin from "./main";
 import { VersionedData } from "./data/VersionedData";
-import { HistoryManager } from "./data/HistoryManager";
+import { HistoryManager } from "./data/HistoryManager.svelte";
 
 export const TASKMAP_VIEW_TYPE = "taskmap-view";
 
@@ -47,6 +47,7 @@ export class TaskmapView extends TextFileView {
 			this.app,
 			new NodePositionsCalculator(),
 		);
+		this.contentEl.addClass("taskmap-view-container");
 		this.taskmapContainer = mount(TaskmapContainer, {
 			target: this.contentEl,
 			props: {

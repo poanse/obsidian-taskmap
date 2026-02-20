@@ -9,6 +9,7 @@
 	import {NoTaskId, RootTaskId} from "../NodePositionsCalculator";
 	import {DraggingManager} from "../DraggingManager.svelte";
 	import {parseNumber} from "../Constants";
+	import SettingsPanel from "./SettingsPanel.svelte";
 
 	let {context}: {context: Context} = $props();
 	
@@ -63,7 +64,7 @@
 			return;
 		}
 		context.save();
-		context.incrementUpdateOnZoomCounter();// required for TaskText update
+		context.incrementUpdateOnZoomCounter(); // required for TaskText update
 		context.updateTaskPositions();
 		e.stopPropagation();
 		e.preventDefault();
@@ -191,7 +192,6 @@
 		
 		<div
 			class="task-layer"
-			tabindex="-1"
 			role="presentation"
 		>
 			{#each context.versionedData.getTasks().filter(t => !context.isTaskHidden(t.taskId)) as task (task.taskId)}
@@ -236,8 +236,12 @@
 		{/if}
 	</div>
 </div>
+<SettingsPanel {context}/>
 
 <style>
+	:global(.taskmap-view-container) {
+		padding: 0 !important;
+	}
 	.viewport {
 		width: 100%;
 		height: 100%;

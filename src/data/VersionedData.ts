@@ -1,4 +1,4 @@
-﻿import { HistoryManager } from "./HistoryManager";
+﻿import { HistoryManager } from "./HistoryManager.svelte";
 import { type BlockerPair, StatusCode, type TaskId } from "../types";
 import { ProjectData } from "./ProjectData.svelte";
 import {
@@ -33,6 +33,14 @@ export class VersionedData {
 		if (this.history.canRedo()) {
 			this.history.redo(this.data);
 		}
+	};
+
+	public canUndo = () => {
+		return this.history.canUndo();
+	};
+
+	public canRedo = () => {
+		return this.history.canRedo();
 	};
 
 	public addBlockerPair = (blockerPair: BlockerPair) => {
@@ -93,10 +101,20 @@ export class VersionedData {
 		value: string,
 		path: string | undefined,
 	) => {
-		this.history.execute(
-			new SetTaskNameAction(taskId, value, path),
-			this.data,
-		);
+		const lastAction = this.history.lastAction();
+		const newAction = new SetTaskNameAction(taskId, value, path);
+		if (
+			lastAction instanceof SetTaskNameAction &&
+			lastAction.shouldCombine(newAction)
+		) {
+			this.history.undo(this.data);
+			this.history.execute(
+				new SetTaskNameAction(taskId, value, path),
+				this.data,
+			);
+		} else {
+			this.history.execute(newAction, this.data);
+		}
 	};
 
 	public changeParent = (taskId: TaskId, newParentId: TaskId) => {

@@ -16,6 +16,13 @@ export enum IconCode {
 	STATUS_DONE,
 }
 
+export enum SettingsIconCode {
+	NONE,
+	SETTINGS_MENU,
+	SETTINGS_UNDO,
+	SETTINGS_REDO,
+}
+
 export enum StatusCode {
 	DRAFT,
 	READY,

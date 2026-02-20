@@ -125,6 +125,7 @@
 		if (e.key === "Enter") {
 			e.preventDefault();
 			textEditEl.blur(); // Triggers handleBlur
+			// TODO: body gets focused instead of viewport
 		} else if (e.key === "Tab" && suggest !== null) {
 			// another hack to select suggest on tab
 			e.preventDefault();
@@ -179,7 +180,6 @@
 		<div
 			class="text-preview tasktext"
 			class:unselect={isUnselected}
-			tabindex="0"
 			bind:this={textPreviewEl}
 			onpointerup={handlePreviewClick}
 			onmouseover={handlePreviewMouseOver}

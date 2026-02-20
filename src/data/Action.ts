@@ -186,6 +186,16 @@ export class SetTaskNameAction implements Action {
 		this.oldName = undefined;
 		this.oldPath = undefined;
 	}
+
+	shouldCombine(newAction: SetTaskNameAction) {
+		if (this.newPath !== newAction.newPath) {
+			return false;
+		}
+		// If both actions add one symbol or both remove 1 symbol then combine into one
+		const deltaLeft = this.newName.length - this.oldName!.length;
+		const deltaRight = newAction.newName.length - this.newName.length;
+		return deltaLeft === deltaRight;
+	}
 }
 
 export class SetTaskPriorityAction implements Action {

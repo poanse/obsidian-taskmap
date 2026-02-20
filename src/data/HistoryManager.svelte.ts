@@ -2,8 +2,8 @@
 import type { Action } from "./Action";
 
 export class HistoryManager {
-	private undoStack: Action[] = [];
-	private redoStack: Action[] = [];
+	private undoStack: Action[] = $state([]);
+	private redoStack: Action[] = $state([]);
 
 	execute(action: Action, data: ProjectData): void {
 		action.do(data);
@@ -35,5 +35,9 @@ export class HistoryManager {
 
 	canRedo(): boolean {
 		return this.redoStack.length > 0;
+	}
+
+	lastAction() {
+		return this.undoStack.last();
 	}
 }
