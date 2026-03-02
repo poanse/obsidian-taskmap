@@ -11,7 +11,6 @@
 	import {slideCustom} from '../Custom';
 	import type {Context} from "../Context.svelte.js";
 	import {
-		buttonTextFromIconCode,
 		IconCode, StatusCode, type TaskId, toIconCode
 	} from "../types";
 	import {RootTaskId} from "../NodePositionsCalculator";
@@ -74,7 +73,16 @@
 	]).map(x => toIconCode(x)));
 	
 	let subtoolbarTopShift = (buttons: IconCode[]) => {
-		return - (buttons.length * SUBTOOLBAR_BUTTON_SIZE + (buttons.length -1)*SUBTOOLBAR_GAP + 2*SUBTOOLBAR_PADDING.y + SUBTOOLBAR_SHIFT);
+		return - (
+			buttons.length * SUBTOOLBAR_BUTTON_SIZE	+
+			(buttons.length -1)*SUBTOOLBAR_GAP +
+			2*SUBTOOLBAR_PADDING.y +
+			SUBTOOLBAR_SHIFT
+		);
+	};
+	let subtoolbarLeftShift = (index: number) => {
+		return index * TOOLBAR_BUTTON_SIZE +
+			   Math.max(index - 1, 0) * TOOLBAR_GAP;
 	};
 </script>
 
@@ -106,12 +114,18 @@
 					transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
 					style="
 						top: {subtoolbarTopShift(removeButtons)}px;
-						left: {toolbarButtons.indexOf(IconCode.REMOVE_SUBMENU) * (TOOLBAR_BUTTON_SIZE + TOOLBAR_GAP) - 128/2 + TOOLBAR_BUTTON_SIZE / 2}px;
+						left: {subtoolbarLeftShift(toolbarButtons.indexOf(IconCode.REMOVE_SUBMENU))}px;
 					"
 				>
 					{#key context.updateOnZoomCounter}
-						<Button iconCode={IconCode.REMOVE_SINGLE} {context} text={buttonTextFromIconCode(IconCode.REMOVE_SINGLE)}/>
-						<Button iconCode={IconCode.REMOVE_MULTIPLE} {context} text={buttonTextFromIconCode(IconCode.REMOVE_MULTIPLE)}/>
+						<Button 
+							iconCode={IconCode.REMOVE_SINGLE}
+							{context}
+						/>
+						<Button
+							iconCode={IconCode.REMOVE_MULTIPLE}
+							{context}
+						/>
 					{/key}
 				</div>
 			{/if}
@@ -124,11 +138,14 @@
 					transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
 					style="
 						top: {subtoolbarTopShift(statusButtons)}px;
-						left: {toolbarButtons.indexOf(IconCode.STATUS_SUBMENU) * (TOOLBAR_BUTTON_SIZE + TOOLBAR_GAP) - 128/2 + TOOLBAR_BUTTON_SIZE / 2}px;
+						left: {subtoolbarLeftShift(toolbarButtons.indexOf(IconCode.STATUS_SUBMENU))}px;
 					"
 				>
 					{#each statusButtons as button}
-						<Button iconCode={button} {context} text={buttonTextFromIconCode(button)}/>
+						<Button 
+							iconCode={button}
+							{context}
+						/>
 					{/each}
 				</div>
 			{/if}
@@ -140,7 +157,7 @@
 <style>
 	.toolbar {
 		gap: 2px;
-		padding: 2px 2px;
+		padding: 4px 4px;
 		/*background: #181818;*/
 		background: #0f0f0fff;
 		/*background-color: #1E1E1E;*/

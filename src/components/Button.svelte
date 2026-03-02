@@ -17,11 +17,9 @@
 	let {
 		iconCode,
 		context,
-		text = ""
 	}: {
 		iconCode: IconCode,
 		context: Context,
-		text?: string
 	} = $props();
 
 	let isPressedDown = $state(false);
@@ -110,7 +108,6 @@
 
 <div class="button"
 	 use:tooltip={getTooltipText(iconCode)}
-	 class:with-text={text.length > 0}
 	 class:disabled={isButtonDisabled}
 	 class:no-pan={true}
 	 class:is-pressed-up={isPressed}
@@ -156,7 +153,6 @@
 	{:else if iconCode === IconCode.STATUS_DONE}
 		<Circle class={classString + " done"}/>
 	{/if}
-	{text}
 </div>
 
 <style>
@@ -214,19 +210,6 @@
 			stroke: #3E9959;
 			fill: #212B24;
 		}
-	}
-	.button.with-text {
-		width: 128px;
-		height: 32px;
-		justify-content: left;
-		gap: 8px;
-		padding: 4px;
-
-		font-size: 16px;
-		font-family: var(--font-text);
-		font-weight: 600;
-		letter-spacing: 0.005em;
-		line-height: 1.5;
 	}
 
 	.button.disabled {
