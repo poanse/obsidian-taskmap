@@ -41,10 +41,9 @@ export class TaskmapView extends TextFileView {
 		this.setViewData(data);
 		this.projectData = deserializeProjectData(this.app, this.data);
 		this.context = new Context(
-			this.plugin,
-			this,
-			new VersionedData(this.projectData, new HistoryManager()),
 			this.app,
+			this.plugin,
+			new VersionedData(this.projectData, new HistoryManager()),
 			new NodePositionsCalculator(),
 		);
 		this.contentEl.addClass("taskmap-view-container");

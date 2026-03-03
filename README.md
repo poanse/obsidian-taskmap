@@ -1,10 +1,10 @@
 # Obsidian Taskmap Plugin
-
-Visualize your project as a tree of automatically positioned tasks.
+Plan projects via interactive GUI task trees.
+No need to move tasks around manually — the automatic layout keeps your structure visually clear and easy to edit.
 
 ## How to install
 
-*Installation from obsidian is unavailable while Taskmap is in beta.*
+*Taskmap is in beta. Installation from Obsidian community plugins is currently unavailable.*
 
 Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) community plugin from obsidian app.
 Go to settings, press `Add beta plugin` and paste link to this repo https://github.com/poanse/obsidian-taskmap
@@ -22,11 +22,11 @@ Canvas-style visualization, zero manual positioning.
 
 ## Key Features
 
-- Automatic parent status from children
-- Color-coded status visualization
-- Tree restructuring via reparenting
-- Blockers/dependencies
-- Hide irrelevant branches
+- Automatic layout
+- Tree navigation via temporarily hiding irrelevant branches
 - Link tasks to obsidian notes for rich description
+- Color-coded status visualization
+- Automatic parent status from children
+- Link tasks outside of tree structure using blocker system
 
 ![screenshot.png](screenshot.png)

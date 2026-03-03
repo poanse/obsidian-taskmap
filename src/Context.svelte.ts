@@ -14,7 +14,7 @@ import {
 	TFile,
 	type WorkspaceLeaf,
 } from "obsidian";
-import type { TaskmapView } from "./TaskmapView";
+import { TaskmapView } from "./TaskmapView";
 import {
 	type NodePositionsCalculator,
 	NoTaskId,
@@ -28,7 +28,6 @@ import { VersionedData } from "./data/VersionedData";
 export class Context {
 	app: App;
 	plugin: TaskmapPlugin;
-	view: TaskmapView;
 	nodePositionsCalculator: NodePositionsCalculator;
 	linkManager: LinkManager;
 	pressedButtonCode = $state(-1);
@@ -56,14 +55,12 @@ export class Context {
 	private springOptions = { stiffness: 0.07, damping: 0.7 };
 
 	constructor(
-		plugin: TaskmapPlugin,
-		view: TaskmapView,
-		projectData: VersionedData,
 		app: App,
+		plugin: TaskmapPlugin,
+		projectData: VersionedData,
 		nodePositionsCalculator: NodePositionsCalculator,
 	) {
 		this.plugin = plugin;
-		this.view = view;
 		this.nodePositionsCalculator = nodePositionsCalculator;
 		this.app = app;
 		this.versionedData = projectData;
@@ -341,9 +338,7 @@ export class Context {
 	}
 
 	public save() {
-		const x = this.view;
-		x.debouncedSave();
-		console.debug("saved");
+		this.app.workspace.getActiveViewOfType(TaskmapView)?.debouncedSave();
 	}
 
 	public addTask(parentId: TaskId): void {
@@ -373,7 +368,7 @@ export class Context {
 		);
 		this.versionedData.setStatus(this.selectedTaskId, status);
 		this.toolbarStatus = status;
-		this.view.debouncedSave();
+		this.save();
 	}
 
 	public hideTaskBranch(id: number) {
