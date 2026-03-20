@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-taskmap",
 	"name": "Obsidian Taskmap Plugin",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"minAppVersion": "1.12.4",
 	"description": "Plan projects via interactive GUI task trees. No need to move tasks around manually — the automatic layout keeps your structure visually clear and easy to edit.",
 	"author": "poanse",
