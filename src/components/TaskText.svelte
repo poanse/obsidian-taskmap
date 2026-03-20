@@ -1,9 +1,9 @@
 ﻿<script lang="ts">
 	import {onMount, tick} from "svelte";
-	import {Component, MarkdownRenderer} from "obsidian";
+	import {Component, MarkdownRenderer, Notice} from "obsidian";
 	import {LinkSuggest} from "../LinkSuggest";
 	import type {Context} from "../Context.svelte.js";
-	import {getFromRelativePath, isLink} from "../LinkManager";
+	import {delink, getFromRelativePath, isLink} from "../LinkManager";
 	import {NoTaskId} from "../NodePositionsCalculator";
 
 	// PROPS
@@ -153,16 +153,20 @@
 			return;
 		}
 		let path;
-		if (isLink(taskData.name)) {
-			const file = context.linkManager.getFromLink(taskData.name);
-			if (file === null) {
-				throw new Error(`Link [${taskData.name}] points to a nonexistent file`);
+		let newName = textEditEl.value;
+		if (isLink(newName)) {
+			const file = context.linkManager.getFromLink(newName);
+			if (file !== null) {
+				path = file.path;
+			} else {
+				new Notice(`Link ${newName} points to a nonexistent file`);
+				path = undefined;
+				newName = delink(newName);
 			}
-			path = file.path;
 		} else {
 			path = undefined;
 		}
-		context.versionedData.setName(taskId, textEditEl.value, path);
+		context.versionedData.setName(taskId, newName, path);
 		context.save();
 	}
 </script>
