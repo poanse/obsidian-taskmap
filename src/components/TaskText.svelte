@@ -198,7 +198,7 @@
 
 <style>
 	.task-text-container {
-		width: 160px;
+		width: 180px;
 		height: 60px;
 		display: flex;
 		justify-content: center;
@@ -213,7 +213,7 @@
 		gap: 0;
 		border: none;
 		/*transform: translate3d(0,20px,0);*/
-		width: 160px;
+		width: 180px;
 		/*height: 60px;*/
 		/*width: 100%;*/
 		/*height: 100%;*/
@@ -221,7 +221,8 @@
 		resize: none;
 		font-size: 20px;
 		font-family: var(--font-text);
-		line-height: 1.5;
+		/*line-height: 1.5;*/
+		line-height: 1.1;
 		/*border: 4px solid #707070;*/
 		/*border-radius: 22px;*/
 		outline: none;
@@ -246,8 +247,8 @@
 
 	.text-edit {
 		display: flex;
-		align-items: center;
 		field-sizing: content;
+		padding-top: 4px; /* fixes text jumping between text-edit and text-preview */
 	}
 	.text-edit:hover {
 		background-color: transparent;
@@ -263,9 +264,9 @@
 		word-wrap: break-word;
 		p {
 			top: 0;
-			width: 160px;
+			width: 180px;
 			height: 60px;
-			line-height: 1.5;
+			line-height: 1.1;
 			margin: 0;
 			padding: 0;
 			gap: 0;
