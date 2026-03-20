@@ -31,6 +31,7 @@ export class TaskmapView extends TextFileView {
 
 	async refreshUi() {
 		const projectFile = this.file!;
+		await this.debouncedSave.run();
 		this.clear();
 		await this.onLoadFile(projectFile);
 	}
