@@ -197,9 +197,16 @@
 <!--onkeydown={(e) => e.key === 'Enter' && toggleEdit()}-->
 
 <style>
+	:root, .task-text-container {
+		--task-width: 180px;
+		--task-height: 60px;
+		--task-line-height: 1.1;
+		/*--task-line-height: 1.5;*/
+		--task-font-size: 20px;
+	}
 	.task-text-container {
-		width: 180px;
-		height: 60px;
+		width: var(--task-width);
+		height: var(--task-height);
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -213,16 +220,15 @@
 		gap: 0;
 		border: none;
 		/*transform: translate3d(0,20px,0);*/
-		width: 180px;
-		/*height: 60px;*/
+		width: var(--task-width);
+		/*height: var(--task-height);*/
 		/*width: 100%;*/
 		/*height: 100%;*/
 		background: transparent;
 		resize: none;
-		font-size: 20px;
+		font-size: var(--task-font-size);
 		font-family: var(--font-text);
-		/*line-height: 1.5;*/
-		line-height: 1.1;
+		line-height: var(--task-line-height);
 		/*border: 4px solid #707070;*/
 		/*border-radius: 22px;*/
 		outline: none;
@@ -264,9 +270,9 @@
 		word-wrap: break-word;
 		p {
 			top: 0;
-			width: 180px;
-			height: 60px;
-			line-height: 1.1;
+			width: var(--task-width);
+			height: var(--task-height);
+			line-height: var(--task-line-height);
 			margin: 0;
 			padding: 0;
 			gap: 0;
