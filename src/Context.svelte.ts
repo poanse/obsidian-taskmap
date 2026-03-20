@@ -24,6 +24,8 @@ import {
 import { DraggingManager } from "./DraggingManager.svelte";
 import { delink, LinkManager, tasknameFromFilePath } from "./LinkManager";
 import { VersionedData } from "./data/VersionedData";
+import { innerHeight } from "svelte/reactivity/window";
+import { TASK_SIZE } from "./Constants";
 
 export class Context {
 	app: App;
@@ -218,8 +220,12 @@ export class Context {
 					this.versionedData
 						.getTasks()
 						.filter((t) => !this.isTaskHidden(t.taskId)),
-					{ x: 0, y: 0 },
+					{
+						x: 0,
+						y: (innerHeight.current ?? 0) / 2 - TASK_SIZE.height,
+					},
 				);
+
 			if (this.taskDraggingManager.isDragging) {
 				[
 					this.draggedTaskId,
@@ -429,6 +435,9 @@ export class Context {
 				filepath,
 			);
 			this.save();
+			await this.app.workspace
+				.getActiveViewOfType(TaskmapView)
+				?.refreshUi();
 			await this.openOrFocusNote(tfile);
 		} catch (error) {
 			new Notice(
