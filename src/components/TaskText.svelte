@@ -125,11 +125,17 @@
 		if (e.key === "Enter") {
 			e.preventDefault();
 			textEditEl.blur(); // Triggers handleBlur
-			// TODO: body gets focused instead of viewport
 		} else if (e.key === "Tab" && suggest !== null) {
 			// another hack to select suggest on tab
 			e.preventDefault();
 			textEditEl.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
+		} else if (e.key == "Escape" && isEditing) {
+			e.stopPropagation();
+			textEditEl.blur();
+		} else if (e.key == "Escape") {
+			textEditEl.blur();
+		} else {
+			e.stopPropagation();
 		}
 	}
 
@@ -137,6 +143,7 @@
 		// TODO: throws error because text preview doesn't exit when blur on textedit happens
 		context.editingTaskId = NoTaskId;
 		handleInput();
+		textEditEl?.parentElement?.parentElement?.focus();
 		await tick(); // Wait for DOM to render preview element
 		await renderMarkdown();
 	}

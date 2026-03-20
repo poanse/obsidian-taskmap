@@ -148,6 +148,7 @@
 				onpointerup={onPointerUp}
 				onblur={() => finishEditing()}
 				role="presentation"
+				tabindex="-1"
 			>
 				<TaskText {taskId} {isUnselected} {context}/>
 			</div>
