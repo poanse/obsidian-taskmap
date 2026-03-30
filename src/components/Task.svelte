@@ -168,11 +168,11 @@
 			{#if context.versionedData.isTaskBlocking(taskId)}
 				<div
 					class="icon-container"
-					style="
-						top: 4px;
-					"
+					style="top: 4px;"
 				>
 					<KeyRound
+						onmouseenter={() => context.hoveredBlockerId = taskId}
+						onmouseleave={() => context.hoveredBlockerId = NoTaskId}
 						class={
 							classStringFromStatusCode(taskData.status)
 							+ (isBlockerHighlight ? ' blocker-highlight' : '')
@@ -185,15 +185,17 @@
 			{#if context.versionedData.isTaskBlocked(taskId)}
 				<div
 					class="icon-container"
-					style="
-						top: 40px;
-					"
+					style="top: 40px;"
 				>
-					<LockKeyhole class={
-						classStringFromStatusCode(taskData.status)
-						+ (isBlockerHighlight ? ' blocker-highlight' : '')
-						+ (isUnselected ? ' unselect' : '')
-					}/>
+					<LockKeyhole
+						onpointerenter={() => context.hoveredBlockedId = taskId}
+						onpointerleave={() => context.hoveredBlockedId = NoTaskId}
+						class={
+							classStringFromStatusCode(taskData.status)
+							+ (isBlockerHighlight ? ' blocker-highlight' : '')
+							+ (isUnselected ? ' unselect' : '')
+						}
+					/>
 				</div>
 			{/if}
 		</div>
@@ -283,7 +285,7 @@
 		justify-content: center;
 		align-items: center;
 		display: inline-flex;
-		pointer-events: none;
+		pointer-events: auto;
 
 		:global(svg.draft) {
 			stroke: #7E7E7E;

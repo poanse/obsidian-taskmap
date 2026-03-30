@@ -39,6 +39,8 @@ export class Context {
 	focusedTaskId = $state(RootTaskId);
 	chosenBlockerId = $state(NoTaskId);
 	chosenBlockedId = $state(NoTaskId);
+	hoveredBlockerId = $state(NoTaskId);
+	hoveredBlockedId = $state(NoTaskId);
 	toolbarStatus = $state(StatusCode.DRAFT);
 	reparentingTaskId = $state(NoTaskId);
 	versionedData: VersionedData;
@@ -95,6 +97,22 @@ export class Context {
 				this.versionedData.containsBlockerPair({
 					blocked: taskId,
 					blocker: this.chosenBlockerId,
+				})
+			);
+		} else if (this.hoveredBlockedId !== NoTaskId) {
+			return (
+				this.hoveredBlockedId === taskId ||
+				this.versionedData.containsBlockerPair({
+					blocked: this.hoveredBlockedId,
+					blocker: taskId,
+				})
+			);
+		} else if (this.hoveredBlockerId !== NoTaskId) {
+			return (
+				this.hoveredBlockerId === taskId ||
+				this.versionedData.containsBlockerPair({
+					blocked: taskId,
+					blocker: this.hoveredBlockerId,
 				})
 			);
 		} else {

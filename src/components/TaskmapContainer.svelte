@@ -208,9 +208,15 @@
 				</defs>
 			</defs>
 			<g class="svg-group" bind:this={svgGroupEl}>
-				{#if context.chosenBlockerId !== NoTaskId || context.chosenBlockedId !== NoTaskId}
+				{#if context.chosenBlockerId !== NoTaskId || context.chosenBlockedId !== NoTaskId || context.hoveredBlockerId !== NoTaskId || context.hoveredBlockedId !== NoTaskId}
 					{#each (context.versionedData.getBlockerPairs().filter(
-						p => p.blocker === context.chosenBlockerId || p.blocked === context.chosenBlockedId
+						p => {
+							if (context.chosenBlockerId === NoTaskId && context.chosenBlockedId === NoTaskId) {
+								return p.blocker === context.hoveredBlockerId || p.blocked === context.hoveredBlockedId;
+							} else {
+								return p.blocker === context.chosenBlockerId || p.blocked === context.chosenBlockedId;
+							}
+						}
 					).filter(
 						p => {
 							const blockedT = context.versionedData.getTask(p.blocked);
