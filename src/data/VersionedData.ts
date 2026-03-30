@@ -166,7 +166,9 @@ export class VersionedData {
 		}
 		return this.data.blockerPairs
 			.filter((p) => p.blocked === taskId)
-			.some((p) => this.getTask(p.blocker).status !== StatusCode.DONE);
+			.map((p) => this.getTask(p.blocker))
+			.filter((blockerTask) => !blockerTask.deleted)
+			.some((blockerTask) => blockerTask.status !== StatusCode.DONE);
 	};
 
 	public isTaskBlocking = (taskId: TaskId) => {
@@ -175,7 +177,9 @@ export class VersionedData {
 		}
 		return this.data.blockerPairs
 			.filter((p) => p.blocker === taskId)
-			.some((p) => this.getTask(p.blocked).status !== StatusCode.DONE);
+			.map((p) => this.getTask(p.blocked))
+			.filter((blockedTask) => !blockedTask.deleted)
+			.some((blockedTask) => blockedTask.status !== StatusCode.DONE);
 	};
 
 	public isBranchHidden(id: number) {
