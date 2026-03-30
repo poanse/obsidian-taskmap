@@ -92,6 +92,7 @@
 		else if (context.isReparentingOn()) {
 			if (context.isValidReparentingTarget(taskId)) {
 				context.finishReparenting(taskId);
+				context.cancelReparenting();
 			}
 		} else {
 			context.pressedButtonCode = -1;

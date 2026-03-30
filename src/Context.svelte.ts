@@ -190,6 +190,7 @@ export class Context {
 	}
 
 	public finishReparenting(newParentId: TaskId) {
+		this.pressedButtonCode = -1;
 		if (this.reparentingTaskId == NoTaskId) {
 			throw new Error("Incorrect state: reparentingTaskId expected");
 		}

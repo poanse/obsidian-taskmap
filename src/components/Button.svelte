@@ -69,12 +69,10 @@
 		}
 		if (isPressed) {
 			// pressed the same button a second time
-			isPressed = false;
 			context.pressedButtonCode = -1;
 			return;
 		} else if (stateful) {
 			// pressed a stateful button
-			isPressed = true;
 			context.pressedButtonCode = iconCode;
 		} else {
 			// pressed a stateless button
@@ -98,7 +96,6 @@
 			context.chosenBlockerId = context.chosenBlockerId === NoTaskId ? context.selectedTaskId : NoTaskId;
 		}
 	}
-
 	let classString = $derived(`
 		${(isPressed && !isButtonDisabled) ? 'is-pressed-up ': ''}
 		${(isPressedDown && !isButtonDisabled) ? 'is-pressed-down ': '' }
