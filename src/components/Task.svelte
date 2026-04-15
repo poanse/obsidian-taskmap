@@ -230,13 +230,13 @@
 		transition: background-color 0.3s, border-color 0.3s;
 		transform: translateZ(0);
 		will-change: transform;
+		cursor: pointer;
 	}
 	.task.hovered {
 		width: 284px;
 		height: 84px;
 		border-width: 4px;
 		transform: translate3d(-2px,-2px,0);
-		cursor: pointer;
 	}
 	.task.draft {
 		border-color: #7E7E7E;
