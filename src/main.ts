@@ -10,7 +10,7 @@ import {
 import { TaskmapSettingTab } from "./TaskmapSettingTab";
 import { DEFAULT_DATA} from "./data/ProjectData.svelte";
 import { LOGO_CONTENT, LOGO_NAME } from "./IconService";
-import { getOnRename} from "./FileWatcher";
+import { getOnDelete, getOnRename} from "./FileWatcher";
 
 export const FILE_EXTENSION = "taskmap";
 
@@ -34,6 +34,9 @@ export default class TaskmapPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.vault.on("rename",	getOnRename(this.app)),
+		);
+		this.registerEvent(
+			this.app.vault.on("delete", getOnDelete(this.app)),
 		);
 	}
 

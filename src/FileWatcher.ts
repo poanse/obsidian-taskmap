@@ -3,8 +3,29 @@ import type { ProjectData } from "./data/ProjectData.svelte";
 import type { TaskData } from "./types";
 import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
 import { deserializeProjectData, updateFile } from "./SaveManager";
-import { generateMarkdownLink } from "./LinkManager";
+import { delink, generateMarkdownLink } from "./LinkManager";
 
+export function getOnDelete(app: App) {
+    return async (file: TAbstractFile) => {
+        console.debug(`${file.path} deleted`);
+        let files: TFile[];
+        if (file instanceof TFile) {
+            files = [file];
+        } else if (file instanceof TFolder) {
+            files = app.vault
+                .getMarkdownFiles()
+                .filter((mdFile) =>
+                    mdFile.path.startsWith(file.path + "/"),
+                );
+        } else {
+            return;
+        }
+        await handleDeleteFiles(
+            app,
+            files,
+        );
+    };
+}
 
 export function getOnRename(app: App) {
     return async (file: TAbstractFile, oldPath: string) => {
@@ -40,8 +61,6 @@ export async function handleRenameFiles(
         .getFiles()
         .filter((file) => file.path.endsWith(".taskmap"));
 
-    const updatedTaskMapFilePaths: Set<string> = new Set<string>();
-
     // update paths in taskmap files
     for (const taskmapFile of taskmapFiles) {
         console.debug(`handling ${taskmapFile.path}`);
@@ -76,21 +95,63 @@ export async function handleRenameFiles(
             console.debug(`${taskmapFile.path} changed`);
             // resave file on the file system
             await updateFile(app, taskmapFile, projectData);
-            updatedTaskMapFilePaths.add(taskmapFile.path);
         } else {
             console.debug(`${taskmapFile.path} not changed`);
         }
     }
 
+    // refresh all active views
+    for (const view of app.workspace
+        .getLeavesOfType(TASKMAP_VIEW_TYPE)
+        .map((l) => l.view)
+        .filter((view) => view instanceof TaskmapView)
+    ) {
+        await view.refreshUi();
+    }
+}
+
+export async function handleDeleteFiles(
+    app: App,
+    files: TFile[],
+) {
+    const deletedPaths = new Array<string>(...files.map((f) => f.path));
+    const taskmapFiles = app.vault
+        .getFiles()
+        .filter((file) => file.path.endsWith(".taskmap"));
+    for (const taskmapFile of taskmapFiles) {
+        let projectData: ProjectData;
+        try {
+            const projectDataRaw = await app.vault.read(taskmapFile);
+            projectData = deserializeProjectData(projectDataRaw);
+        } catch (e) {
+            console.error(`Taskmap rename hook: skipped invalid file ${taskmapFile.path}`);
+            new Notice(`Taskmap rename hook: skipped invalid file: ${String(e)}`);
+            continue;
+        }
+        let taskmapFileChanged = false;
+        projectData.tasks.forEach((t) => {
+            if (t.path) {
+                if (deletedPaths.map(p => t.path!.startsWith(p)).some(Boolean)) {
+                    t.name = delink(t.name);
+                    t.path = undefined;
+                    taskmapFileChanged = true;
+                }
+            }
+        });
+        if (taskmapFileChanged) {
+            console.debug(`${taskmapFile.path} changed`);
+            // resave file on the file system
+            await updateFile(app, taskmapFile, projectData);
+        } else {
+            console.debug(`${taskmapFile.path} not changed`);
+        }
+    }
     // refresh active views
     for (const view of app.workspace
         .getLeavesOfType(TASKMAP_VIEW_TYPE)
         .map((l) => l.view)
         .filter((view) => view instanceof TaskmapView)
-        .filter(
-            (view) =>
-                view.file && updatedTaskMapFilePaths.has(view.file.path),
-        )) {
+    ) {
         await view.refreshUi();
     }
 }
