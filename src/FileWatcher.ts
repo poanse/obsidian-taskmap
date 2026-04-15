@@ -84,13 +84,14 @@ export async function handleRenameFiles(
         });
         console.debug("mapping " + JSON.stringify(mapping.keys()));
         let changed = false;
-        changedMdFiles.forEach((mdFile) => {
-            if (mapping.has(mdFile.path)) {
+        changedMdFiles
+            .filter(mdFile => mapping.has(mdFile.path))
+            .forEach((mdFile) => {
                 const t = mapping.get(mdFile.path)!;
                 t.name = generateMarkdownLink(app, mdFile);
                 changed = true;
             }
-        });
+        );
         if (changed) {
             console.debug(`${taskmapFile.path} changed`);
             // resave file on the file system
@@ -114,7 +115,7 @@ export async function handleDeleteFiles(
     app: App,
     files: TFile[],
 ) {
-    const deletedPaths = new Array<string>(...files.map((f) => f.path));
+    const deletedPaths = new Set<string>(files.map((f) => f.path));
     const taskmapFiles = app.vault
         .getFiles()
         .filter((file) => file.path.endsWith(".taskmap"));
@@ -129,14 +130,10 @@ export async function handleDeleteFiles(
             continue;
         }
         let taskmapFileChanged = false;
-        projectData.tasks.forEach((t) => {
-            if (t.path) {
-                if (deletedPaths.map(p => t.path!.startsWith(p)).some(Boolean)) {
-                    t.name = delink(t.name);
-                    t.path = undefined;
-                    taskmapFileChanged = true;
-                }
-            }
+        projectData.tasks.filter(t => t.path && deletedPaths.has(t.path)).forEach((t) => {
+            t.name = delink(t.name);
+            t.path = undefined;
+            taskmapFileChanged = true;
         });
         if (taskmapFileChanged) {
             console.debug(`${taskmapFile.path} changed`);
