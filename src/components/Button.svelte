@@ -25,13 +25,13 @@
 	let isPressedDown = $state(false);
 	let isPressed = $derived(context.pressedButtonCode == iconCode);
 	
-	const stateful = [
+	let stateful = $derived([
 		IconCode.REMOVE_SUBMENU,
 		IconCode.STATUS_SUBMENU,
 		IconCode.KEY,
 		IconCode.LOCK,
 		IconCode.REPARENT
-	].includes(iconCode);
+	].includes(iconCode));
 	
 	function onpointerdown(event: MouseEvent) {
 		isPressedDown = true;

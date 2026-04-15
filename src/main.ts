@@ -1,21 +1,19 @@
-import {
-	addIcon,
-	Plugin,
-} from "obsidian";
+import { addIcon, Plugin } from "obsidian";
 import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
 import {
 	DEFAULT_SETTINGS,
 	type TaskmapPluginSettings,
 } from "./TaskmapPluginSettings";
 import { TaskmapSettingTab } from "./TaskmapSettingTab";
-import { DEFAULT_DATA} from "./data/ProjectData.svelte";
+import { DEFAULT_DATA } from "./data/ProjectData.svelte";
 import { LOGO_CONTENT, LOGO_NAME } from "./IconService";
-import { getOnDelete, getOnRename} from "./FileWatcher";
+import { FileWatcherWithCache } from "./FileWatcherWithCache";
 
 export const FILE_EXTENSION = "taskmap";
 
 export default class TaskmapPlugin extends Plugin {
 	settings: TaskmapPluginSettings;
+	private readonly filewatcher = new FileWatcherWithCache();
 
 	async onload() {
 		await this.loadSettings();
@@ -32,12 +30,8 @@ export default class TaskmapPlugin extends Plugin {
 
 		this.addSettingTab(new TaskmapSettingTab(this.app, this));
 
-		this.registerEvent(
-			this.app.vault.on("rename",	getOnRename(this.app)),
-		);
-		this.registerEvent(
-			this.app.vault.on("delete", getOnDelete(this.app)),
-		);
+		this.filewatcher.initFromVault(this.app);
+		this.filewatcher.registerTaskmapVaultHooks(this);
 	}
 
 	public async createAndOpenDrawing(): Promise<string> {

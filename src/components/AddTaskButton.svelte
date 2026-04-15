@@ -18,6 +18,7 @@
 
 <div
 	class="hover-container-add-task-button"
+	role="group"
 	onmouseenter={() => entered = true}
 	onmouseleave={() => entered = false}
 	style="
@@ -28,7 +29,6 @@
 	{#if entered}
 		<svg
 			role="button"
-			aria-label="Add task"
 			tabindex="0"
 			class="button-add"
 			class:draft={taskData.status === StatusCode.DRAFT}

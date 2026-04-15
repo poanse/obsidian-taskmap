@@ -21,8 +21,8 @@
 	let isSelected = $derived(context.isSelected(taskId));
 	let isEditing = $derived(context.editingTaskId === taskId);
 	let suggest: LinkSuggest | null = null;
-	let textPreviewEl: HTMLElement;
-	let textEditEl: HTMLTextAreaElement;
+	let textPreviewEl = $state<HTMLElement | undefined>(undefined);
+	let textEditEl = $state<HTMLTextAreaElement | undefined>(undefined);
 	let component = new Component(); // Required by Obsidian to manage render lifecycle
 	let isDragging = $derived(context.taskDraggingManager.isDragging);
 	onMount(() => {
@@ -78,7 +78,7 @@
 		const target = e.target as HTMLElement;
 		const link = target.closest(".internal-link");
 
-		if (link) {
+		if (link && textPreviewEl) {
 			// Trigger the native hover preview
 			context.app.workspace.trigger("hover-link", {
 				event: e,
@@ -92,6 +92,9 @@
 	}
 	
 	async function renderMarkdown() {
+		if (!textPreviewEl) {
+			return;
+		}
 		textPreviewEl.empty(); // Clear previous render
 		const content = taskData.name;
 		await MarkdownRenderer.render(
@@ -121,18 +124,22 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		const el = textEditEl;
+		if (!el) {
+			return;
+		}
 		if (e.key === "Enter") {
 			e.preventDefault();
-			textEditEl.blur(); // Triggers handleBlur
+			el.blur(); // Triggers handleBlur
 		} else if (e.key === "Tab" && suggest !== null) {
 			// another hack to select suggest on tab
 			e.preventDefault();
-			textEditEl.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
+			el.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
 		} else if (e.key == "Escape" && isEditing) {
 			e.stopPropagation();
-			textEditEl.blur();
+			el.blur();
 		} else if (e.key == "Escape") {
-			textEditEl.blur();
+			el.blur();
 		} else {
 			e.stopPropagation();
 		}
@@ -148,7 +155,7 @@
 	}
 	
 	function handleInput() {
-		if (textEditEl === null) {
+		if (textEditEl == null) {
 			return;
 		}
 		let path;
@@ -174,6 +181,7 @@
 	class="task-text-container"
 	class:selected={isSelected}
 	class:not-selected={!isSelected}
+	role="group"
 	onpointerup={handlePreviewClick}
 >
 	{#if isEditing}
@@ -190,8 +198,9 @@
 		<div
 			class="text-preview tasktext"
 			class:unselect={isUnselected}
+			role="group"
 			bind:this={textPreviewEl}
-			onmouseover={handlePreviewMouseOver}
+			onmousemove={handlePreviewMouseOver}
 		>
 		</div>
 	{/if}
@@ -217,9 +226,6 @@
 	}
 	.task-text-container.selected .tasktext:hover {
 		cursor: text;
-	}
-	.task-text-container.not-selected .tasktext:hover {
-		/*cursor: default;*/
 	}
 	.tasktext {
 		margin: 0;
@@ -269,19 +275,21 @@
 		overflow: visible;
 		white-space: pre-wrap;
 		word-wrap: break-word;
-		p {
-			top: 0;
-			width: var(--task-width);
-			height: var(--task-height);
-			line-height: var(--task-line-height);
-			margin: 0;
-			padding: 0;
-			gap: 0;
-			border: none;
-			text-align: center;
-			justify-content: center;
-			align-items: center;
-			overflow: visible;
+		:global {
+			p {
+				top: 0;
+				width: var(--task-width);
+				height: var(--task-height);
+				line-height: var(--task-line-height);
+				margin: 0;
+				padding: 0;
+				gap: 0;
+				border: none;
+				text-align: center;
+				justify-content: center;
+				align-items: center;
+				overflow: visible;
+			}
 		}
 	}
 </style>

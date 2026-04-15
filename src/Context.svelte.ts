@@ -1,4 +1,4 @@
-﻿import TaskmapPlugin from "./main";
+import TaskmapPlugin from "./main";
 import {
 	type BlockerPair,
 	MouseDown,
@@ -14,7 +14,7 @@ import {
 	TFile,
 	type WorkspaceLeaf,
 } from "obsidian";
-import { TaskmapView } from "./TaskmapView";
+import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
 import {
 	type NodePositionsCalculator,
 	NoTaskId,
@@ -371,7 +371,7 @@ export class Context {
 	}
 
 	private updateDraggedTaskPriority() {
-		// Если порядок тасок по оси Y отличается от приоритетов, то меняем приоритеты и пересчитываем порядок
+		// If task positions are different from priorities, change priorities and recalculate order
 		const draggedParentId = this.versionedData.getTask(
 			this.draggedTaskId,
 		).parentId;
@@ -408,7 +408,11 @@ export class Context {
 	}
 
 	public save() {
-		this.app.workspace.getActiveViewOfType(TaskmapView)?.debouncedSave();
+		// Cannot have reference to the view, so save all opened views
+		this.app.workspace.getLeavesOfType(TASKMAP_VIEW_TYPE)
+			.map((leaf) => leaf.view)
+			.filter((view) => view instanceof TaskmapView)
+			.forEach((view) => view.debouncedSave());
 	}
 
 	public addTask(parentId: TaskId): void {

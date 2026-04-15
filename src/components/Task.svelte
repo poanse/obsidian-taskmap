@@ -18,14 +18,14 @@
 		coords: {x: number, y: number}
 	} = $props();
 	
-	let self: HTMLElement;
-	let viewport: HTMLElement;
+	let self = $state<HTMLElement | undefined>(undefined);
+	let viewport = $state<HTMLElement | undefined>(undefined);
 
 	onMount(() => {
-		viewport = self?.closest('.viewport') as HTMLElement;
+		viewport = self?.closest(".viewport") as HTMLElement | undefined;
 		return () => {
-			viewport.focus();
-		}
+			viewport?.focus();
+		};
 	});
 	
 	let taskData = $derived(context.versionedData.getTask(taskId));

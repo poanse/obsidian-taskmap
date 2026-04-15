@@ -15,13 +15,19 @@ export function delink(s: string) {
 	return isLink(s) ? s.slice(2, s.length - 2) : s;
 }
 
-// relativePath to TFile
+/** relativePath to TFile */
 export function getFromRelativePath(app: App, path: string) {
 	return app.vault.getFileByPath(path);
 }
-// TFile to wikilink
+
+/** TFile to wikilink */
 export function generateMarkdownLink(app: App, file: TFile) {
 	return app.fileManager.generateMarkdownLink(file, "");
+}
+
+/** True if `path` is a file inside `folderPath` (not a false `startsWith` on the folder segment). */
+export function pathIsUnderFolder(path: string, folderPath: string): boolean {
+	return path.startsWith(folderPath + "/");
 }
 
 export class LinkManager {

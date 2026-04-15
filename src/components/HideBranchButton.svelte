@@ -18,6 +18,7 @@
 
 <div
 	class="hover-container-hide-branch-button"
+	role="group"
 	onmouseenter={() => entered = true}
 	onmouseleave={() => entered = false}
 	style="

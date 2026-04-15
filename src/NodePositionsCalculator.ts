@@ -58,7 +58,7 @@ export class NodePositionsCalculator {
 	}
 
 	/**
-	 * Позиции относительно рута
+	 * Positions relative to the root
 	 */
 	private CalculatePositionsInRootFrame(
 		tasks: TaskData[],
@@ -98,19 +98,19 @@ export class NodePositionsCalculator {
 	}
 
 	/**
-	 * Считаем позиции на основе веса поддеревьев и константы alignmentRatio
+	 * Calculate positions based on the weight of subtrees and the alignmentRatio constant
 	 */
 	private CalculatePositionsInParentFrame(
 		tasks: TaskData[],
 	): Map<TaskId, Vector2> {
-		// Расположение ноды родителя относительно высоты поддерева. 0 - top, 0.5 - center, 1 - bottom
+		// Position of the parent node relative to the height of the subtree. 0 - top, 0.5 - center, 1 - bottom
 		const alignmentRatio: Vector2 = { x: 0, y: 0.5 };
-		// Дополнительный сдвиг в виде доли от siblingDelta, чтобы дети сиблингов не сливались в один список
+		// Additional shift in the form of a fraction of siblingDelta, so that siblings' children do not merge into a single list
 		const parentDelta: Vector2 = { x: 0, y: 0.15 };
 
-		//// Вспомогательные структуры данных
-		// Сортируем таски, чтобы упросить реализацию DP: depth DESC, parentId ASC/DESC, priority ASC
-		// TODO: мб поддерживать порядок сортировки в DataModel?
+		//// Helper data structures
+		// Sort tasks to simplify the implementation of DP: depth DESC, parentId ASC/DESC, priority ASC
+		// TODO: maybe support order sorting in DataModel?
 		const sortedTasks = [...tasks].sort((a, b) => {
 			if (b.depth !== a.depth) {
 				return b.depth - a.depth;
@@ -138,8 +138,8 @@ export class NodePositionsCalculator {
 
 		const parentIds = [...childrenIdsByParentId.keys()];
 
-		//// Расчеты
-		// ключ - айди рута поддерева
+		//// Calculations
+		// key - root id of the subtree
 		const subtreeSizeByNodeId: Map<TaskId, Vector2> = new Map<
 			TaskId,
 			Vector2
@@ -168,7 +168,7 @@ export class NodePositionsCalculator {
 			}
 		});
 
-		// Шифт дочерних нод относительно левой-верхней точки прямоугольника
+		// Shift of children nodes relative to the left-top point of the rectangle
 		const siblingShiftsRel: Map<TaskId, Vector2> = new Map<
 			TaskId,
 			Vector2
@@ -189,7 +189,7 @@ export class NodePositionsCalculator {
 					s = V2.add(s, prevSize);
 					s = V2.add(s, siblingShiftsRel.get(previousSibling)!);
 				}
-				// Дополнительный сдвиг для отрисовки блокеров
+				// Additional shift for drawing blockers
 				// var blockerCount = BlockerDataManager.GetConnections()
 				//      .Count(x => x.Item1 == childId);
 				// s += blockerCount;
@@ -197,14 +197,8 @@ export class NodePositionsCalculator {
 			});
 		});
 
-		// TODO: походу в проекте что-то не так с данными.
-		// Нужно перейти на мета уровень и сделать удобный способ смотреть данные. Какой?
-		// - Логировать десятки тасок в виде json может быть полезно, но не удобно.
-		// - Можно добавить этап валидации данных, где будут проверяться предположения.
-		// - Можно добавить дебажную инфу с данными выбранной таски. Не поможет, если проблема в удаленных.
-
-		// Шифт родителя относительно левой-верхней точки прямоугольника.
-		// Вычитаем parentDelta, чтобы родитель был выровнен по детям
+		// Shift of the parent relative to the left-top point of the rectangle.
+		// Subtract parentDelta, so that the parent is aligned with the children
 		const parentAlignmentShift: Map<TaskId, Vector2> = new Map<
 			TaskId,
 			Vector2
@@ -219,7 +213,7 @@ export class NodePositionsCalculator {
 			);
 		});
 
-		// Шифт дочерних нод относительно родителя и уже в нормальных координатах
+		// Shift of children nodes relative to the parent and already in normal coordinates
 		const finalChildShifts: Map<TaskId, Vector2> = new Map<
 			TaskId,
 			Vector2
@@ -273,11 +267,8 @@ export class NodePositionsCalculator {
 				depthOneTasksByRow.get(idx)!.push(t);
 			});
 
-			const yShiftByRowId: Map<number, number> = {} as Map<
-				number,
-				number
-			>;
-			Object.keys(depthOneTasksByRow).forEach((key) => {
+			const yShiftByRowId: Map<number, number> = new Map<number, number>();
+			[...depthOneTasksByRow.keys()].forEach((key) => {
 				const rowIdx = Number(key);
 				const elements = depthOneTasksByRow.get(rowIdx)!;
 
@@ -308,13 +299,10 @@ export class NodePositionsCalculator {
 						subtreeSizeByNodeId.get(x.taskId)!.x + this.xshift;
 				});
 			} else if (this.Algorithm === AlgorithmEnum.DoubleRow) {
-				// Размеры поддеревьев по иксу. Если 2 таски друг над другом, то используется большее.
-				this.subtreeWidthByHalfPriority = {} as Map<number, number>;
+				// Sizes of subtrees by x. If 2 tasks are above each other, the larger one is used.
+				this.subtreeWidthByHalfPriority = new Map<number, number>();
 
-				const rootChildrenByPriority: Map<number, TaskId> = {} as Map<
-					number,
-					TaskId
-				>;
+				const rootChildrenByPriority: Map<number, TaskId> = new Map<number, TaskId>();
 				const rootChildren =
 					childrenIdsByParentId.get(RootTaskId) ?? [];
 				rootChildren.forEach((id, idx) => {

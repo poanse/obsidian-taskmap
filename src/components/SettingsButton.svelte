@@ -100,10 +100,6 @@
 			stroke-linejoin: round;
 			will-change: transform,scale,translate;
 		}
-		.custom-svg {
-			stroke-width: 0.083;
-			fill: #bbb;
-		}
 	}
 
 	.button.disabled {
@@ -125,13 +121,6 @@
 	}
 	
 	.button.is-pressed-down:not(.disabled){
-		background-color: #343434;
-		color: white;
-		:global(svg) {
-			stroke: white;
-		}
-	}
-	.button.is-pressed-up:not(.disabled){
 		background-color: #343434;
 		color: white;
 		:global(svg) {

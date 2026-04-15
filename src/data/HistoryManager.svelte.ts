@@ -38,6 +38,6 @@ export class HistoryManager {
 	}
 
 	lastAction() {
-		return this.undoStack.last();
+		return this.undoStack[this.undoStack.length - 1];
 	}
 }

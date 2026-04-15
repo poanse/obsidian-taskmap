@@ -9,7 +9,10 @@
 {#if !context.taskDraggingManager.isDragging}
 	<div
 		class="settings-panel"
+		role="toolbar"
+		tabindex="-1"
 		onclick={(e) => e.stopPropagation()}
+		onkeydown={(e) => e.stopPropagation()}
 		onpointerdown={(e) => e.stopPropagation()}
 		onpointerup={(e) => e.stopPropagation()}
 	>

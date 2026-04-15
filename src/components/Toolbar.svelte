@@ -22,8 +22,8 @@
 	}: {taskId: TaskId,
 		context: Context} = $props();
 
-	let self: HTMLElement;
-	let viewport: HTMLElement;
+	let self: HTMLElement = $state(null! as HTMLElement);
+	let viewport: HTMLElement = $state(null! as HTMLElement);
 
 	onMount(() => {
 		viewport = self?.closest('.viewport') as HTMLElement;
@@ -90,10 +90,13 @@
 	<div
 		class="toolbar"
 		class:no-pan={true}
+		role="toolbar"
+		tabindex="-1"
 		bind:this={self}
 		in:fade|global={{ duration: 500 }}
 		out:fade|global={{ duration: 300 }}
 		onclick={(e) => e.stopPropagation()}
+		onkeydown={(e) => e.stopPropagation()}
 		onpointerdown={(e) => e.stopPropagation()}
 		onpointerup={(e) => e.stopPropagation()}
 		style="
@@ -111,6 +114,7 @@
 			{#if context.pressedButtonCode === IconCode.REMOVE_SUBMENU}
 				<div
 					class="subtoolbar"
+					role="group"
 					transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
 					style="
 						top: {subtoolbarTopShift(removeButtons)}px;
@@ -135,6 +139,7 @@
 			{#if context.pressedButtonCode === IconCode.STATUS_SUBMENU}
 				<div
 					class="subtoolbar"
+					role="group"
 					transition:slideCustom={{ duration: 300, easing: quintOut, axis: '-y' }}
 					style="
 						top: {subtoolbarTopShift(statusButtons)}px;

@@ -16,7 +16,7 @@ export class TaskmapSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Zoom sensitivity (touchpad)")
-			.setDesc("In percents")
+			.setDesc("As a percentage")
 			.addText((text) =>
 				text
 					.setPlaceholder("100")
@@ -28,7 +28,7 @@ export class TaskmapSettingTab extends PluginSettingTab {
 			);
 		new Setting(containerEl)
 			.setName("Zoom sensitivity (mouse)")
-			.setDesc("In percents")
+			.setDesc("As a percentage")
 			.addText((text) =>
 				text
 					.setPlaceholder("100")
