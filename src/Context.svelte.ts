@@ -523,11 +523,17 @@ export class Context {
 	/**
 	 * Opens a file with "Smart Focus":
 	 * 1. If file is already open anywhere -> Focus it.
-	 * 2. If an unpinned tab exists in another pane -> Open it there.
-	 * 3. If everything else is pinned or only one pane exists -> Create a new split.
+	 * 2. Prefer an unpinned non-Taskmap pane.
+	 * 3. If only a pinned non-Taskmap pane exists, keep pinned tab intact and open
+	 *    file as a new unpinned tab in that pane.
+	 * 4. Otherwise create a new leaf (split from Taskmap, tab for non-Taskmap).
 	 */
 	public async openOrFocusNote(file: TFile) {
 		const { workspace } = this.app;
+		const openAndFocusLeaf = async (leaf: WorkspaceLeaf) => {
+			await leaf.openFile(file);
+			workspace.setActiveLeaf(leaf, { focus: true });
+		};
 
 		// 1. Check if the file is already open in any leaf (pinned or not)
 		let existingLeaf: WorkspaceLeaf | null = null;
@@ -545,23 +551,49 @@ export class Context {
 			return;
 		}
 
-		// 2. Look for a reusable (unpinned) leaf in the root split
-		const activeLeaf = workspace.getMostRecentLeaf();
+		// 2. Look for a reusable (unpinned) leaf in the root split.
+		// Avoid reusing Taskmap leafs so the map stays visible side-by-side.
 		const rootLeaves: WorkspaceLeaf[] = [];
 		workspace.iterateRootLeaves((leaf) => {
 			rootLeaves.push(leaf);
 		});
+		const activeTaskmapView = workspace.getActiveViewOfType(TaskmapView);
+		const activeLeaf =
+			rootLeaves.find((leaf) => leaf.view === activeTaskmapView) ??
+			workspace.getMostRecentLeaf();
 
-		const anotherUnpinnedLeaf = rootLeaves.reverse().find((leaf) => {
-			return leaf !== activeLeaf && !leaf.getViewState().pinned;
-		});
+		const candidateLeaves = rootLeaves
+			.reverse()
+			.filter(
+				(leaf) => leaf !== activeLeaf && !(leaf.view instanceof TaskmapView),
+			);
+
+		let anotherUnpinnedLeaf: WorkspaceLeaf | null = null;
+		let anotherPinnedLeaf: WorkspaceLeaf | null = null;
+		for (const leaf of candidateLeaves) {
+			if (!leaf.getViewState().pinned) {
+				anotherUnpinnedLeaf = leaf;
+				break;
+			}
+			if (anotherPinnedLeaf === null) {
+				anotherPinnedLeaf = leaf;
+			}
+		}
 
 		if (anotherUnpinnedLeaf) {
-			await anotherUnpinnedLeaf.openFile(file);
-			workspace.setActiveLeaf(anotherUnpinnedLeaf, { focus: true });
+			await openAndFocusLeaf(anotherUnpinnedLeaf);
+		} else if (anotherPinnedLeaf) {
+			// Keep the pinned tab intact and open the note as a new unpinned tab
+			// in the same pane.
+			workspace.setActiveLeaf(anotherPinnedLeaf, { focus: false });
+			const newTabInPinnedPane = workspace.getLeaf("tab");
+			await openAndFocusLeaf(newTabInPinnedPane);
 		} else {
-			const newLeaf = workspace.getLeaf("tab");
-			await newLeaf.openFile(file);
+			const shouldSplitFromTaskmap = activeTaskmapView !== null;
+			const newLeaf = workspace.getLeaf(
+				shouldSplitFromTaskmap ? "split" : "tab",
+			);
+			await openAndFocusLeaf(newLeaf);
 		}
 	}
 
