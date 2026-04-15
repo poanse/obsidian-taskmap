@@ -74,11 +74,11 @@ export class ProjectData {
 	public isAncestorOf(taskId: TaskId, candidate: TaskId) {
 		return this.getAncestors(taskId)
 			.map((t) => t.taskId)
-			.contains(candidate);
+			.includes(candidate);
 	}
 
-	public isDescendentOf(taskId: TaskId, candidate: TaskId) {
-		return this.getDescendantIds(taskId).contains(candidate);
+	public isDescendantOf(taskId: TaskId, candidate: TaskId) {
+		return this.getDescendantIds(taskId).includes(candidate);
 	}
 
 	public getChildren(taskId: number, includeDeleted: boolean = false) {

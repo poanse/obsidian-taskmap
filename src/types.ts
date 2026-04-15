@@ -36,7 +36,7 @@ export const isStatusCode = (s: IconCode) => {
 		IconCode.STATUS_DRAFT,
 		IconCode.STATUS_DONE,
 		IconCode.STATUS_IN_PROGRESS,
-	].contains(s);
+	].includes(s);
 };
 
 export const classStringFromStatusCode = (code: StatusCode) => {

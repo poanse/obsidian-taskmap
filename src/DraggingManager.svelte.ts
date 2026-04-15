@@ -17,7 +17,7 @@ export class DraggingManager {
 	public onPointerDown = (e: PointerEvent) => {
 		console.debug("DraggingManager pointerDown");
 		this.mouseDown = e.button as MouseDown;
-		if (this.mouseCodes.contains(this.mouseDown)) {
+		if (this.mouseCodes.includes(this.mouseDown)) {
 			this.startX = e.clientX;
 			this.startY = e.clientY;
 			const target = e.target as HTMLElement;
@@ -29,14 +29,19 @@ export class DraggingManager {
 
 	public onPointerUp = (e: PointerEvent) => {
 		console.debug(`DraggingManager pointerUp: ${this.deltaX}`);
+		this.reset();
+	};
+
+	/** Clears drag state without requiring a pointer event (e.g. external file reload). */
+	reset(): void {
 		this.mouseDown = MouseDown.NONE;
 		this.isDragging = false;
 		this.deltaX = 0;
 		this.deltaY = 0;
-	};
+	}
 
 	public onPointerMove = (e: PointerEvent) => {
-		if (this.mouseCodes.contains(this.mouseDown)) {
+		if (this.mouseCodes.includes(this.mouseDown)) {
 			const deltaX = e.clientX - this.startX;
 			const deltaY = e.clientY - this.startY;
 			// Calculate distance moved

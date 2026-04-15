@@ -152,8 +152,8 @@ export class VersionedData {
 		return this.data.isAncestorOf(taskId, candidate);
 	};
 
-	public isDescendentOf = (taskId: TaskId, candidate: TaskId) => {
-		return this.data.isDescendentOf(taskId, candidate);
+	public isDescendantOf = (taskId: TaskId, candidate: TaskId) => {
+		return this.data.isDescendantOf(taskId, candidate);
 	};
 
 	public containsBlockerPair = (blockerPair: BlockerPair) => {

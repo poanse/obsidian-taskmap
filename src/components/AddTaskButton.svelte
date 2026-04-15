@@ -27,6 +27,9 @@
 >
 	{#if entered}
 		<svg
+			role="button"
+			aria-label="Add task"
+			tabindex="0"
 			class="button-add"
 			class:draft={taskData.status === StatusCode.DRAFT}
 			class:ready={taskData.status === StatusCode.READY}
@@ -57,29 +60,16 @@
 		background: transparent;
 		pointer-events: auto;
 		cursor: pointer;
-
 		.button-add {
 			width: 41px;
 			height: 41px;
 			stroke-width: 1;
-			fill: none;
-			stroke: currentColor;
+			fill: var(--button-fill, none);
+			stroke: var(--button-stroke, currentColor);
 		}
-		:global(svg.draft) {
-			stroke: #7E7E7E;
-			fill: #1E1E1E;
-		}
-		:global(svg.ready) {
-			stroke: #A1383D;
-			fill: #2E2122;
-		}
-		:global(svg.in-progress) {
-			stroke: #A6A45D;
-			fill: #2C2C24;
-		}
-		:global(svg.done) {
-			stroke: #3E9959;
-			fill: #212B24;
-		}
+		.button-add.draft       { --button-stroke: #7E7E7E; --button-fill: #1E1E1E; }
+		.button-add.ready       { --button-stroke: #A1383D; --button-fill: #2E2122; }
+		.button-add.in-progress { --button-stroke: #A6A45D; --button-fill: #2C2C24; }
+		.button-add.done        { --button-stroke: #3E9959; --button-fill: #212B24; }
 	}
 </style>

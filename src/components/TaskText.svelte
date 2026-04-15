@@ -6,7 +6,6 @@
 	import {delink, getFromRelativePath, isLink} from "../LinkManager";
 	import {NoTaskId} from "../NodePositionsCalculator";
 
-	// PROPS
 	let {
 		taskId,
 		isUnselected,
@@ -18,7 +17,7 @@
 	} = $props();
 
 	// STATE
-	let taskData = context.versionedData.getTask(taskId);
+	let taskData = $derived(context.versionedData.getTask(taskId));
 	let isSelected = $derived(context.isSelected(taskId));
 	let isEditing = $derived(context.editingTaskId === taskId);
 	let suggest: LinkSuggest | null = null;
@@ -87,7 +86,7 @@
 				hoverParent: textPreviewEl,
 				targetEl: link,
 				linktext: link.getAttribute("data-href"),
-				sourcePath: ""
+				sourcePath: taskData.path ?? ""
 			});
 		}
 	}
@@ -192,13 +191,11 @@
 			class="text-preview tasktext"
 			class:unselect={isUnselected}
 			bind:this={textPreviewEl}
-			onpointerup={handlePreviewClick}
 			onmouseover={handlePreviewMouseOver}
 		>
 		</div>
 	{/if}
 </div>
-<!--onkeydown={(e) => e.key === 'Enter' && toggleEdit()}-->
 
 <style>
 	:root, .task-text-container {
@@ -217,6 +214,12 @@
 		position: absolute;
 		padding: 0;
 		gap: 0;
+	}
+	.task-text-container.selected .tasktext:hover {
+		cursor: text;
+	}
+	.task-text-container.not-selected .tasktext:hover {
+		/*cursor: default;*/
 	}
 	.tasktext {
 		margin: 0;
@@ -248,17 +251,11 @@
 	.tasktext.unselect {
 		color: color-mix(in srgb, #7E7E7E 100%, #000000 50%);
 	}
-	.task-text-container.selected .tasktext:hover {
-		cursor: text;
-	}
-	.task-text-container.not-selected .tasktext:hover {
-		/*cursor: default;*/
-	}
 
 	.text-edit {
 		display: flex;
 		field-sizing: content;
-		padding-top: 4px; /* fixes text jumping between text-edit and text-preview */
+		padding-top: 5px; /* fixes text jumping between text-edit and text-preview */
 	}
 	.text-edit:hover {
 		background-color: transparent;
@@ -284,8 +281,6 @@
 			text-align: center;
 			justify-content: center;
 			align-items: center;
-			/*white-space: pre-wrap;*/
-			/*word-wrap: break-word;*/
 			overflow: visible;
 		}
 	}

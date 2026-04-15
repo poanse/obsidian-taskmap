@@ -31,7 +31,7 @@
 		IconCode.KEY,
 		IconCode.LOCK,
 		IconCode.REPARENT
-	].contains(iconCode);
+	].includes(iconCode);
 	
 	function onpointerdown(event: MouseEvent) {
 		isPressedDown = true;
@@ -44,8 +44,8 @@
 	}
 
 	let isButtonDisabled = $derived(
-		[IconCode.LOCK, IconCode.KEY].contains(iconCode) && context.isReparentingOn()
-		|| [IconCode.LOCK, IconCode.KEY].contains(iconCode) && context.versionedData.getTask(context.selectedTaskId).status == StatusCode.DONE
+		[IconCode.LOCK, IconCode.KEY].includes(iconCode) && context.isReparentingOn()
+		|| [IconCode.LOCK, IconCode.KEY].includes(iconCode) && context.versionedData.getTask(context.selectedTaskId).status == StatusCode.DONE
 		|| (iconCode == IconCode.REPARENT && context.chosenBlockerId !== NoTaskId)
 		|| (iconCode == IconCode.REPARENT && context.chosenBlockedId !== NoTaskId)
 		|| (iconCode === IconCode.STATUS_DONE && context.versionedData.isTaskBlocked(context.selectedTaskId))

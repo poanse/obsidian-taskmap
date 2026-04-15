@@ -23,9 +23,13 @@ import {
 } from "./NodePositionsCalculator";
 import { DraggingManager } from "./DraggingManager.svelte";
 import { delink, LinkManager, tasknameFromFilePath } from "./LinkManager";
+import { HistoryManager } from "./data/HistoryManager.svelte";
+import type { ProjectData } from "./data/ProjectData.svelte.js";
 import { VersionedData } from "./data/VersionedData";
 import { innerHeight } from "svelte/reactivity/window";
 import { TASK_SIZE } from "./Constants";
+
+const DEFAULT_TOOLBAR_STATUS = StatusCode.DRAFT;
 
 export class Context {
 	app: App;
@@ -41,9 +45,9 @@ export class Context {
 	chosenBlockedId = $state(NoTaskId);
 	hoveredBlockerId = $state(NoTaskId);
 	hoveredBlockedId = $state(NoTaskId);
-	toolbarStatus = $state(StatusCode.DRAFT);
+	toolbarStatus = $state(DEFAULT_TOOLBAR_STATUS);
 	reparentingTaskId = $state(NoTaskId);
-	versionedData: VersionedData;
+	versionedData = $state(null! as VersionedData);
 	positions: Map<TaskId, Vector2>;
 	taskPositions: Array<{
 		taskId: TaskId;
@@ -77,6 +81,47 @@ export class Context {
 			};
 		});
 		this.updateTaskPositions();
+	}
+
+	/**
+	 * Replaces project data from disk (e.g. after an external update) without remounting the view,
+	 * so pan/zoom and the scene stay intact.
+	 */
+	public reloadFromDisk(projectData: ProjectData): void {
+		this.versionedData = new VersionedData(projectData, new HistoryManager());
+		this.taskDraggingManager.reset();
+		this.draggedTaskId = NoTaskId;
+		this.reparentingTaskId = NoTaskId;
+		this.chosenBlockerId = NoTaskId;
+		this.chosenBlockedId = NoTaskId;
+		this.hoveredBlockerId = NoTaskId;
+		this.hoveredBlockedId = NoTaskId;
+		this.pressedButtonCode = -1;
+
+		const sel = this.versionedData.getTaskOption(this.selectedTaskId);
+		if (sel == null || sel.deleted) {
+			this.selectedTaskId = NoTaskId;
+			this.toolbarStatus = DEFAULT_TOOLBAR_STATUS;
+		} else {
+			this.toolbarStatus = sel.status;
+		}
+
+		const focused = this.versionedData.getTaskOption(this.focusedTaskId);
+		if (focused == null || focused.deleted) {
+			this.focusedTaskId = RootTaskId;
+		}
+
+		const editing = this.versionedData.getTaskOption(this.editingTaskId);
+		if (editing == null || editing.deleted) {
+			this.editingTaskId = NoTaskId;
+		}
+
+		this.taskPositions = this.versionedData.getTasks().map((task) => ({
+			taskId: task.taskId,
+			tween: null,
+		}));
+		this.updateTaskPositions();
+		this.incrementUpdateOnZoomCounter();
 	}
 
 	public isBlockerHighlighted = (taskId: TaskId) => {
@@ -174,7 +219,7 @@ export class Context {
 				blockerPair.blocked,
 				blockerPair.blocker,
 			) ||
-			this.versionedData.isDescendentOf(
+			this.versionedData.isDescendantOf(
 				blockerPair.blocked,
 				blockerPair.blocker,
 			)
@@ -203,7 +248,7 @@ export class Context {
 			candidate != task.parentId &&
 			!this.versionedData
 				.getDescendantIds(this.reparentingTaskId)
-				.contains(candidate)
+				.includes(candidate)
 		);
 	}
 
@@ -229,7 +274,7 @@ export class Context {
 		return this.versionedData
 			.getAncestors(this.focusedTaskId)
 			.map((t) => t.taskId)
-			.contains(taskId);
+			.includes(taskId);
 	}
 
 	public updateTaskPositions(draggingOnly = false) {
@@ -300,7 +345,7 @@ export class Context {
 				this.draggedTaskId,
 			);
 			this.taskPositions
-				.filter((t) => draggedTaskIds.contains(t.taskId))
+				.filter((t) => draggedTaskIds.includes(t.taskId))
 				.forEach((t) => {
 					if (
 						t.tween !== null &&
@@ -334,7 +379,7 @@ export class Context {
 			.filter((t) =>
 				this.versionedData
 					.getChildren(draggedParentId)
-					.contains(t.taskId),
+					.includes(t.taskId),
 			)
 			.sort((a, b) => a.tween?.target.y! - b.tween?.target.y!)
 			.map((t) => t.taskId);
@@ -424,8 +469,8 @@ export class Context {
 			ancestorTasks.some((t) => t.hidden) ||
 			!(
 				task.taskId == this.focusedTaskId ||
-				focusedAncestorIds.contains(task.taskId) ||
-				focusedDescendantIds.contains(task.taskId)
+				focusedAncestorIds.includes(task.taskId) ||
+				focusedDescendantIds.includes(task.taskId)
 			)
 		);
 	}

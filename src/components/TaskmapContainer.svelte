@@ -15,7 +15,6 @@
 	
 	let viewportEl: HTMLDivElement | null = null;
 	let sceneEl: HTMLDivElement | null = null;
-	let svgGroupEl: SVGGElement | null = null;
 	let panzoom: PanzoomObject | null = null;
 	let panstart: Vector2 = {x: 0, y: 0};
 	let draggingManager = new DraggingManager([MouseDown.MIDDLE, MouseDown.LEFT]);
@@ -23,9 +22,6 @@
 	onMount(async () => {
 		if (!sceneEl) {
 			throw new Error('No scene element');
-		}
-		if (!svgGroupEl) {
-			throw new Error('No svg group element');
 		}
 		if (!viewportEl) {
 			throw new Error('No viewport');
@@ -168,13 +164,11 @@
 	>
 		<svg class="svg-layer" overflow="visible">
 			<defs>
-				<defs>
-					<marker id="arrow" markerWidth="5" markerHeight="10" refX="3" refY="3" orient="auto" markerUnits="strokeWidth">
-						<path d="M-1,0 L-1,6 L4.5,3 z" fill="context-stroke" />
-					</marker>
-				</defs>
+				<marker id="arrow" markerWidth="5" markerHeight="10" refX="3" refY="3" orient="auto" markerUnits="strokeWidth">
+					<path d="M-1,0 L-1,6 L4.5,3 z" fill="context-stroke" />
+				</marker>
 			</defs>
-			<g class="svg-group" bind:this={svgGroupEl}>
+			<g class="svg-group">
 				{#each (context.versionedData.getTasks()
 						.filter(t => !context.isTaskHidden(t.taskId))
 						.filter(t => t.taskId !== RootTaskId)
@@ -201,13 +195,11 @@
 		
 		<svg class="svg-layer" overflow="visible">
 			<defs>
-				<defs>
-					<marker id="arrow" markerWidth="5" markerHeight="10" refX="3" refY="3" orient="auto" markerUnits="strokeWidth">
-						<path d="M-1,0 L-1,6 L4.5,3 z" fill="context-stroke" />
-					</marker>
-				</defs>
+				<marker id="arrow" markerWidth="5" markerHeight="10" refX="3" refY="3" orient="auto" markerUnits="strokeWidth">
+					<path d="M-1,0 L-1,6 L4.5,3 z" fill="context-stroke" />
+				</marker>
 			</defs>
-			<g class="svg-group" bind:this={svgGroupEl}>
+			<g class="svg-group">
 				{#if context.chosenBlockerId !== NoTaskId || context.chosenBlockedId !== NoTaskId || context.hoveredBlockerId !== NoTaskId || context.hoveredBlockedId !== NoTaskId}
 					{#each (context.versionedData.getBlockerPairs().filter(
 						p => {

@@ -1,6 +1,6 @@
 import { debounce, TextFileView, TFile, WorkspaceLeaf } from "obsidian";
 import { mount, unmount } from "svelte";
-import { DEFAULT_DATA, ProjectData } from "./data/ProjectData.svelte.js";
+import { DEFAULT_DATA, ProjectData } from "./data/ProjectData.svelte";
 import { Context } from "./Context.svelte.js";
 import { NodePositionsCalculator } from "./NodePositionsCalculator";
 import TaskmapContainer from "./components/TaskmapContainer.svelte";
@@ -32,15 +32,21 @@ export class TaskmapView extends TextFileView {
 	async refreshUi() {
 		const projectFile = this.file!;
 		await this.debouncedSave.run();
-		this.clear();
-		await this.onLoadFile(projectFile);
+		if (this.taskmapContainer === undefined) {
+			await this.onLoadFile(projectFile);
+		} else {
+			const data = await this.app.vault.read(projectFile);
+			this.setViewData(data);
+			this.projectData = deserializeProjectData(data);
+			this.context.reloadFromDisk(this.projectData);
+		}
 	}
 
 	async onLoadFile(file: TFile): Promise<void> {
 		this.file = file;
 		const data = await this.app.vault.read(file);
 		this.setViewData(data);
-		this.projectData = deserializeProjectData(this.app, this.data);
+		this.projectData = deserializeProjectData(data);
 		this.context = new Context(
 			this.app,
 			this.plugin,
@@ -54,22 +60,6 @@ export class TaskmapView extends TextFileView {
 				context: this.context,
 			},
 		});
-	}
-
-	getFile() {
-		if (this.file) {
-			return this.file;
-		} else {
-			throw new Error();
-		}
-	}
-
-	getFilePath(): string {
-		if (this.file) {
-			return this.file.path;
-		} else {
-			throw new Error();
-		}
 	}
 
 	getViewData(): string {
@@ -88,17 +78,16 @@ export class TaskmapView extends TextFileView {
 		try {
 			await updateFile(this.app, this.file!, this.projectData);
 		} catch (err) {
-			console.error("Save failed:", err);
-			throw new Error(`Save failed. ${err.message}`);
+			console.error("Save failed: ", err);
+			throw new Error(`Save failed: ${String(err)}`);
 		}
 	}
 
 	clear(): void {
 		this.debouncedSave.cancel();
 		this.setViewData(DEFAULT_DATA);
-		// 3. Proper unmounting in the clear cycle
 		if (this.taskmapContainer) {
-			unmount(this.taskmapContainer);
+			void unmount(this.taskmapContainer);
 			this.taskmapContainer = undefined;
 		}
 		this.contentEl.empty();

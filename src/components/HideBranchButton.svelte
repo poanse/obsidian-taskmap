@@ -59,7 +59,7 @@
 			width: 41px;
 			height: 41px;
 			stroke: #bbb;
-			fill: #181818;
+			fill: none;
 			stroke-width: 2;
 			stroke-linecap: round;
 			stroke-linejoin: round;
