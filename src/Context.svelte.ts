@@ -357,7 +357,7 @@ export class Context {
 					) {
 						t.tween.stiffness = 1;
 						t.tween.damping = 1;
-						t.tween.set(
+						void t.tween.set(
 							V2.add(
 								this.positions.get(t.taskId)!,
 								draggingDelta,
