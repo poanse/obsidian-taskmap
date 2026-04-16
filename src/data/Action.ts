@@ -21,7 +21,7 @@ export class AddTaskAction implements Action {
 			taskId: this.addedTaskId,
 			parentId: this.parentId,
 			status: StatusCode.READY,
-			name: "default",
+			name: "task",
 			deleted: false,
 			hidden: false,
 			priority: childrenCount,
