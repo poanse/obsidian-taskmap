@@ -59,7 +59,6 @@ export class Context {
 	scale = $state(1);
 
 	// parameters for animating task movement
-	private tweenOptions = { duration: 300 };
 	private springOptions = { stiffness: 0.07, damping: 0.7 };
 
 	constructor(
@@ -305,8 +304,9 @@ export class Context {
 				});
 			}
 			this.positions = newPositions;
+			// Disable because reactivity from this variable is not needed
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity
-			const taskIdSet = new Set<TaskId>(
+			const taskIdSet: ReadonlySet<TaskId> = new Set<TaskId>(
 				this.taskPositions.map((t) => t.taskId),
 			);
 			this.positions.forEach((v, k) => {
@@ -384,7 +384,12 @@ export class Context {
 					.getChildren(draggedParentId)
 					.includes(t.taskId),
 			)
-			.sort((a, b) => a.tween?.target.y! - b.tween?.target.y!)
+			.sort((left, right) => {
+				if (left.tween !== null && right.tween !== null) {
+					return left.tween?.target.y - right.tween?.target.y;
+				}
+				return 0;
+			})
 			.map((t) => t.taskId);
 		const newPriority = orderedSiblings.findIndex(
 			(t) => t == this.draggedTaskId,

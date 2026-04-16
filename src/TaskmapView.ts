@@ -67,11 +67,10 @@ export class TaskmapView extends TextFileView {
 	}
 
 	setViewData(data: string = DEFAULT_DATA, clear = false): void {
-		this.data = data;
-
 		if (clear) {
 			this.clear();
 		}
+		this.data = data;
 	}
 
 	async save() {
@@ -86,22 +85,14 @@ export class TaskmapView extends TextFileView {
 	clear(): void {
 		this.debouncedSave.cancel();
 		this.setViewData(DEFAULT_DATA);
-		if (this.taskmapContainer) {
-			void unmount(this.taskmapContainer);
-			this.taskmapContainer = undefined;
-		}
 		this.contentEl.empty();
-	}
-
-	async onUnloadFile(file: TFile): Promise<void> {
-		this.clear();
 	}
 
 	onunload() {
 		this.clear();
-	}
-
-	async onClose() {
-		this.clear();
+		if (this.taskmapContainer) {
+			void unmount(this.taskmapContainer);
+			this.taskmapContainer = undefined;
+		}
 	}
 }

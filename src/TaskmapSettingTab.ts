@@ -1,4 +1,4 @@
-import { PluginSettingTab, App, Setting, TFolder, Notice } from "obsidian";
+import { PluginSettingTab, App, Setting, TFolder } from "obsidian";
 import type TaskmapPlugin from "./main";
 import { FolderSuggest } from "./helpers/FolderSuggest";
 
