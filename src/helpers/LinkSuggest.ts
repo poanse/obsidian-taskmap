@@ -1,4 +1,4 @@
-﻿import { App, TFile, AbstractInputSuggest, prepareFuzzySearch } from "obsidian";
+﻿import { AbstractInputSuggest, App, prepareFuzzySearch, TFile } from "obsidian";
 
 export class LinkSuggest extends AbstractInputSuggest<TFile> {
 	textInputEl: HTMLTextAreaElement;
@@ -10,7 +10,7 @@ export class LinkSuggest extends AbstractInputSuggest<TFile> {
 		this.textInputEl = textInputEl;
 	}
 
-	getSuggestions(query: string): TFile[] {
+	getSuggestions(_query: string): TFile[] {
 		const cursor = this.textInputEl.selectionStart;
 		const text = this.textInputEl.value;
 
@@ -31,9 +31,9 @@ export class LinkSuggest extends AbstractInputSuggest<TFile> {
 
 		// Perform the search
 		const search = prepareFuzzySearch(linkQuery);
-		const files = this.app.vault.getFiles();
 
-		return files
+		return this.app.vault
+			.getFiles()
 			.filter((file) => search(file.path) || search(file.basename))
 			.sort((a, b) => {
 				const resA = search(a.path);

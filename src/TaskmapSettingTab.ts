@@ -1,5 +1,6 @@
-import { PluginSettingTab, App, Setting } from "obsidian";
+import { PluginSettingTab, App, Setting, TFolder, Notice } from "obsidian";
 import type TaskmapPlugin from "./main";
+import { FolderSuggest } from "./helpers/FolderSuggest";
 
 export class TaskmapSettingTab extends PluginSettingTab {
 	plugin: TaskmapPlugin;
@@ -38,5 +39,26 @@ export class TaskmapSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
+		new Setting(containerEl)
+			.setName("Note folder")
+			.setDesc(
+				"Notes created from tasks will be placed in this folder. If blank, they will be placed in the default location for this vault.",
+			)
+			.addText((text) => {
+				new FolderSuggest(this.app, text.inputEl);
+				text.setPlaceholder("")
+					.setValue(this.plugin.settings.newNoteFolder)
+					.onChange(async (value) => {
+						if (
+							value === "" ||
+							this.plugin.app.vault.getAbstractFileByPath(
+								value,
+							) instanceof TFolder
+						) {
+							this.plugin.settings.newNoteFolder = value;
+							await this.plugin.saveSettings();
+						}
+					});
+			});
 	}
 }

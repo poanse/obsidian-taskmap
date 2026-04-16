@@ -88,7 +88,10 @@ export class Context {
 	 * so pan/zoom and the scene stay intact.
 	 */
 	public reloadFromDisk(projectData: ProjectData): void {
-		this.versionedData = new VersionedData(projectData, new HistoryManager());
+		this.versionedData = new VersionedData(
+			projectData,
+			new HistoryManager(),
+		);
 		this.taskDraggingManager.reset();
 		this.draggedTaskId = NoTaskId;
 		this.reparentingTaskId = NoTaskId;
@@ -409,7 +412,8 @@ export class Context {
 
 	public save() {
 		// Cannot have reference to the view, so save all opened views
-		this.app.workspace.getLeavesOfType(TASKMAP_VIEW_TYPE)
+		this.app.workspace
+			.getLeavesOfType(TASKMAP_VIEW_TYPE)
 			.map((leaf) => leaf.view)
 			.filter((view) => view instanceof TaskmapView)
 			.forEach((view) => view.debouncedSave());
@@ -483,10 +487,18 @@ export class Context {
 	 * Creates note named after task name if not exists already.
 	 * Changes task name to a link to the node.
 	 * Opens the note on the right side.
-	 * @param taskId
 	 */
-	public async createLinkedNote(taskId: TaskId) {
-		const filepath = this.filePathFromTask(taskId);
+	public async createLinkedNote(taskId: TaskId, plugin: TaskmapPlugin) {
+		const taskmapPath =
+			plugin.app.workspace.getActiveViewOfType(TaskmapView)?.file?.parent
+				?.path;
+		let folderPath = "";
+		if (plugin.settings.newNoteFolder) {
+			folderPath = plugin.settings.newNoteFolder;
+		} else if (taskmapPath) {
+			folderPath = taskmapPath;
+		}
+		const filepath = this.filePathFromTask(taskId, folderPath);
 
 		try {
 			const abstractFile = this.app.vault.getAbstractFileByPath(filepath);
@@ -499,7 +511,7 @@ export class Context {
 						);
 			this.versionedData.setName(
 				taskId,
-				tasknameFromFilePath(filepath),
+				tasknameFromFilePath(this.versionedData.getTask(taskId).name),
 				filepath,
 			);
 			this.save();
@@ -509,19 +521,25 @@ export class Context {
 			await this.openOrFocusNote(tfile);
 		} catch (error) {
 			new Notice(
-				"Error creating note. It might already exist or the name is invalid.",
+				`Error creating note. It might already exist or the name is invalid. ${String(error)}`,
 			);
 			console.error(error);
 		}
 	}
 
-	public filePathFromTask(taskId: TaskId) {
+	public filePathFromTask(taskId: TaskId, folder: string = "") {
 		const task = this.versionedData.getTask(taskId);
 		const taskName = task.name;
 		// Sanitize the name for Obsidian filenames
 		let sanitizedName = taskName.replace(/[\\/:*?"<>|]/g, "-");
 		sanitizedName = delink(sanitizedName);
-		return `${sanitizedName}.md`;
+		if (folder === "" || folder === "/") {
+			return `${sanitizedName}.md`;
+		}
+		if (!folder.endsWith("/")) {
+			folder = folder + "/";
+		}
+		return `${folder}${sanitizedName}.md`;
 	}
 
 	/**
@@ -569,7 +587,8 @@ export class Context {
 		const candidateLeaves = rootLeaves
 			.reverse()
 			.filter(
-				(leaf) => leaf !== activeLeaf && !(leaf.view instanceof TaskmapView),
+				(leaf) =>
+					leaf !== activeLeaf && !(leaf.view instanceof TaskmapView),
 			);
 
 		let anotherUnpinnedLeaf: WorkspaceLeaf | null = null;

@@ -1,18 +1,15 @@
 import { addIcon, Plugin } from "obsidian";
 import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
-import {
-	DEFAULT_SETTINGS,
-	type TaskmapPluginSettings,
-} from "./TaskmapPluginSettings";
+import { DEFAULT_SETTINGS, type TaskmapSettings } from "./TaskmapSettings";
 import { TaskmapSettingTab } from "./TaskmapSettingTab";
 import { DEFAULT_DATA } from "./data/ProjectData.svelte";
-import { LOGO_CONTENT, LOGO_NAME } from "./IconService";
 import { FileWatcherWithCache } from "./FileWatcherWithCache";
+import { LOGO_CONTENT, LOGO_NAME } from "./Constants";
 
 export const FILE_EXTENSION = "taskmap";
 
 export default class TaskmapPlugin extends Plugin {
-	settings: TaskmapPluginSettings;
+	settings: TaskmapSettings;
 	private readonly filewatcher = new FileWatcherWithCache();
 
 	async onload() {
@@ -59,7 +56,7 @@ export default class TaskmapPlugin extends Plugin {
 			{},
 			DEFAULT_SETTINGS,
 			await this.loadData(),
-		) as TaskmapPluginSettings;
+		) as TaskmapSettings;
 	}
 
 	async saveSettings() {

@@ -1,7 +1,7 @@
 ﻿<script lang="ts">
 	import {onMount, tick} from "svelte";
 	import {Component, MarkdownRenderer, Notice} from "obsidian";
-	import {LinkSuggest} from "../LinkSuggest";
+	import {LinkSuggest} from "../helpers/LinkSuggest";
 	import type {Context} from "../Context.svelte.js";
 	import {delink, getFromRelativePath, isLink} from "../LinkManager";
 	import {NoTaskId} from "../NodePositionsCalculator";

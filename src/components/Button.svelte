@@ -89,7 +89,7 @@
 		} else if (iconCode == IconCode.REMOVE_MULTIPLE) {
 			context.removeTaskBranch(context.selectedTaskId);
 		} else if (iconCode == IconCode.CREATE_LINKED_NOTE) {
-			context.createLinkedNote(context.selectedTaskId);
+			context.createLinkedNote(context.selectedTaskId, context.plugin);
 		} else if (iconCode == IconCode.KEY) {
 			context.chosenBlockedId = context.chosenBlockedId === NoTaskId ? context.selectedTaskId : NoTaskId;
 		} else if (iconCode == IconCode.LOCK) {

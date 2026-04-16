@@ -8,7 +8,7 @@
 		SUBTOOLBAR_PADDING
 	} from "../Constants";
 	import {quintOut} from 'svelte/easing';
-	import {slideCustom} from '../Custom';
+	import {slideCustom} from '../helpers/svelte';
 	import type {Context} from "../Context.svelte.js";
 	import {
 		IconCode, StatusCode, type TaskId, toIconCode
