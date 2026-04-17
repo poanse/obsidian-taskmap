@@ -33,7 +33,7 @@ export class LinkSuggest extends AbstractInputSuggest<TFile> {
 		const search = prepareFuzzySearch(linkQuery);
 
 		return this.app.vault
-			.getFiles()
+			.getMarkdownFiles()
 			.filter((file) => search(file.path) || search(file.basename))
 			.sort((a, b) => {
 				const resA = search(a.path);
