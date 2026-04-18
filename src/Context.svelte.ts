@@ -28,6 +28,7 @@ import type { ProjectData } from "./data/ProjectData.svelte.js";
 import { VersionedData } from "./data/VersionedData";
 import { innerHeight } from "svelte/reactivity/window";
 import { TASK_SIZE } from "./Constants";
+import { SvelteSet } from "svelte/reactivity";
 
 const DEFAULT_TOOLBAR_STATUS = StatusCode.DRAFT;
 
@@ -304,9 +305,8 @@ export class Context {
 				});
 			}
 			this.positions = newPositions;
-			// Disable because reactivity from this variable is not needed
-			// eslint-disable-next-line svelte/prefer-svelte-reactivity
-			const taskIdSet: ReadonlySet<TaskId> = new Set<TaskId>(
+			// no need for reactivity here, but eslint issues a warning upon using plain Set
+			const taskIdSet: ReadonlySet<TaskId> = new SvelteSet<TaskId>(
 				this.taskPositions.map((t) => t.taskId),
 			);
 			this.positions.forEach((v, k) => {
