@@ -14,6 +14,7 @@ export function serializeProjectData(projectData: ProjectData) {
 			schemaVersion: TASKMAP_FILE_SCHEMA_VERSION,
 			tasks: projectData.tasks,
 			blockerPairs: projectData.blockerPairs,
+			folderPath: projectData.folderPath,
 			curTaskId: projectData.curTaskId,
 		},
 		null,
