@@ -2,7 +2,7 @@ import { Modal, Setting, TFolder } from "obsidian";
 import type { Context } from "./Context.svelte.js";
 import { FolderSuggest } from "./helpers/FolderSuggest";
 
-export class TaskmapSettingsModal extends Modal {
+export class ProjectSettingsModal extends Modal {
 	constructor(private readonly context: Context) {
 		super(context.app);
 	}
@@ -10,7 +10,7 @@ export class TaskmapSettingsModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 
-		contentEl.createEl("h2", { text: "Project Settings" });
+		contentEl.createEl("h2", { text: "Project settings" });
 
 		new Setting(contentEl)
 			.setName("Note folder")
@@ -19,14 +19,14 @@ export class TaskmapSettingsModal extends Modal {
 			)
 			.addText((text) => {
 				new FolderSuggest(this.app, text.inputEl);
-				text
-					.setPlaceholder("")
+				text.setPlaceholder("")
 					.setValue(this.context.versionedData.getFolderPath() ?? "")
 					.onChange(async (value) => {
 						if (
 							value === "" ||
-							this.app.vault.getAbstractFileByPath(value) instanceof
-								TFolder
+							this.app.vault.getAbstractFileByPath(
+								value,
+							) instanceof TFolder
 						) {
 							this.context.versionedData.setFolderPath(value);
 							this.context.save();

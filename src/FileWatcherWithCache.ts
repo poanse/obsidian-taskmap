@@ -1,22 +1,18 @@
-import {
-	Notice,
-	type Plugin,
-	TAbstractFile,
-	type App,
-	TFile,
-	TFolder,
-} from "obsidian";
-import type { ProjectData } from "./data/ProjectData.svelte";
+import { type Plugin, TAbstractFile, type App, TFile, TFolder } from "obsidian";
 import type { TaskData } from "./types";
 import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
-import { deserializeProjectData, updateFile } from "./SaveManager";
+import { loadProjectData, updateFile } from "./SaveManager";
 import { delink, generateMarkdownLink, pathIsUnderFolder } from "./LinkManager";
 
 function taskPathAffectedByRename(taskPath: string, oldPath: string): boolean {
 	return taskPath === oldPath || pathIsUnderFolder(taskPath, oldPath);
 }
 
-function remapTaskPathAfterRename(taskPath: string,	oldPath: string, newPath: string): string {
+function remapTaskPathAfterRename(
+	taskPath: string,
+	oldPath: string,
+	newPath: string,
+): string {
 	if (taskPath === oldPath) {
 		return newPath;
 	}
@@ -61,7 +57,7 @@ export class FileWatcherWithCache {
 		);
 		plugin.registerEvent(
 			app.vault.on("rename", (file, oldPath) => {
-				void this.onRenameLinkUpdate(file, oldPath, app);
+				void this.onRenameLinkUpdate(app, file, oldPath);
 			}),
 		);
 
@@ -114,29 +110,19 @@ export class FileWatcherWithCache {
 			files = [...this.cachedTaskmapFiles].filter((f) =>
 				pathIsUnderFolder(f.path, file.path),
 			);
+			await this.handleNoteFolderDelete(app, file);
 		} else {
 			return;
 		}
 		await this.handleDeleteFiles(app, files);
-	}
 
-	async onRenameLinkUpdate(
-		file: TAbstractFile,
-		oldPath: string,
-		app: App,
-	) {
-		console.debug(`${file.path} renamed`);
-		let files: TFile[];
-		if (file instanceof TFile) {
-			files = [file];
-		} else if (file instanceof TFolder) {
-			files = [...this.cachedTaskmapFiles].filter((f) =>
-				pathIsUnderFolder(f.path, file.path),
-			);
-		} else {
-			return;
+		// refresh all active views
+		for (const view of app.workspace
+			.getLeavesOfType(TASKMAP_VIEW_TYPE)
+			.map((l) => l.view)
+			.filter((view) => view instanceof TaskmapView)) {
+			await view.refreshUi();
 		}
-		await this.handleRenameFiles(app, files, oldPath, file.path);
 	}
 
 	async handleDeleteFiles(app: App, files: TFile[]) {
@@ -146,13 +132,8 @@ export class FileWatcherWithCache {
 				// Entire .taskmap was removed; link handler runs before cache — skip read/write.
 				continue;
 			}
-			let projectData: ProjectData;
-			try {
-				const projectDataRaw = await app.vault.read(taskmapFile);
-				projectData = deserializeProjectData(projectDataRaw);
-			} catch (e) {
-				console.error(`Taskmap delete hook: skipped invalid file ${taskmapFile.path}`);
-				new Notice(`Taskmap delete hook: skipped invalid file: ${String(e)}`);
+			const projectData = await loadProjectData(app, taskmapFile);
+			if (!projectData) {
 				continue;
 			}
 			let taskmapFileChanged = false;
@@ -167,16 +148,54 @@ export class FileWatcherWithCache {
 				console.debug(`${taskmapFile.path} changed`);
 				// resave file on the file system
 				await updateFile(app, taskmapFile, projectData);
-			} else {
-				console.debug(`${taskmapFile.path} not changed`);
 			}
 		}
+	}
+
+	async onRenameLinkUpdate(app: App, file: TAbstractFile, oldPath: string) {
+		console.debug(`${file.path} renamed`);
+		let files: TFile[];
+		if (file instanceof TFile) {
+			files = [file];
+		} else if (file instanceof TFolder) {
+			files = [...this.cachedTaskmapFiles].filter((f) =>
+				pathIsUnderFolder(f.path, file.path),
+			);
+			await this.handleNoteFolderRename(app, file, oldPath);
+		} else {
+			return;
+		}
+		await this.handleRenameFiles(app, files, oldPath, file.path);
+
 		// refresh all active views
 		for (const view of app.workspace
 			.getLeavesOfType(TASKMAP_VIEW_TYPE)
 			.map((l) => l.view)
 			.filter((view) => view instanceof TaskmapView)) {
 			await view.refreshUi();
+		}
+	}
+
+	async handleNoteFolderRename(app: App, folder: TFolder, oldPath: string) {
+		for (const taskmapFile of this.cachedTaskmapFiles) {
+			const projectData = await loadProjectData(app, taskmapFile);
+			if (projectData && projectData.folderPath == oldPath) {
+				console.debug(
+					`Changed folderPath for ${taskmapFile.name} from ${oldPath} to ${projectData.folderPath}`,
+				);
+				projectData.setFolderPath(folder.path);
+				await updateFile(app, taskmapFile, projectData);
+			}
+		}
+	}
+	async handleNoteFolderDelete(app: App, folder: TFolder) {
+		for (const taskmapFile of this.cachedTaskmapFiles) {
+			const projectData = await loadProjectData(app, taskmapFile);
+			if (projectData && projectData.folderPath == folder.path) {
+				console.debug(`Removed folderPath for ${taskmapFile.name}`);
+				projectData.setFolderPath("");
+				await updateFile(app, taskmapFile, projectData);
+			}
 		}
 	}
 
@@ -188,26 +207,23 @@ export class FileWatcherWithCache {
 	) {
 		// update paths in taskmap files
 		for (const taskmapFile of [...this.cachedTaskmapFiles]) {
-			console.debug(`handling ${taskmapFile.path}`);
-			let projectData: ProjectData;
-			try {
-				const projectDataRaw = await app.vault.read(taskmapFile);
-				projectData = deserializeProjectData(projectDataRaw);
-			} catch (e) {
-				console.error(`Taskmap rename hook: skipped invalid file ${taskmapFile.path}`);
-				new Notice(`Taskmap rename hook: skipped invalid file: ${String(e)}`);
+			const projectData = await loadProjectData(app, taskmapFile);
+			if (!projectData) {
 				continue;
 			}
 			const mapping = new Map<string, TaskData>();
 			projectData.tasks.forEach((t) => {
 				if (t.path) {
 					if (taskPathAffectedByRename(t.path, oldPath)) {
-						t.path = remapTaskPathAfterRename(t.path, oldPath, newPath);
+						t.path = remapTaskPathAfterRename(
+							t.path,
+							oldPath,
+							newPath,
+						);
 					}
 					mapping.set(t.path, t);
 				}
 			});
-			console.debug("mapping " + JSON.stringify(mapping.keys()));
 			let changed = false;
 			changedMdFiles
 				.filter((mdFile) => mapping.has(mdFile.path))
@@ -220,17 +236,7 @@ export class FileWatcherWithCache {
 				console.debug(`${taskmapFile.path} changed`);
 				// resave file on the file system
 				await updateFile(app, taskmapFile, projectData);
-			} else {
-				console.debug(`${taskmapFile.path} not changed`);
 			}
-		}
-
-		// refresh all active views
-		for (const view of app.workspace
-			.getLeavesOfType(TASKMAP_VIEW_TYPE)
-			.map((l) => l.view)
-			.filter((view) => view instanceof TaskmapView)) {
-			await view.refreshUi();
 		}
 	}
 }

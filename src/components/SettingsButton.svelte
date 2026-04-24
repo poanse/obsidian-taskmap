@@ -3,13 +3,12 @@
 	import {SettingsIconCode} from "../types";
 	import {getTooltipTextSettings, tooltip} from "../Tooltip";
 	import {Redo2, Settings, Undo2} from 'lucide-svelte';
-	import { TaskmapSettingsModal } from "src/TaskMapSettingsModal.js";
+	import { ProjectSettingsModal } from "src/ProjectSettingsModal.js";
 
 	let { iconCode,	context }: { iconCode: SettingsIconCode, context: Context } = $props();
 
 	let isPressedDown = $state(false);
-	let modal: TaskmapSettingsModal | null = null;
-	let buttonEl: HTMLDivElement | null = null;
+	let modal: ProjectSettingsModal | null = null;
 	
 	function onpointerdown(event: MouseEvent) {
 		isPressedDown = true;
@@ -43,19 +42,7 @@
 		} else if (iconCode == SettingsIconCode.SETTINGS_REDO) {
 			context.versionedData.redo();
 		} else if (iconCode == SettingsIconCode.SETTINGS_MENU) {
-			modal = new TaskmapSettingsModal(context);
-			modal.containerEl.classList.add("taskmap-settings-modal");
-			modal.open();
-			if (buttonEl) {
-				const rect = buttonEl.getBoundingClientRect();
-				modal.containerEl.style.position = "absolute";
-				// modal.containerEl.style.top = `${rect.top + 20}px`;
-
-				// 👇 THIS is the key line (left-align with button)
-				// modal.containerEl.style.left = `${rect.left}px`;
-
-				modal.containerEl.style.transform = "none";
-			}
+			new ProjectSettingsModal(context).open();
 		}
 	}
 
@@ -65,7 +52,6 @@
 </script>
 
 <div class="button"
-	 bind:this={buttonEl}
 	 use:tooltip={getTooltipTextSettings(iconCode)}
 	 class:disabled={isButtonDisabled}
 	 class:no-pan={true}

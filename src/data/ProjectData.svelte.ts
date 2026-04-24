@@ -203,6 +203,18 @@ export class ProjectData {
 	public addBlockerPair = (blockerPair: BlockerPair) => {
 		this.blockerPairs.push(blockerPair);
 	};
+
+	public getFolderPath = (): string | undefined => {
+		return this.folderPath;
+	};
+
+	public setFolderPath = (path: string | undefined) => {
+		const next = path === "" ? undefined : path;
+		if (next === this.folderPath) {
+			return;
+		}
+		this.folderPath = next;
+	};
 }
 
 export const DEFAULT_DATA = serializeProjectData(ProjectData.getDefault());

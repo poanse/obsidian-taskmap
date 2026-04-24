@@ -125,15 +125,11 @@ export class VersionedData {
 	};
 
 	public getFolderPath = (): string | undefined => {
-		return this.data.folderPath;
+		return this.data.getFolderPath();
 	};
 
 	public setFolderPath = (path: string | undefined) => {
-		const next = path === "" ? undefined : path;
-		if (next === this.data.folderPath) {
-			return;
-		}
-		this.data.folderPath = next;
+		this.data.setFolderPath(path);
 	};
 
 	public getTasks = (includeDeleted = false) => {
