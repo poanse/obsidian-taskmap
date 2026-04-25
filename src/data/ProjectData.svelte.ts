@@ -209,11 +209,7 @@ export class ProjectData {
 	};
 
 	public setFolderPath = (path: string | undefined) => {
-		const next = path === "" ? undefined : path;
-		if (next === this.folderPath) {
-			return;
-		}
-		this.folderPath = next;
+		this.folderPath = path === "" ? undefined : path;
 	};
 }
 

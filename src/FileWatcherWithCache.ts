@@ -1,23 +1,8 @@
-import { type Plugin, TAbstractFile, type App, TFile, TFolder } from "obsidian";
-import type { TaskData } from "./types";
+import { type App, type Plugin, TAbstractFile, TFile, TFolder } from "obsidian";
 import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
 import { loadProjectData, updateFile } from "./SaveManager";
 import { delink, generateMarkdownLink, pathIsUnderFolder } from "./LinkManager";
-
-function taskPathAffectedByRename(taskPath: string, oldPath: string): boolean {
-	return taskPath === oldPath || pathIsUnderFolder(taskPath, oldPath);
-}
-
-function remapTaskPathAfterRename(
-	taskPath: string,
-	oldPath: string,
-	newPath: string,
-): string {
-	if (taskPath === oldPath) {
-		return newPath;
-	}
-	return newPath + taskPath.slice(oldPath.length);
-}
+import type { ProjectData } from "./data/ProjectData.svelte";
 
 /** In-memory index of `.taskmap` files; `TFile.path` stays in sync with vault renames. */
 export class FileWatcherWithCache {
@@ -89,153 +74,157 @@ export class FileWatcherWithCache {
 
 	/**
 	 * Path-only renames update `TFile.path` on the same instance — no Set mutation.
-	 * Still handle extension changes (e.g. `.taskmap` → `.md`).
+	 * Still handle extension changes (e.g. `.md` -> `.taskmap`).
 	 */
 	onRenameCacheUpdate(file: TAbstractFile): void {
-		if (!(file instanceof TFile)) {
-			return;
-		}
-		this.cachedTaskmapFiles.delete(file);
-		if (file.extension === "taskmap") {
-			this.cachedTaskmapFiles.add(file);
+		if (file instanceof TFile) {
+			this.cachedTaskmapFiles.delete(file);
+			if (file.extension === "taskmap") {
+				this.cachedTaskmapFiles.add(file);
+			}
 		}
 	}
 
 	async onDeleteLinkUpdate(file: TAbstractFile, app: App) {
-		console.debug(`${file.path} deleted`);
-		let files: TFile[];
 		if (file instanceof TFile) {
-			files = [file];
+			await this.handleDeleteFile(app, file);
 		} else if (file instanceof TFolder) {
-			files = [...this.cachedTaskmapFiles].filter((f) =>
-				pathIsUnderFolder(f.path, file.path),
-			);
+			// files in folder emit separate events per file
 			await this.handleNoteFolderDelete(app, file);
-		} else {
-			return;
-		}
-		await this.handleDeleteFiles(app, files);
-
-		// refresh all active views
-		for (const view of app.workspace
-			.getLeavesOfType(TASKMAP_VIEW_TYPE)
-			.map((l) => l.view)
-			.filter((view) => view instanceof TaskmapView)) {
-			await view.refreshUi();
-		}
-	}
-
-	async handleDeleteFiles(app: App, files: TFile[]) {
-		const deletedPaths = new Set<string>(files.map((f) => f.path));
-		for (const taskmapFile of [...this.cachedTaskmapFiles]) {
-			if (deletedPaths.has(taskmapFile.path)) {
-				// Entire .taskmap was removed; link handler runs before cache — skip read/write.
-				continue;
-			}
-			const projectData = await loadProjectData(app, taskmapFile);
-			if (!projectData) {
-				continue;
-			}
-			let taskmapFileChanged = false;
-			projectData.tasks
-				.filter((t) => t.path && deletedPaths.has(t.path))
-				.forEach((t) => {
-					t.name = delink(t.name);
-					t.path = undefined;
-					taskmapFileChanged = true;
-				});
-			if (taskmapFileChanged) {
-				console.debug(`${taskmapFile.path} changed`);
-				// resave file on the file system
-				await updateFile(app, taskmapFile, projectData);
-			}
 		}
 	}
 
 	async onRenameLinkUpdate(app: App, file: TAbstractFile, oldPath: string) {
-		console.debug(`${file.path} renamed`);
-		let files: TFile[];
 		if (file instanceof TFile) {
-			files = [file];
+			await this.handleRenameFiles(app, file, oldPath);
 		} else if (file instanceof TFolder) {
-			files = [...this.cachedTaskmapFiles].filter((f) =>
-				pathIsUnderFolder(f.path, file.path),
-			);
+			// files in folder emit separate events per file
 			await this.handleNoteFolderRename(app, file, oldPath);
-		} else {
-			return;
 		}
-		await this.handleRenameFiles(app, files, oldPath, file.path);
+	}
 
-		// refresh all active views
-		for (const view of app.workspace
-			.getLeavesOfType(TASKMAP_VIEW_TYPE)
-			.map((l) => l.view)
-			.filter((view) => view instanceof TaskmapView)) {
-			await view.refreshUi();
+	async handleDeleteFile(app: App, deletedFile: TFile) {
+		for (const taskmapFile of [...this.cachedTaskmapFiles]) {
+			if (deletedFile.path === taskmapFile.path) {
+				// Entire .taskmap was removed; link handler runs before cache — skip read/write.
+				continue;
+			}
+			const projectData = await this.getProjectData(app, taskmapFile);
+			if (!projectData) {
+				continue;
+			}
+			const affectedTasks = projectData.tasks.filter(
+				(t) => t.path && deletedFile.path === t.path,
+			);
+			for (const t of affectedTasks) {
+				t.name = delink(t.name);
+				t.path = undefined;
+			}
+			if (affectedTasks) {
+				console.debug(`${taskmapFile.path} changed`);
+				await this.updateFileAndRefreshActiveView(
+					app,
+					taskmapFile,
+					projectData,
+				);
+			}
+		}
+	}
+
+	async handleNoteFolderDelete(app: App, folder: TFolder) {
+		for (const taskmapFile of [...this.cachedTaskmapFiles]) {
+			const projectData = await this.getProjectData(app, taskmapFile);
+			if (projectData && projectData.folderPath == folder.path) {
+				console.debug(`Removed folderPath for ${taskmapFile.name}`);
+				projectData.setFolderPath("");
+				await this.updateFileAndRefreshActiveView(
+					app,
+					taskmapFile,
+					projectData,
+				);
+			}
+		}
+	}
+
+	async handleRenameFiles(app: App, changedMdFile: TFile, oldPath: string) {
+		// update paths in taskmap files
+		for (const taskmapFile of [...this.cachedTaskmapFiles]) {
+			const projectData = await this.getProjectData(app, taskmapFile);
+			if (!projectData) {
+				continue;
+			}
+			const affectedTasks = projectData.tasks.filter(
+				(t) => t.path && t.path === oldPath,
+			);
+			for (const t of affectedTasks) {
+				t.path = changedMdFile.path;
+				t.name = generateMarkdownLink(app, changedMdFile);
+			}
+			if (affectedTasks) {
+				console.debug(`${taskmapFile.path} changed`);
+				// resave file on the file system
+				await this.updateFileAndRefreshActiveView(
+					app,
+					taskmapFile,
+					projectData,
+				);
+			}
 		}
 	}
 
 	async handleNoteFolderRename(app: App, folder: TFolder, oldPath: string) {
-		for (const taskmapFile of this.cachedTaskmapFiles) {
-			const projectData = await loadProjectData(app, taskmapFile);
+		for (const taskmapFile of [...this.cachedTaskmapFiles]) {
+			const projectData = await this.getProjectData(app, taskmapFile);
 			if (projectData && projectData.folderPath == oldPath) {
-				console.debug(
-					`Changed folderPath for ${taskmapFile.name} from ${oldPath} to ${projectData.folderPath}`,
-				);
 				projectData.setFolderPath(folder.path);
-				await updateFile(app, taskmapFile, projectData);
-			}
-		}
-	}
-	async handleNoteFolderDelete(app: App, folder: TFolder) {
-		for (const taskmapFile of this.cachedTaskmapFiles) {
-			const projectData = await loadProjectData(app, taskmapFile);
-			if (projectData && projectData.folderPath == folder.path) {
-				console.debug(`Removed folderPath for ${taskmapFile.name}`);
-				projectData.setFolderPath("");
-				await updateFile(app, taskmapFile, projectData);
+				console.debug(
+					`Changed folderPath for ${taskmapFile.name} from ${oldPath} to ${folder.path}`,
+				);
+				await this.updateFileAndRefreshActiveView(
+					app,
+					taskmapFile,
+					projectData,
+				);
 			}
 		}
 	}
 
-	async handleRenameFiles(
-		app: App,
-		changedMdFiles: TFile[],
-		oldPath: string,
-		newPath: string,
-	) {
-		// update paths in taskmap files
-		for (const taskmapFile of [...this.cachedTaskmapFiles]) {
-			const projectData = await loadProjectData(app, taskmapFile);
-			if (!projectData) {
-				continue;
-			}
-			const mapping = new Map<string, TaskData>();
-			projectData.tasks.forEach((t) => {
-				if (t.path) {
-					if (taskPathAffectedByRename(t.path, oldPath)) {
-						t.path = remapTaskPathAfterRename(
-							t.path,
-							oldPath,
-							newPath,
-						);
-					}
-					mapping.set(t.path, t);
+	async getProjectData(app: App, taskmapFile: TFile) {
+		const viewByName = new Map<string, TaskmapView>();
+		app.workspace
+			.getLeavesOfType(TASKMAP_VIEW_TYPE)
+			.map((l) => l.view)
+			.forEach((v) => {
+				if (v instanceof TaskmapView && v.file) {
+					viewByName.set(v.file.name, v);
 				}
 			});
-			let changed = false;
-			changedMdFiles
-				.filter((mdFile) => mapping.has(mdFile.path))
-				.forEach((mdFile) => {
-					const t = mapping.get(mdFile.path)!;
-					t.name = generateMarkdownLink(app, mdFile);
-					changed = true;
-				});
-			if (changed) {
-				console.debug(`${taskmapFile.path} changed`);
-				// resave file on the file system
-				await updateFile(app, taskmapFile, projectData);
+		const view = viewByName.get(taskmapFile.name);
+		if (view) {
+			// ensure that view data is consistent with disk data
+			await view.debouncedSave.run();
+			return view.projectData;
+		}
+		const loadedProjectData = await loadProjectData(app, taskmapFile);
+		if (loadedProjectData) {
+			return loadedProjectData;
+		}
+	}
+
+	async updateFileAndRefreshActiveView(
+		app: App,
+		taskmapFile: TFile,
+		projectData: ProjectData,
+	) {
+		await updateFile(app, taskmapFile, projectData);
+		for (const view of app.workspace
+			.getLeavesOfType(TASKMAP_VIEW_TYPE)
+			.map((l) => l.view)) {
+			if (
+				view instanceof TaskmapView &&
+				view.file?.name === taskmapFile.name
+			) {
+				await view.refreshUi();
 			}
 		}
 	}
