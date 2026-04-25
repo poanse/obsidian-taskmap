@@ -3,10 +3,12 @@
 	import {SettingsIconCode} from "../types";
 	import {getTooltipTextSettings, tooltip} from "../Tooltip";
 	import {Redo2, Settings, Undo2} from 'lucide-svelte';
+	import { ProjectSettingsModal } from "src/ProjectSettingsModal.js";
 
 	let { iconCode,	context }: { iconCode: SettingsIconCode, context: Context } = $props();
 
 	let isPressedDown = $state(false);
+	let modal: ProjectSettingsModal | null = null;
 	
 	function onpointerdown(event: MouseEvent) {
 		isPressedDown = true;
@@ -20,7 +22,6 @@
 
 	let isButtonDisabled = $derived(
 		(iconCode == SettingsIconCode.NONE)
-		|| (iconCode == SettingsIconCode.SETTINGS_MENU)
 		|| (iconCode == SettingsIconCode.SETTINGS_UNDO && !context.versionedData.canUndo())
 		|| (iconCode == SettingsIconCode.SETTINGS_REDO && !context.versionedData.canRedo())
 	);
@@ -39,6 +40,8 @@
 			context.versionedData.undo();
 		} else if (iconCode == SettingsIconCode.SETTINGS_REDO) {
 			context.versionedData.redo();
+		} else if (iconCode == SettingsIconCode.SETTINGS_MENU) {
+			new ProjectSettingsModal(context).open();
 		}
 	}
 

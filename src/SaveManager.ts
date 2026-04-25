@@ -14,11 +14,33 @@ export function serializeProjectData(projectData: ProjectData) {
 			schemaVersion: TASKMAP_FILE_SCHEMA_VERSION,
 			tasks: projectData.tasks,
 			blockerPairs: projectData.blockerPairs,
+			folderPath: projectData.folderPath,
 			curTaskId: projectData.curTaskId,
 		},
 		null,
 		2,
 	);
+}
+
+export async function updateFile(
+	app: App,
+	file: TFile,
+	projectData: ProjectData,
+) {
+	await app.vault.modify(file, serializeProjectData(projectData));
+}
+
+export async function loadProjectData(app: App, taskmapFile: TFile) {
+	let projectData: ProjectData | undefined = undefined;
+	try {
+		const projectDataRaw = await app.vault.read(taskmapFile);
+		projectData = deserializeProjectData(projectDataRaw);
+	} catch (e) {
+		console.error(
+			`Taskmap rename hook: skipped invalid file ${taskmapFile.path} ${e}`,
+		);
+	}
+	return projectData;
 }
 
 export function deserializeProjectData(data: string) {
@@ -33,12 +55,4 @@ export function deserializeProjectData(data: string) {
 	}
 	const input = parseProjectFileJson(parsed);
 	return new ProjectData(input);
-}
-
-export async function updateFile(
-	app: App,
-	file: TFile,
-	projectData: ProjectData,
-) {
-	await app.vault.modify(file, serializeProjectData(projectData));
 }

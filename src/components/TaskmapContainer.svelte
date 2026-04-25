@@ -93,7 +93,6 @@
 	}
 	
 	function onpointermove(e: PointerEvent) {
-		console.debug('handlePointerMove', e.pointerId, e.button);
 		if (context.draggedTaskId != NoTaskId) {
 			context.taskDraggingManager.onPointerMove(e);
 			if (context.taskDraggingManager.isDragging) {

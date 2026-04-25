@@ -124,6 +124,14 @@ export class VersionedData {
 		);
 	};
 
+	public getFolderPath = (): string | undefined => {
+		return this.data.getFolderPath();
+	};
+
+	public setFolderPath = (path: string | undefined) => {
+		this.data.setFolderPath(path);
+	};
+
 	public getTasks = (includeDeleted = false) => {
 		return this.data.tasks.filter((t) => includeDeleted || !t.deleted);
 	};

@@ -6,27 +6,27 @@
 } from "../types";
 import { NoTaskId, RootTaskId } from "../NodePositionsCalculator";
 import { serializeProjectData } from "../SaveManager";
+import type { ProjectFileParsed } from "./ProjectDataSchema";
 
 export class ProjectData {
 	tasks = $state(new Array<TaskData>());
 	blockerPairs = $state(new Array<BlockerPair>());
+	folderPath: string | undefined;
 	curTaskId = RootTaskId;
 
 	public static getDefault(): ProjectData {
 		return new ProjectData({
 			tasks: new Array<TaskData>(),
 			blockerPairs: new Array<BlockerPair>(),
+			folderPath: undefined,
 			curTaskId: 0,
 		});
 	}
 
-	constructor(obj: {
-		tasks: TaskData[];
-		blockerPairs?: BlockerPair[];
-		curTaskId: number;
-	}) {
+	constructor(obj: ProjectFileParsed) {
 		this.tasks = obj.tasks;
 		this.blockerPairs = obj.blockerPairs ?? [];
+		this.folderPath = obj.folderPath;
 		this.curTaskId = obj.curTaskId;
 		if (this.tasks.length == 0) {
 			this.addRootTask();
@@ -202,6 +202,14 @@ export class ProjectData {
 
 	public addBlockerPair = (blockerPair: BlockerPair) => {
 		this.blockerPairs.push(blockerPair);
+	};
+
+	public getFolderPath = (): string | undefined => {
+		return this.folderPath;
+	};
+
+	public setFolderPath = (path: string | undefined) => {
+		this.folderPath = path === "" ? undefined : path;
 	};
 }
 

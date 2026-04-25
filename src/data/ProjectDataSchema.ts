@@ -40,12 +40,14 @@ export const projectFileSchema = v.object({
 	),
 	tasks: v.array(taskDataSchema),
 	blockerPairs: v.optional(v.array(blockerPairSchema)),
+	folderPath: v.optional(v.string()),
 	curTaskId: v.pipe(v.number(), v.integer()),
 });
 
 export type ProjectFileParsed = {
 	tasks: TaskData[];
 	blockerPairs: BlockerPair[];
+	folderPath: string | undefined;
 	curTaskId: number;
 };
 
@@ -89,6 +91,7 @@ export function parseProjectFileJson(parsed: unknown): ProjectFileParsed {
 	return {
 		tasks: o.tasks,
 		blockerPairs: o.blockerPairs ?? [],
+		folderPath: o.folderPath,
 		curTaskId: o.curTaskId,
 	};
 }

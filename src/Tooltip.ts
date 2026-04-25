@@ -58,7 +58,7 @@ export function getTooltipText(code: IconCode) {
 export function getTooltipTextSettings(code: SettingsIconCode) {
 	switch (code) {
 		case SettingsIconCode.SETTINGS_MENU:
-			return "WIP (Settings)";
+			return "Settings";
 		case SettingsIconCode.SETTINGS_REDO:
 			return "Redo";
 		case SettingsIconCode.SETTINGS_UNDO:
