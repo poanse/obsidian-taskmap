@@ -1,7 +1,7 @@
 {
 	"id": "taskmap",
 	"name": "Taskmap",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"minAppVersion": "1.12.4",
 	"description": "Plan projects via interactive GUI task trees with automatic layout.",
 	"author": "poanse",
