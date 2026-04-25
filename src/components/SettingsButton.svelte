@@ -22,7 +22,6 @@
 
 	let isButtonDisabled = $derived(
 		(iconCode == SettingsIconCode.NONE)
-		// || (iconCode == SettingsIconCode.SETTINGS_MENU)
 		|| (iconCode == SettingsIconCode.SETTINGS_UNDO && !context.versionedData.canUndo())
 		|| (iconCode == SettingsIconCode.SETTINGS_REDO && !context.versionedData.canRedo())
 	);

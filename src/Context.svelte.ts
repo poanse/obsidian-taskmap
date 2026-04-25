@@ -494,19 +494,13 @@ export class Context {
 	 * Opens the note on the right side.
 	 */
 	public async createLinkedNote(taskId: TaskId, plugin: TaskmapPlugin) {
-		let folderPath = "";
 		const projectNoteFolder = this.versionedData.getFolderPath();
 		const pluginNoteFolder = plugin.settings.newNoteFolder;
 		const taskmapPath =
-			plugin.app.workspace.getActiveViewOfType(TaskmapView)?.file?.parent
-				?.path;
-		if (projectNoteFolder) {
-			folderPath = projectNoteFolder;
-		} else if (pluginNoteFolder) {
-			folderPath = pluginNoteFolder;
-		} else if (taskmapPath) {
-			folderPath = taskmapPath;
-		}
+			plugin.app.workspace.getActiveViewOfType(TaskmapView)?.file?.parent?.path;
+		const folderPath =
+			projectNoteFolder || pluginNoteFolder || taskmapPath || "";
+
 		const filepath = this.filePathFromTask(taskId, folderPath);
 
 		try {
