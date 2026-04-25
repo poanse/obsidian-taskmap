@@ -21,7 +21,7 @@ export class ProjectSettingsModal extends Modal {
 				new FolderSuggest(this.app, text.inputEl);
 				text.setPlaceholder("")
 					.setValue(this.context.versionedData.getFolderPath() ?? "")
-					.onChange(async (value) => {
+					.onChange((value) => {
 						if (
 							value === "" ||
 							this.app.vault.getAbstractFileByPath(
