@@ -45,7 +45,7 @@ export class TaskmapView extends TextFileView {
 	async onLoadFile(file: TFile): Promise<void> {
 		this.file = file;
 		const data = await this.app.vault.read(file);
-		this.setViewData(data);
+		this.setViewData(data, true);
 		this.projectData = deserializeProjectData(data);
 		this.context = new Context(
 			this.app,

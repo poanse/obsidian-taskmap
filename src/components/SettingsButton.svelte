@@ -38,8 +38,12 @@
 		
 		if (iconCode == SettingsIconCode.SETTINGS_UNDO) {
 			context.versionedData.undo();
+			context.save();
+			context.updateTaskPositions();
 		} else if (iconCode == SettingsIconCode.SETTINGS_REDO) {
 			context.versionedData.redo();
+			context.save();
+			context.updateTaskPositions();
 		} else if (iconCode == SettingsIconCode.SETTINGS_MENU) {
 			new ProjectSettingsModal(context).open();
 		}
