@@ -121,11 +121,14 @@
 		<div
 			class="task-container"
 			bind:this={self}
+			role="presentation"
 			style="
 				top: {coords.y}px;
 				left: {coords.x}px;
 				pointer-events={context.taskDraggingManager.isDragging ? 'none' : 'auto'}
 			"
+			onpointerenter={() => isHovered = true}
+			onpointerleave={() => isHovered = false}
 		>
 			<div
 				class={`task ${classStringFromStatusCode(taskData.status)}`}
@@ -138,8 +141,6 @@
 				}
 				class:unselect={isUnselected}
 				class:blocker-highlight={isBlockerHighlight}
-				onmouseenter={() => isHovered = true}
-				onmouseleave={() => isHovered = false}
 				onpointerdown={(e: PointerEvent) => {
 					if (context.editingTaskId === NoTaskId) {
 						context.startTaskDragging(e, taskId);
