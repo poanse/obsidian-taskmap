@@ -17,7 +17,7 @@ export class AddTaskAction implements Action {
 	do(data: ProjectData): void {
 		const childrenCount = data.getChildren(this.parentId).length;
 		this.addedTaskId = data.curTaskId;
-		data.tasks.push({
+		const task = {
 			taskId: this.addedTaskId,
 			parentId: this.parentId,
 			status: StatusCode.READY,
@@ -26,8 +26,8 @@ export class AddTaskAction implements Action {
 			hidden: false,
 			priority: childrenCount,
 			depth: data.getTask(this.parentId).depth + 1,
-		});
-		data.curTaskId++;
+		};
+		data.addTask(task);
 		data.recalcStatusRecursive(this.parentId);
 	}
 
@@ -38,8 +38,7 @@ export class AddTaskAction implements Action {
 		if (data.curTaskId != this.addedTaskId + 1) {
 			throw new Error();
 		}
-		data.tasks = data.tasks.filter((t) => t.taskId !== this.addedTaskId);
-		data.curTaskId--;
+		data.removeTask(this.addedTaskId);
 		this.addedTaskId = undefined;
 	}
 }

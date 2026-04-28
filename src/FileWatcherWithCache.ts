@@ -113,7 +113,7 @@ export class FileWatcherWithCache {
 			if (!projectData) {
 				continue;
 			}
-			const affectedTasks = projectData.tasks.filter(
+			const affectedTasks = projectData.getTasks().filter(
 				(t) => t.path && deletedFile.path === t.path,
 			);
 			for (const t of affectedTasks) {
@@ -153,7 +153,7 @@ export class FileWatcherWithCache {
 			if (!projectData) {
 				continue;
 			}
-			const affectedTasks = projectData.tasks.filter(
+			const affectedTasks = projectData.getTasks().filter(
 				(t) => t.path && t.path === oldPath,
 			);
 			for (const t of affectedTasks) {

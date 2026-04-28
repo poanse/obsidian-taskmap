@@ -102,7 +102,7 @@ export class Context {
 		this.pressedButtonCode = -1;
 
 		const sel = this.versionedData.getTaskOption(this.selectedTaskId);
-		if (sel == null || sel.deleted) {
+		if (sel === undefined || sel.deleted) {
 			this.selectedTaskId = NoTaskId;
 			this.toolbarStatus = DEFAULT_TOOLBAR_STATUS;
 		} else {
@@ -110,12 +110,12 @@ export class Context {
 		}
 
 		const focused = this.versionedData.getTaskOption(this.focusedTaskId);
-		if (focused == null || focused.deleted) {
+		if (focused === undefined || focused.deleted) {
 			this.focusedTaskId = RootTaskId;
 		}
 
 		const editing = this.versionedData.getTaskOption(this.editingTaskId);
-		if (editing == null || editing.deleted) {
+		if (editing === undefined || editing.deleted) {
 			this.editingTaskId = NoTaskId;
 		}
 
@@ -274,10 +274,7 @@ export class Context {
 	}
 
 	public isAncestorOfHidden(taskId: TaskId): boolean {
-		return this.versionedData
-			.getAncestors(this.focusedTaskId)
-			.map((t) => t.taskId)
-			.includes(taskId);
+		return this.versionedData.getAncestorIds(this.focusedTaskId).includes(taskId);
 	}
 
 	public updateTaskPositions(draggingOnly = false) {
@@ -471,9 +468,9 @@ export class Context {
 		const task = this.versionedData.getTask(taskId);
 		const ancestorTasks = this.versionedData.getAncestors(taskId);
 
-		const focusedAncestorIds = this.versionedData
-			.getAncestors(this.focusedTaskId)
-			.map((t) => t.taskId);
+		const focusedAncestorIds = this.versionedData.getAncestorIds(
+			this.focusedTaskId,
+		);
 		const focusedDescendantIds = this.versionedData.getDescendantIds(
 			this.focusedTaskId,
 		);

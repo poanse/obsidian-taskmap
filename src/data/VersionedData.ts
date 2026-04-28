@@ -133,7 +133,11 @@ export class VersionedData {
 	};
 
 	public getTasks = (includeDeleted = false) => {
-		return this.data.tasks.filter((t) => includeDeleted || !t.deleted);
+		return this.data.getTasks(includeDeleted);
+	};
+
+	public getTasksVersion = () => {
+		return this.data.tasksVersion;
 	};
 
 	public getTask = (taskId: TaskId) => {
@@ -141,7 +145,7 @@ export class VersionedData {
 	};
 
 	public getTaskOption = (taskId: TaskId) => {
-		return this.data.tasks.find((t) => t.taskId == taskId) ?? null;
+		return this.data.tasks.get(taskId);
 	};
 
 	public getChildren = (taskId: TaskId, includeDeleted?: boolean) => {
@@ -152,8 +156,12 @@ export class VersionedData {
 		return this.data.getAncestors(taskId);
 	};
 
-	public getDescendantIds = (taskId: TaskId, includeDeleted?: boolean) => {
-		return this.data.getDescendantIds(taskId, includeDeleted);
+	public getAncestorIds = (taskId: TaskId) => {
+		return this.data.getAncestorIds(taskId);
+	};
+
+	public getDescendantIds = (taskId: TaskId) => {
+		return this.data.getDescendantIds(taskId);
 	};
 
 	public isAncestorOf = (taskId: TaskId, candidate: TaskId) => {

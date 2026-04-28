@@ -2,9 +2,9 @@ import { addIcon, Plugin } from "obsidian";
 import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
 import { DEFAULT_SETTINGS, type TaskmapSettings } from "./TaskmapSettings";
 import { TaskmapSettingTab } from "./TaskmapSettingTab";
-import { DEFAULT_DATA } from "./data/ProjectData.svelte";
 import { FileWatcherWithCache } from "./FileWatcherWithCache";
 import { LOGO_CONTENT, LOGO_NAME } from "./Constants";
+import { DEFAULT_DATA } from "./SaveManager";
 
 export const FILE_EXTENSION = "taskmap";
 

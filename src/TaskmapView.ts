@@ -1,10 +1,10 @@
 import { debounce, TextFileView, TFile, WorkspaceLeaf } from "obsidian";
 import { mount, unmount } from "svelte";
-import { DEFAULT_DATA, ProjectData } from "./data/ProjectData.svelte";
+import { ProjectData } from "./data/ProjectData.svelte";
 import { Context } from "./Context.svelte.js";
 import { NodePositionsCalculator } from "./NodePositionsCalculator";
 import TaskmapContainer from "./components/TaskmapContainer.svelte";
-import { deserializeProjectData, updateFile } from "./SaveManager";
+import { DEFAULT_DATA, deserializeProjectData, updateFile } from "./SaveManager";
 import type TaskmapPlugin from "./main";
 import { VersionedData } from "./data/VersionedData";
 import { HistoryManager } from "./data/HistoryManager.svelte";

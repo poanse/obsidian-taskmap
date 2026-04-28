@@ -204,6 +204,11 @@ export class NodePositionsCalculator {
 			Vector2
 		>();
 		parentIds.forEach((parentId) => {
+			if (!subtreeSizeByNodeId.has(parentId)) {
+				throw new Error(
+					`Failed to calculate layout: taskId [${parentId}] not in subtreeSizeByNodeId`,
+				);
+			}
 			parentAlignmentShift.set(
 				parentId,
 				V2.mult(
@@ -267,7 +272,10 @@ export class NodePositionsCalculator {
 				depthOneTasksByRow.get(idx)!.push(t);
 			});
 
-			const yShiftByRowId: Map<number, number> = new Map<number, number>();
+			const yShiftByRowId: Map<number, number> = new Map<
+				number,
+				number
+			>();
 			[...depthOneTasksByRow.keys()].forEach((key) => {
 				const rowIdx = Number(key);
 				const elements = depthOneTasksByRow.get(rowIdx)!;
@@ -302,7 +310,10 @@ export class NodePositionsCalculator {
 				// Sizes of subtrees by x. If 2 tasks are above each other, the larger one is used.
 				this.subtreeWidthByHalfPriority = new Map<number, number>();
 
-				const rootChildrenByPriority: Map<number, TaskId> = new Map<number, TaskId>();
+				const rootChildrenByPriority: Map<number, TaskId> = new Map<
+					number,
+					TaskId
+				>();
 				const rootChildren =
 					childrenIdsByParentId.get(RootTaskId) ?? [];
 				rootChildren.forEach((id, idx) => {

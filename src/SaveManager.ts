@@ -12,7 +12,7 @@ export function serializeProjectData(projectData: ProjectData) {
 	return JSON.stringify(
 		{
 			schemaVersion: TASKMAP_FILE_SCHEMA_VERSION,
-			tasks: projectData.tasks,
+			tasks: [...projectData.tasks.values()],
 			blockerPairs: projectData.blockerPairs,
 			folderPath: projectData.folderPath,
 			curTaskId: projectData.curTaskId,
@@ -56,3 +56,5 @@ export function deserializeProjectData(data: string) {
 	const input = parseProjectFileJson(parsed);
 	return new ProjectData(input);
 }
+
+export const DEFAULT_DATA = serializeProjectData(ProjectData.getDefault());

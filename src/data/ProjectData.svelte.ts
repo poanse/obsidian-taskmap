@@ -4,12 +4,16 @@
 	type TaskData,
 	type TaskId,
 } from "../types";
+import { SvelteMap } from "svelte/reactivity";
 import { NoTaskId, RootTaskId } from "../NodePositionsCalculator";
-import { serializeProjectData } from "../SaveManager";
 import type { ProjectFileParsed } from "./ProjectDataSchema";
 
 export class ProjectData {
-	tasks = $state(new Array<TaskData>());
+	tasks = new SvelteMap<TaskId, TaskData>();
+	childrenCache = new SvelteMap<TaskId, TaskId[]>();
+	ancestorsCache = new SvelteMap<TaskId, TaskId[]>();
+	descendantsCache = new SvelteMap<TaskId, TaskId[]>();
+	tasksVersion = $state(0);
 	blockerPairs = $state(new Array<BlockerPair>());
 	folderPath: string | undefined;
 	curTaskId = RootTaskId;
@@ -24,17 +28,96 @@ export class ProjectData {
 	}
 
 	constructor(obj: ProjectFileParsed) {
-		this.tasks = obj.tasks;
+		this.tasks = new SvelteMap(
+			obj.tasks.map((task) => [task.taskId, task]),
+		);
+		if (this.tasks.size == 0) {
+			this.addRootTask();
+		}
+		this.rebuildCaches();
 		this.blockerPairs = obj.blockerPairs ?? [];
 		this.folderPath = obj.folderPath;
 		this.curTaskId = obj.curTaskId;
-		if (this.tasks.length == 0) {
-			this.addRootTask();
+	}
+
+	public markTasksUpdated() {
+		this.tasksVersion += 1;
+	}
+
+	private rebuildCaches() {
+		// Order matters: descendants rely on ancestors, and ancestors rely on children.
+		this.rebuildChildrenCache();
+		this.rebuildAncestorsCache();
+		this.rebuildDescendantsCache();
+	}
+
+	private rebuildChildrenCache() {
+		this.childrenCache = new SvelteMap<TaskId, TaskId[]>();
+		for (const task of this.getTasks()) {
+			const children = this.childrenCache.get(task.parentId) ?? [];
+			children.push(task.taskId);
+			this.childrenCache.set(task.parentId, children);
 		}
 	}
 
+	// Rebuild ancestors by traversing childrenCache top-down from root.
+	private rebuildAncestorsCache() {
+		this.ancestorsCache = new SvelteMap<TaskId, TaskId[]>();
+		const queue: TaskId[] = [RootTaskId];
+
+		while (queue.length > 0) {
+			const taskId = queue.shift();
+			if (taskId === undefined) {
+				continue;
+			}
+			const task = this.getTask(taskId);
+			if (task.depth === 0) {
+				this.ancestorsCache.set(taskId, []);
+			} else {
+				const parentAncestors =
+					this.ancestorsCache.get(task.parentId) ?? [];
+				this.ancestorsCache.set(taskId, [
+					task.parentId,
+					...parentAncestors,
+				]);
+			}
+			queue.push(...(this.childrenCache.get(taskId) ?? []));
+		}
+	}
+
+	private rebuildDescendantsCache() {
+		this.descendantsCache = new SvelteMap<TaskId, TaskId[]>();
+
+		for (const task of this.getTasks()) {
+			this.descendantsCache.set(task.taskId, [task.taskId]);
+		}
+
+		for (const taskId of this.tasks.keys()) {
+			for (const ancestorId of this.getAncestorIds(taskId)) {
+				const descendants = this.descendantsCache.get(ancestorId);
+				if (descendants !== undefined) {
+					descendants.push(taskId);
+				}
+			}
+		}
+	}
+
+	public addTask(task: TaskData) {
+		this.tasks.set(task.taskId, task);
+		this.rebuildCaches();
+		this.markTasksUpdated();
+		this.curTaskId++;
+	}
+
+	public removeTask(taskId: TaskId) {
+		this.tasks.delete(taskId);
+		this.rebuildCaches();
+		this.markTasksUpdated();
+		this.curTaskId--;
+	}
+
 	public addRootTask() {
-		this.tasks.push({
+		const task = {
 			taskId: this.curTaskId,
 			parentId: NoTaskId,
 			status: StatusCode.IN_PROGRESS,
@@ -43,38 +126,24 @@ export class ProjectData {
 			depth: 0,
 			deleted: false,
 			hidden: false,
-		});
-		this.curTaskId++;
+		};
+		this.addTask(task);
 	}
 
-	public getDescendantIds(taskId: number, includeDeleted: boolean = false) {
-		const tasks = [taskId];
-		const result: TaskId[] = [];
-		while (tasks.length > 0) {
-			const task = tasks.pop();
-			if (task === undefined) {
-				break;
-			}
-			result.push(task);
-			tasks.push(...this.getChildren(task, includeDeleted));
-		}
-		return result;
+	public getDescendantIds(taskId: number) {
+		return this.descendantsCache.get(taskId) ?? [taskId];
 	}
 
 	public getAncestors(taskId: number) {
-		const res: TaskData[] = [];
-		let task = this.getTask(taskId);
-		while (task.depth != 0) {
-			task = this.getTask(task.parentId);
-			res.push(task);
-		}
-		return res;
+		return this.getAncestorIds(taskId).map((id) => this.getTask(id));
+	}
+
+	public getAncestorIds(taskId: number) {
+		return [...(this.ancestorsCache.get(taskId) ?? [])];
 	}
 
 	public isAncestorOf(taskId: TaskId, candidate: TaskId) {
-		return this.getAncestors(taskId)
-			.map((t) => t.taskId)
-			.includes(candidate);
+		return this.getAncestorIds(taskId).includes(candidate);
 	}
 
 	public isDescendantOf(taskId: TaskId, candidate: TaskId) {
@@ -82,20 +151,26 @@ export class ProjectData {
 	}
 
 	public getChildren(taskId: number, includeDeleted: boolean = false) {
-		let res = this.tasks.filter((t) => t.parentId === taskId);
-		if (!includeDeleted) {
-			res = res.filter((t) => !t.deleted);
+		const childIds = this.childrenCache.get(taskId) ?? [];
+		if (includeDeleted) {
+			return [...childIds];
 		}
-		return res.map((t) => t.taskId);
+		return childIds.filter((id) => !this.getTask(id).deleted);
 	}
 
 	public getTask(taskId: number) {
-		const res = this.tasks.find((t) => t.taskId == taskId);
+		const res = this.tasks.get(taskId);
 		if (res) {
 			return res;
 		} else {
 			throw new Error(`No task found with id ${taskId}`);
 		}
+	}
+
+	public getTasks(includeDeleted: boolean = false) {
+		return [...this.tasks.values()].filter(
+			(t) => includeDeleted || !t.deleted,
+		);
 	}
 
 	public isTaskDeleted(taskId: number) {
@@ -106,9 +181,10 @@ export class ProjectData {
 		const taskData = this.getTask(taskId);
 		const oldParentId = taskData.parentId;
 		taskData.parentId = newParentId;
+		this.rebuildCaches();
 		this.recalcStatusRecursive(oldParentId);
 		this.recalcStatusRecursive(newParentId);
-		[taskId, ...this.getDescendantIds(taskId)].forEach((taskId) => {
+		this.getDescendantIds(taskId).forEach((taskId) => {
 			const task = this.getTask(taskId);
 			task.depth = this.getTask(task.parentId).depth + 1;
 		});
@@ -212,5 +288,3 @@ export class ProjectData {
 		this.folderPath = path === "" ? undefined : path;
 	};
 }
-
-export const DEFAULT_DATA = serializeProjectData(ProjectData.getDefault());
