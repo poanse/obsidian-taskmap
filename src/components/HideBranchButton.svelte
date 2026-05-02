@@ -20,8 +20,8 @@
 <div
 	class="hover-container-hide-branch-button"
 	role="group"
-	onmouseenter={() => entered = true}
-	onmouseleave={() => entered = false}
+	onpointerenter={() => entered = true}
+	onpointerleave={() => entered = false}
 	style="
 		left: {TASK_SIZE.width / 2 + ParentToChildHorizontalShift / 2 - 50/2}px;
 		top: {TASK_SIZE.height / 2 - 50 / 2}px;

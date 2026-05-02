@@ -111,7 +111,7 @@
 	 class:is-pressed-down={isPressedDown}
 	 {onpointerdown}
 	 {onpointerup}
-	 onmouseleave={onBlur}
+	 onpointerleave={onBlur}
 	 onclick={(event: MouseEvent) => {
 		 event.stopPropagation();
 	 }}

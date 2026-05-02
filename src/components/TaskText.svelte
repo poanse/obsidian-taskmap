@@ -200,7 +200,7 @@
 			class:unselect={isUnselected}
 			role="group"
 			bind:this={textPreviewEl}
-			onmousemove={handlePreviewMouseOver}
+			onpointermove={handlePreviewMouseOver}
 		>
 		</div>
 	{/if}

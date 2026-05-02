@@ -172,8 +172,8 @@
 					style="top: 4px;"
 				>
 					<KeyRound
-						onmouseenter={() => context.hoveredBlockerId = taskId}
-						onmouseleave={() => context.hoveredBlockerId = NoTaskId}
+						onpointerenter={() => context.hoveredBlockerId = taskId}
+						onpointerleave={() => context.hoveredBlockerId = NoTaskId}
 						class={
 							classStringFromStatusCode(taskData.status)
 							+ (isBlockerHighlight ? ' blocker-highlight' : '')
