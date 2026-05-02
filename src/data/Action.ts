@@ -38,7 +38,7 @@ export class AddTaskAction implements Action {
 		if (data.curTaskId != this.addedTaskId + 1) {
 			throw new Error();
 		}
-		data.removeTask(this.addedTaskId);
+		data.removeTask();
 		this.addedTaskId = undefined;
 	}
 }
@@ -68,9 +68,9 @@ export class RemoveTaskSingleAction implements Action {
 			t.parentId = parentTask.taskId;
 			t.depth = parentTask.depth + 1;
 		});
-		// TODO: Priorities suck
 		data.recalcPriorities(task.parentId);
 		data.recalcStatusRecursive(task.parentId);
+		data.markTasksUpdated();
 	}
 
 	undo(data: ProjectData) {
@@ -84,7 +84,6 @@ export class RemoveTaskSingleAction implements Action {
 			t.parentId = task.taskId;
 			t.depth = task.depth + 1;
 		});
-		// TODO: Priorities suck
 		data.recalcPriorities(task.parentId);
 		data.recalcPriorities(task.taskId);
 		data.recalcStatusRecursive(task.taskId);

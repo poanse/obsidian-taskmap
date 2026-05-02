@@ -263,6 +263,7 @@ export class Context {
 		this.versionedData.changeParent(this.reparentingTaskId, newParentId);
 		this.updateTaskPositions();
 		this.cancelReparenting();
+		this.selectedTaskId = NoTaskId;
 	}
 
 	public changeFocusedTask(taskId: TaskId): void {
@@ -452,14 +453,6 @@ export class Context {
 		this.versionedData.setStatus(this.selectedTaskId, status);
 		this.toolbarStatus = status;
 		this.save();
-	}
-
-	public hideTaskBranch(id: number) {
-		this.versionedData.setHidden(id, true);
-	}
-
-	public unhideTaskBranch(id: number) {
-		this.versionedData.setHidden(id, false);
 	}
 
 	public getCurrentTaskPosition(taskId: number) {

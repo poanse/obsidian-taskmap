@@ -7,7 +7,6 @@ export class HistoryManager {
 
 	execute(action: Action, data: ProjectData): void {
 		action.do(data);
-		data.markTasksUpdated();
 		this.undoStack.push(action);
 		this.redoStack = []; // Clear redo stack on new action
 	}
@@ -17,7 +16,6 @@ export class HistoryManager {
 		if (!action) return false;
 
 		action.undo(data);
-		data.markTasksUpdated();
 		this.redoStack.push(action);
 		return true;
 	}
@@ -27,7 +25,6 @@ export class HistoryManager {
 		if (!action) return false;
 
 		action.do(data);
-		data.markTasksUpdated();
 		this.undoStack.push(action);
 		return true;
 	}

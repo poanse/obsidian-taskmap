@@ -73,7 +73,10 @@ export class TaskmapView extends TextFileView {
 	protected onOpen(): Promise<void> {
 		this.registerEvent(
 			this.app.vault.on("modify", async (file) => {
-				if (file.path === this.file?.path) {
+				if (
+					file.path === this.file?.path &&
+					this.app.workspace.getActiveViewOfType(TaskmapView) != this
+				) {
 					await this.refreshUi(false);
 				}
 			}),

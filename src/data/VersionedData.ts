@@ -145,7 +145,11 @@ export class VersionedData {
 	};
 
 	public getTaskOption = (taskId: TaskId) => {
-		return this.data.tasks.get(taskId);
+		try {
+			return this.data.getTask(taskId);
+		} catch {
+			return undefined;
+		}
 	};
 
 	public getChildren = (taskId: TaskId, includeDeleted?: boolean) => {

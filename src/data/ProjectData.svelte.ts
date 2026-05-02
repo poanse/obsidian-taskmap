@@ -9,12 +9,14 @@ import { NoTaskId, RootTaskId } from "../NodePositionsCalculator";
 import type { ProjectFileParsed } from "./ProjectDataSchema";
 
 export class ProjectData {
-	tasks = new SvelteMap<TaskId, TaskData>();
+	// cannot use just SvelteMap<TaskId, Task> because it breaks reactivity
+	tasks: Array<TaskData>;
+	taskIndexCache = new SvelteMap<TaskId, number>();
 	childrenCache = new SvelteMap<TaskId, TaskId[]>();
 	ancestorsCache = new SvelteMap<TaskId, TaskId[]>();
 	descendantsCache = new SvelteMap<TaskId, TaskId[]>();
-	tasksVersion = $state(0);
-	blockerPairs = $state(new Array<BlockerPair>());
+	tasksVersion: number;
+	blockerPairs: Array<BlockerPair>;
 	folderPath: string | undefined;
 	curTaskId = RootTaskId;
 
@@ -28,16 +30,15 @@ export class ProjectData {
 	}
 
 	constructor(obj: ProjectFileParsed) {
-		this.tasks = new SvelteMap(
-			obj.tasks.map((task) => [task.taskId, task]),
-		);
-		if (this.tasks.size == 0) {
+		this.tasks = $state(obj.tasks);
+		this.blockerPairs = $state(obj.blockerPairs ?? []);
+		this.tasksVersion = $state(0);
+		this.folderPath = obj.folderPath;
+		this.curTaskId = obj.curTaskId;
+		if (this.tasks.length == 0) {
 			this.addRootTask();
 		}
 		this.rebuildCaches();
-		this.blockerPairs = obj.blockerPairs ?? [];
-		this.folderPath = obj.folderPath;
-		this.curTaskId = obj.curTaskId;
 	}
 
 	public markTasksUpdated() {
@@ -45,6 +46,10 @@ export class ProjectData {
 	}
 
 	private rebuildCaches() {
+		this.taskIndexCache.clear();
+		this.tasks.forEach((value, index) => {
+			this.taskIndexCache.set(value.taskId, index);
+		});
 		// Order matters: descendants rely on ancestors, and ancestors rely on children.
 		this.rebuildChildrenCache();
 		this.rebuildAncestorsCache();
@@ -103,17 +108,19 @@ export class ProjectData {
 	}
 
 	public addTask(task: TaskData) {
-		this.tasks.set(task.taskId, task);
+		this.tasks.push(task);
 		this.rebuildCaches();
 		this.markTasksUpdated();
 		this.curTaskId++;
 	}
 
-	public removeTask(taskId: TaskId) {
-		this.tasks.delete(taskId);
-		this.rebuildCaches();
-		this.markTasksUpdated();
-		this.curTaskId--;
+	public removeTask() {
+		const task = this.tasks.pop();
+		if (task) {
+			this.rebuildCaches();
+			this.markTasksUpdated();
+			this.curTaskId--;
+		}
 	}
 
 	public addRootTask() {
@@ -159,7 +166,7 @@ export class ProjectData {
 	}
 
 	public getTask(taskId: number) {
-		const res = this.tasks.get(taskId);
+		const res = this.tasks[this.taskIndexCache.get(taskId)!];
 		if (res) {
 			return res;
 		} else {
