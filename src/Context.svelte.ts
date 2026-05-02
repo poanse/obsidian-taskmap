@@ -262,6 +262,7 @@ export class Context {
 		}
 		this.versionedData.changeParent(this.reparentingTaskId, newParentId);
 		this.updateTaskPositions();
+		this.cancelReparenting();
 	}
 
 	public changeFocusedTask(taskId: TaskId): void {
@@ -274,7 +275,9 @@ export class Context {
 	}
 
 	public isAncestorOfHidden(taskId: TaskId): boolean {
-		return this.versionedData.getAncestorIds(this.focusedTaskId).includes(taskId);
+		return this.versionedData
+			.getAncestorIds(this.focusedTaskId)
+			.includes(taskId);
 	}
 
 	public updateTaskPositions(draggingOnly = false) {
@@ -494,7 +497,8 @@ export class Context {
 		const projectNoteFolder = this.versionedData.getFolderPath();
 		const pluginNoteFolder = plugin.settings.newNoteFolder;
 		const taskmapPath =
-			plugin.app.workspace.getActiveViewOfType(TaskmapView)?.file?.parent?.path;
+			plugin.app.workspace.getActiveViewOfType(TaskmapView)?.file?.parent
+				?.path;
 		const folderPath =
 			projectNoteFolder || pluginNoteFolder || taskmapPath || "";
 
