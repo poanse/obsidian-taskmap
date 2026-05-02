@@ -11,6 +11,7 @@
 
 	function hidePressed(event: PointerEvent) {
 		context.versionedData.toggleHidden(taskId);
+		context.save();
 		event.stopPropagation();
 		context.finishTaskDragging(event, true);
 	}
