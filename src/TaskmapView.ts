@@ -4,7 +4,11 @@ import { ProjectData } from "./data/ProjectData.svelte";
 import { Context } from "./Context.svelte.js";
 import { NodePositionsCalculator } from "./NodePositionsCalculator";
 import TaskmapContainer from "./components/TaskmapContainer.svelte";
-import { DEFAULT_DATA, deserializeProjectData, updateFile } from "./SaveManager";
+import {
+	DEFAULT_DATA,
+	deserializeProjectData,
+	updateFile,
+} from "./SaveManager";
 import type TaskmapPlugin from "./main";
 import { VersionedData } from "./data/VersionedData";
 import { HistoryManager } from "./data/HistoryManager.svelte";
@@ -29,12 +33,16 @@ export class TaskmapView extends TextFileView {
 		return TASKMAP_VIEW_TYPE;
 	}
 
-	async refreshUi() {
+	async refreshUi(save: boolean = true) {
 		const projectFile = this.file!;
-		await this.debouncedSave.run();
+		if (save) {
+			await this.debouncedSave.run();
+		}
 		if (this.taskmapContainer === undefined) {
+			// undefined guard, should not be called normally
 			await this.onLoadFile(projectFile);
 		} else {
+			// update local data but keep UI state that is not stored on disk (panzoom)
 			const data = await this.app.vault.read(projectFile);
 			this.setViewData(data);
 			this.projectData = deserializeProjectData(data);
@@ -60,6 +68,17 @@ export class TaskmapView extends TextFileView {
 				context: this.context,
 			},
 		});
+	}
+
+	protected onOpen(): Promise<void> {
+		this.registerEvent(
+			this.app.vault.on("modify", async (file) => {
+				if (file.path === this.file?.path) {
+					await this.refreshUi(false);
+				}
+			}),
+		);
+		return super.onOpen();
 	}
 
 	getViewData(): string {
