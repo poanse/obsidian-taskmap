@@ -1,4 +1,5 @@
 ﻿import { AbstractInputSuggest, App, prepareFuzzySearch, TFile } from "obsidian";
+import { linkFromFilePath } from "../LinkManager";
 
 export class LinkSuggest extends AbstractInputSuggest<TFile> {
 	textInputEl: HTMLTextAreaElement;
@@ -58,20 +59,10 @@ export class LinkSuggest extends AbstractInputSuggest<TFile> {
 
 		if (!match) return;
 
-		const linkStart = lineStart + match.index!;
-		const beforeLink = text.substring(0, linkStart);
-		const afterCursor = text.substring(cursor);
-
-		const newLinkText = `[[${file.basename}]]`;
-
-		this.textInputEl.value = beforeLink + newLinkText + afterCursor;
+		this.textInputEl.value = linkFromFilePath(file.path);
 
 		// Trigger Svelte update
 		this.textInputEl.dispatchEvent(new Event("input"));
-
-		// Reset cursor
-		const newCursor = beforeLink.length + newLinkText.length;
-		this.textInputEl.setSelectionRange(newCursor, newCursor);
 
 		this.textInputEl.focus();
 		this.textInputEl.blur();

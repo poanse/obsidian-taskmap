@@ -1,6 +1,7 @@
 ﻿import type { App, TFile } from "obsidian";
+import type { TaskData } from "./types";
 
-export function tasknameFromFilePath(path: string) {
+export function linkFromFilePath(path: string) {
 	if (path.endsWith(".md")) {
 		path = path.slice(0, path.length - 3);
 	}
@@ -15,19 +16,32 @@ export function delink(s: string) {
 	return isLink(s) ? s.slice(2, s.length - 2) : s;
 }
 
-/** relativePath to TFile */
-export function getFromRelativePath(app: App, path: string) {
-	return app.vault.getFileByPath(path);
+export function nameFromLink(app: App, s: string) {
+	if (!isLink(s)) {
+		return s;
+	}
+	const delinked = delink(s);
+	const file = app.vault.getFileByPath(delinked);
+	if (!file) {
+		return delinked;
+	}
+	return file.basename;
 }
 
-/** TFile to wikilink */
-export function generateMarkdownLink(app: App, file: TFile) {
-	return app.fileManager.generateMarkdownLink(file, "");
+export function generateMarkdownLinkFromTask(task: TaskData) {
+	return `[${task.name}](${task.path})`;
 }
 
 /** True if `path` is a file inside `folderPath` (not a false `startsWith` on the folder segment). */
 export function pathIsUnderFolder(path: string, folderPath: string): boolean {
 	return path.startsWith(folderPath + "/");
+}
+
+export function taskPathFromFile(tfile: TFile) {
+	return tfile.path;
+}
+export function taskNameFromFile(tfile: TFile) {
+	return tfile.basename;
 }
 
 export class LinkManager {

@@ -22,7 +22,12 @@ import {
 	V2,
 } from "./NodePositionsCalculator";
 import { DraggingManager } from "./DraggingManager.svelte";
-import { delink, LinkManager, tasknameFromFilePath } from "./LinkManager";
+import {
+	delink,
+	LinkManager,
+	taskNameFromFile,
+	taskPathFromFile,
+} from "./LinkManager";
 import { HistoryManager } from "./data/HistoryManager.svelte";
 import type { ProjectData } from "./data/ProjectData.svelte.js";
 import { VersionedData } from "./data/VersionedData";
@@ -508,8 +513,8 @@ export class Context {
 						);
 			this.versionedData.setName(
 				taskId,
-				tasknameFromFilePath(this.versionedData.getTask(taskId).name),
-				filepath,
+				taskNameFromFile(tfile),
+				taskPathFromFile(tfile),
 			);
 			this.save();
 			await this.app.workspace

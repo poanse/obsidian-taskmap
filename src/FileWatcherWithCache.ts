@@ -1,7 +1,12 @@
 import { type App, type Plugin, TAbstractFile, TFile, TFolder } from "obsidian";
 import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
 import { loadProjectData, updateFile } from "./SaveManager";
-import { delink, generateMarkdownLink, pathIsUnderFolder } from "./LinkManager";
+import {
+	delink,
+	pathIsUnderFolder,
+	taskNameFromFile,
+	taskPathFromFile,
+} from "./LinkManager";
 import type { ProjectData } from "./data/ProjectData.svelte";
 
 /** In-memory index of `.taskmap` files; `TFile.path` stays in sync with vault renames. */
@@ -113,9 +118,9 @@ export class FileWatcherWithCache {
 			if (!projectData) {
 				continue;
 			}
-			const affectedTasks = projectData.getTasks().filter(
-				(t) => t.path && deletedFile.path === t.path,
-			);
+			const affectedTasks = projectData
+				.getTasks()
+				.filter((t) => t.path && deletedFile.path === t.path);
 			for (const t of affectedTasks) {
 				t.name = delink(t.name);
 				t.path = undefined;
@@ -153,12 +158,12 @@ export class FileWatcherWithCache {
 			if (!projectData) {
 				continue;
 			}
-			const affectedTasks = projectData.getTasks().filter(
-				(t) => t.path && t.path === oldPath,
-			);
+			const affectedTasks = projectData
+				.getTasks()
+				.filter((t) => t.path && t.path === oldPath);
 			for (const t of affectedTasks) {
-				t.path = changedMdFile.path;
-				t.name = generateMarkdownLink(app, changedMdFile);
+				t.path = taskPathFromFile(changedMdFile);
+				t.name = taskNameFromFile(changedMdFile);
 			}
 			if (affectedTasks) {
 				console.debug(`${taskmapFile.path} changed`);

@@ -3,7 +3,13 @@
 	import {Component, MarkdownRenderer, Notice} from "obsidian";
 	import {LinkSuggest} from "../helpers/LinkSuggest";
 	import type {Context} from "../Context.svelte.js";
-	import {delink, getFromRelativePath, isLink} from "../LinkManager";
+	import {
+		generateMarkdownLinkFromTask,
+		isLink,
+		linkFromFilePath,
+		nameFromLink, taskNameFromFile,
+		taskPathFromFile
+	} from "../LinkManager";
 	import {NoTaskId} from "../NodePositionsCalculator";
 
 	let {
@@ -62,7 +68,7 @@
 		const target = e.target as HTMLElement;
 		const link = target.closest(".internal-link");
 		if (link && taskData.path) {
-			const file = getFromRelativePath(context.app, taskData.path);
+			const file = context.app.vault.getFileByPath(taskData.path);
 			if (file) {
 				e.preventDefault(); // TODO: is this line needed?
 				e.stopPropagation();
@@ -96,7 +102,7 @@
 			return;
 		}
 		textPreviewEl.empty(); // Clear previous render
-		const content = taskData.name;
+		const content = taskData.path ? generateMarkdownLinkFromTask(taskData) : taskData.name;
 		await MarkdownRenderer.render(
 			context.app,
 			content,
@@ -159,20 +165,27 @@
 			return;
 		}
 		let path;
-		let newName = textEditEl.value;
-		if (isLink(newName)) {
-			const file = context.linkManager.getFromLink(newName);
+		let name;
+		let maybeLink = textEditEl.value;
+		if (textEditEl.value == taskData.name) {
+			// no changes
+			return;
+		}
+		if (isLink(maybeLink)) {
+			const file = context.linkManager.getFromLink(maybeLink);
 			if (file !== null) {
-				path = file.path;
+				path = taskPathFromFile(file);
+				name = taskNameFromFile(file);
 			} else {
-				new Notice(`Link ${newName} points to a nonexistent file`);
+				new Notice(`Link ${maybeLink} points to a nonexistent file`);
 				path = undefined;
-				newName = delink(newName);
+				name = nameFromLink(context.app, maybeLink);
 			}
 		} else {
 			path = undefined;
+			name = maybeLink;
 		}
-		context.versionedData.setName(taskId, newName, path);
+		context.versionedData.setName(taskId, name, path);
 		context.save();
 	}
 </script>
@@ -193,7 +206,7 @@
 			onblur={handleBlur}
 			onkeydown={handleKeydown}
 			oninput={handleInput}
-		>{taskData.name}</textarea>
+		>{taskData.path ? linkFromFilePath(taskData.path) : taskData.name}</textarea>
 	{:else}
 		<div
 			class="text-preview tasktext"
