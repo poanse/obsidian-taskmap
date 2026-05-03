@@ -4,7 +4,7 @@
 	import {LinkSuggest} from "../helpers/LinkSuggest";
 	import type {Context} from "../Context.svelte.js";
 	import {
-		generateMarkdownLinkFromTask,
+		generateTextContentFromTask,
 		isLink,
 		linkFromFilePath,
 		nameFromLink, taskNameFromFile,
@@ -102,7 +102,7 @@
 			return;
 		}
 		textPreviewEl.empty(); // Clear previous render
-		const content = taskData.path ? generateMarkdownLinkFromTask(taskData) : taskData.name;
+		const content = generateTextContentFromTask(context.app, taskData);
 		await MarkdownRenderer.render(
 			context.app,
 			content,

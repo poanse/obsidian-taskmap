@@ -28,8 +28,19 @@ export function nameFromLink(app: App, s: string) {
 	return file.basename;
 }
 
-export function generateMarkdownLinkFromTask(task: TaskData) {
-	return `[${task.name}](${task.path})`;
+export function generateTextContentFromTask(app: App, task: TaskData) {
+	if (task.path) {
+		const file = app.vault.getFileByPath(task.path);
+		if (file) {
+			return app.fileManager.generateMarkdownLink(
+				file,
+				"",
+				undefined,
+				taskNameFromFile(file),
+			);
+		}
+	}
+	return task.name;
 }
 
 /** True if `path` is a file inside `folderPath` (not a false `startsWith` on the folder segment). */
