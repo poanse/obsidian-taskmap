@@ -27,7 +27,7 @@ export class DraggingManager {
 		}
 	};
 
-	public onPointerUp = (e: PointerEvent) => {
+	public onPointerUp = () => {
 		console.debug(`DraggingManager pointerUp: ${this.deltaX}`);
 		this.reset();
 	};

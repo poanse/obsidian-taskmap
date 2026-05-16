@@ -132,7 +132,7 @@
 			viewportEl!.focus();
 			e.stopPropagation();
 		}
-		draggingManager.onPointerUp(e);
+		draggingManager.onPointerUp();
 		context.finishTaskDragging(e, true);
 	}
 	
@@ -220,7 +220,7 @@
 							const blockerT = context.versionedData.getTask(p.blocker);
 							return blockedT.status !== StatusCode.DONE && blockerT.status !== StatusCode.DONE && !blockerT.deleted && !blockedT.deleted;
 						}
-					)) as pair}
+					)) as pair (pair.blocker + '-' + pair.blocked)}
 						<Connection
 							startTaskId={pair.blocker}
 							endTaskId={pair.blocked}

@@ -8,7 +8,6 @@
 	let { iconCode,	context }: { iconCode: SettingsIconCode, context: Context } = $props();
 
 	let isPressedDown = $state(false);
-	let modal: ProjectSettingsModal | null = null;
 	
 	function onpointerdown(event: MouseEvent) {
 		isPressedDown = true;
@@ -84,8 +83,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0px;
-		padding: 0px;
+		gap: 0;
+		padding: 0;
 		/*background-color: #e0e0e0;*/
 		cursor: pointer;
 		border-radius: 4px;
