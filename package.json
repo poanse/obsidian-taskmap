@@ -40,8 +40,6 @@
 	"dependencies": {
 		"@napolab/alpha-blend": "^2.0.0",
 		"@panzoom/panzoom": "^4.6.1",
-		"autobind-decorator": "^2.4.0",
-		"esm-env": "^1.2.2",
 		"lucide-svelte": "^0.562.0",
 		"rollup-plugin-css-only": "^4.5.5",
 		"ts-pattern": "^5.9.0",
