@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-taskmap",
-	"version": "0.1.5",
+	"version": "0.1.6",
 	"description": "Taskmap plugin for Obsidian (https://obsidian.md)",
 	"main": "main.js",
 	"scripts": {
