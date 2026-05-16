@@ -26,4 +26,4 @@ Canvas-style visualization, zero manual positioning.
 - Automatic parent status from children
 - Link tasks outside of tree structure using blocker system
 
-![screenshot.png](screenshot.png)
+![screenshot.png](.github/screenshot.png)
