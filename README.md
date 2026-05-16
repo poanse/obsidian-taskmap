@@ -4,10 +4,7 @@ No need to move tasks around manually — the automatic layout keeps your struct
 
 ## How to install
 
-*Taskmap is in beta. Installation from Obsidian community plugins is currently unavailable.*
-
-Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) community plugin from obsidian app.
-Go to settings, press `Add beta plugin` and paste link to this repo https://github.com/poanse/obsidian-taskmap
+Taskmap is available via obsidian community portal https://community.obsidian.md/plugins/taskmap and "Community plugins" option in the obsidian app.
 
 ## Why Taskmap?
 
