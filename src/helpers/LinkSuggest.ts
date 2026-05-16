@@ -45,7 +45,7 @@ export class LinkSuggest extends AbstractInputSuggest<TFile> {
 	}
 
 	renderSuggestion(file: TFile, el: HTMLElement) {
-		el.createEl("div", { text: file.basename });
+		el.createDiv({ text: file.basename });
 		el.createEl("small", { text: file.path, cls: "text-muted" });
 	}
 

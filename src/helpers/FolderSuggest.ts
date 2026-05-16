@@ -33,7 +33,7 @@ export class FolderSuggest extends AbstractInputSuggest<TFolder> {
 	}
 
 	renderSuggestion(file: TFolder, el: HTMLElement) {
-		el.createEl("div", { text: file.path });
+		el.createDiv({ text: file.path });
 		el.createEl("small", { text: file.path, cls: "text-muted" });
 	}
 

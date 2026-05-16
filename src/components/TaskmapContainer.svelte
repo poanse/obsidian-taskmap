@@ -132,7 +132,7 @@
 			viewportEl!.focus();
 			e.stopPropagation();
 		}
-		draggingManager.onPointerUp(e);
+		draggingManager.onPointerUp();
 		context.finishTaskDragging(e, true);
 	}
 	

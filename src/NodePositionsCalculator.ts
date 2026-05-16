@@ -321,7 +321,7 @@ export class NodePositionsCalculator {
 					rootChildrenByPriority.set(idx, id);
 				});
 
-				rootChildrenByPriority.forEach((priority, chId) => {
+				rootChildrenByPriority.forEach((_priority, chId) => {
 					const x = taskById.get(chId)!;
 					if (this.RowIndex(x) === 0) {
 						const neighbourId =

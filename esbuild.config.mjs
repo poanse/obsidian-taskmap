@@ -1,6 +1,5 @@
 import esbuild from "esbuild";
 import process from "process";
-import builtins from "builtin-modules";
 import esbuildSvelte from "esbuild-svelte";
 import { sveltePreprocess } from "svelte-preprocess";
 import fs from "fs";
@@ -54,7 +53,6 @@ const context = await esbuild.context({
 		"@lezer/common",
 		"@lezer/highlight",
 		"@lezer/lr",
-		...builtins,
 	],
 	format: "cjs",
 	target: "es2022",

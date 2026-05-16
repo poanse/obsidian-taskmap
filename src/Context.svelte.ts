@@ -180,7 +180,7 @@ export class Context {
 
 	public finishTaskDragging = (e: PointerEvent, updatePositions = false) => {
 		this.draggedTaskId = NoTaskId;
-		this.taskDraggingManager.onPointerUp(e);
+		this.taskDraggingManager.onPointerUp();
 		if (updatePositions) {
 			this.updateTaskPositions();
 		}
@@ -315,7 +315,7 @@ export class Context {
 			const taskIdSet: ReadonlySet<TaskId> = new SvelteSet<TaskId>(
 				this.taskPositions.map((t) => t.taskId),
 			);
-			this.positions.forEach((v, k) => {
+			this.positions.forEach((_v, k) => {
 				if (k != NoTaskId && !taskIdSet.has(k)) {
 					this.taskPositions.push({
 						taskId: k,
@@ -426,8 +426,11 @@ export class Context {
 		this.app.workspace
 			.getLeavesOfType(TASKMAP_VIEW_TYPE)
 			.map((leaf) => leaf.view)
-			.filter((view) => view instanceof TaskmapView)
-			.forEach((view) => view.debouncedSave());
+			.forEach((view) => {
+				if (view instanceof TaskmapView) {
+					view.debouncedSave();
+				}
+			});
 	}
 
 	public addTask(parentId: TaskId): void {
