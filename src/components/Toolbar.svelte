@@ -105,7 +105,7 @@
 		"
 	>
 		{#key context.updateOnZoomCounter}
-			{#each toolbarButtons as button}
+			{#each toolbarButtons as button (button)}
 				<Button iconCode={button} {context} />
 			{/each}
 		{/key}
@@ -146,7 +146,7 @@
 						left: {subtoolbarLeftShift(toolbarButtons.indexOf(IconCode.STATUS_SUBMENU))}px;
 					"
 				>
-					{#each statusButtons as button}
+					{#each statusButtons as button (button)}
 						<Button 
 							iconCode={button}
 							{context}

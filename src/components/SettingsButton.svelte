@@ -8,7 +8,6 @@
 	let { iconCode,	context }: { iconCode: SettingsIconCode, context: Context } = $props();
 
 	let isPressedDown = $state(false);
-	let modal: ProjectSettingsModal | null = null;
 	
 	function onpointerdown(event: MouseEvent) {
 		isPressedDown = true;
