@@ -6,7 +6,10 @@
 } from "../types";
 import { SvelteMap } from "svelte/reactivity";
 import { NoTaskId, RootTaskId } from "../NodePositionsCalculator";
-import type { ProjectFileParsed } from "./ProjectDataSchema";
+import {
+	TASKMAP_FILE_SCHEMA_VERSION,
+	type ProjectFileParsed,
+} from "./ProjectDataSchema";
 
 export class ProjectData {
 	// cannot use just SvelteMap<TaskId, Task> because it breaks reactivity
@@ -22,6 +25,7 @@ export class ProjectData {
 
 	public static getDefault(): ProjectData {
 		return new ProjectData({
+			schemaVersion: TASKMAP_FILE_SCHEMA_VERSION,
 			tasks: new Array<TaskData>(),
 			blockerPairs: new Array<BlockerPair>(),
 			folderPath: undefined,
@@ -39,6 +43,9 @@ export class ProjectData {
 			this.addRootTask();
 		}
 		this.rebuildCaches();
+		if ((obj.schemaVersion ?? 0) < TASKMAP_FILE_SCHEMA_VERSION) {
+			this.tasks.forEach((t) => this.recalcPriorities(t.taskId));
+		}
 	}
 
 	public markTasksUpdated() {

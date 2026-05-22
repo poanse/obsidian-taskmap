@@ -224,6 +224,7 @@ export class ChangeParentAction implements Action {
 	private taskId: TaskId;
 	private newParentId: TaskId;
 	private oldParentId?: TaskId;
+	private oldPriority?: number;
 
 	constructor(taskId: TaskId, newParentId: number) {
 		this.taskId = taskId;
@@ -232,15 +233,25 @@ export class ChangeParentAction implements Action {
 
 	do(data: ProjectData) {
 		this.oldParentId = data.getTask(this.taskId).parentId;
+		this.oldPriority = data.getTask(this.taskId).priority;
+		data.getTask(this.taskId).priority = -1;
 		data.changeParent(this.taskId, this.newParentId);
+		data.recalcPriorities(this.newParentId);
+		data.recalcPriorities(this.oldParentId);
 	}
 
 	undo(data: ProjectData) {
-		if (this.oldParentId === undefined) {
+		if (this.oldParentId === undefined || this.oldPriority === undefined) {
 			throw new Error();
 		}
+		// Use oldPriority - 0.5 so recalcPriorities places task exactly at oldPriority
+		// (sibling priorities are always whole numbers, so this slots in unambiguously)
+		data.getTask(this.taskId).priority = this.oldPriority - 0.5;
 		data.changeParent(this.taskId, this.oldParentId);
+		data.recalcPriorities(this.oldParentId);
+		data.recalcPriorities(this.newParentId);
 		this.oldParentId = undefined;
+		this.oldPriority = undefined;
 	}
 }
 
