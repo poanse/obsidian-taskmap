@@ -47,8 +47,9 @@ export class NodePositionsCalculator {
 	public CalculatePositionsInGlobalFrame(
 		tasks: TaskData[],
 		rootPosition: Vector2,
+		taskHeightOverrides: Map<TaskId, number> = new Map(),
 	): Map<TaskId, Vector2> {
-		const rootFrame = this.CalculatePositionsInRootFrame(tasks);
+		const rootFrame = this.CalculatePositionsInRootFrame(tasks, taskHeightOverrides);
 		const result: Map<TaskId, Vector2> = new Map<TaskId, Vector2>();
 
 		for (const [key, value] of rootFrame) {
@@ -62,9 +63,10 @@ export class NodePositionsCalculator {
 	 */
 	private CalculatePositionsInRootFrame(
 		tasks: TaskData[],
+		taskHeightOverrides: Map<TaskId, number>,
 	): Map<TaskId, Vector2> {
 		const parentFramePositions =
-			this.CalculatePositionsInParentFrame(tasks);
+			this.CalculatePositionsInParentFrame(tasks, taskHeightOverrides);
 		const positions: Map<TaskId, Vector2> = new Map<TaskId, Vector2>();
 		positions.set(NoTaskId, V2.Zero);
 
@@ -102,6 +104,7 @@ export class NodePositionsCalculator {
 	 */
 	private CalculatePositionsInParentFrame(
 		tasks: TaskData[],
+		taskHeightOverrides: Map<TaskId, number>,
 	): Map<TaskId, Vector2> {
 		// Position of the parent node relative to the height of the subtree. 0 - top, 0.5 - center, 1 - bottom
 		const alignmentRatio: Vector2 = { x: 0, y: 0.5 };
@@ -147,7 +150,13 @@ export class NodePositionsCalculator {
 
 		const allIdsToProcess = [...sortedTasks.map((t) => t.taskId), NoTaskId];
 
+		const defaultHeightPx = 80;
+		const gapPx = this.SiblingDelta - defaultHeightPx;
+
 		allIdsToProcess.forEach((id) => {
+			const heightPx = taskHeightOverrides.get(id as TaskId) ?? defaultHeightPx;
+			const minYFromHeight = (heightPx + gapPx) / this.SiblingDelta;
+
 			if (childrenIdsByParentId.has(id)) {
 				const childrenIds = childrenIdsByParentId.get(id)!;
 				const xAgg =
@@ -159,12 +168,15 @@ export class NodePositionsCalculator {
 				const yAgg = childrenIds
 					.map((x) => subtreeSizeByNodeId.get(x)!.y)
 					.reduce((a, b) => a + b, 0);
+				// If this task has a height override, ensure its allocated region is
+				// tall enough for the expanded card to fit without overlapping siblings.
 				subtreeSizeByNodeId.set(
 					id,
-					V2.add({ x: xAgg, y: yAgg }, parentDelta),
+					V2.add({ x: xAgg, y: Math.max(yAgg, minYFromHeight) }, parentDelta),
 				);
 			} else {
-				subtreeSizeByNodeId.set(id, V2.One);
+				const ySizeUnits = minYFromHeight;
+				subtreeSizeByNodeId.set(id, { x: 1, y: ySizeUnits });
 			}
 		});
 

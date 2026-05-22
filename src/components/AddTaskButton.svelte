@@ -21,10 +21,7 @@
 	role="group"
 	onpointerenter={() => entered = true}
 	onpointerleave={() => entered = false}
-	style="
-		left: {TASK_SIZE.width - 50/2}px;
-		top: {TASK_SIZE.height/2 - 50/2}px;
-	"
+	style="left: {TASK_SIZE.width - 50/2}px;"
 >
 	{#if entered}
 		<svg
@@ -50,6 +47,8 @@
 		position: absolute;
 		width: 50px;
 		height: 50px;
+		top: 50%;
+		transform: translateY(-50%);
 
 		/* Centering logic for the SVG */
 		display: flex;

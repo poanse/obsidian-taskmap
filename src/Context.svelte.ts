@@ -63,6 +63,7 @@ export class Context {
 	// svg elements are pixelated zooming from scale < 1 to scale > 1, so we force a redraw manually
 	updateOnZoomCounter = $state(0);
 	scale = $state(1);
+	private taskHeightOverrides = new Map<TaskId, number>();
 
 	// parameters for animating task movement
 	private springOptions = { stiffness: 0.07, damping: 0.7 };
@@ -286,6 +287,18 @@ export class Context {
 			.includes(taskId);
 	}
 
+	public setTaskHeightOverride(taskId: TaskId, heightPx: number) {
+		this.taskHeightOverrides.set(taskId, heightPx);
+		this.updateTaskPositions();
+	}
+
+	public clearTaskHeightOverride(taskId: TaskId) {
+		if (this.taskHeightOverrides.has(taskId)) {
+			this.taskHeightOverrides.delete(taskId);
+			this.updateTaskPositions();
+		}
+	}
+
 	public updateTaskPositions(draggingOnly = false) {
 		if (!draggingOnly) {
 			const newPositions =
@@ -297,6 +310,7 @@ export class Context {
 						x: 0,
 						y: (innerHeight.current ?? 0) / 2 - TASK_SIZE.height,
 					},
+					this.taskHeightOverrides,
 				);
 
 			if (this.taskDraggingManager.isDragging) {

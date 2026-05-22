@@ -15,10 +15,12 @@
 	let {
 		taskId,
 		isUnselected,
+		isHovered,
 		context,
 	}: {
 		taskId: number,
 		isUnselected: boolean,
+		isHovered: boolean,
 		context: Context,
 	} = $props();
 
@@ -31,6 +33,45 @@
 	let textEditEl = $state<HTMLTextAreaElement | undefined>(undefined);
 	let component = new Component(); // Required by Obsidian to manage render lifecycle
 	let isDragging = $derived(context.taskDraggingManager.isDragging);
+
+	// Delayed collapse so the max-height animation is visible before text re-clamps
+	const COLLAPSE_DELAY_MS = 200;
+	let isTextExpanded = $state(false);
+	let collapseTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		if ((isHovered || isSelected) || isEditing) {
+			clearTimeout(collapseTimer);
+			collapseTimer = undefined;
+			isTextExpanded = true;
+		} else if (isTextExpanded) {
+			collapseTimer = setTimeout(() => {
+				isTextExpanded = false;
+				collapseTimer = undefined;
+			}, COLLAPSE_DELAY_MS);
+		}
+	});
+	// Measure the actual rendered text height after DOM settles and report to the layout engine
+	$effect(() => {
+		const active = (isHovered || isSelected) || isEditing;
+		if (!active) {
+			context.clearTaskHeightOverride(taskId);
+			return;
+		}
+		// Don't re-measure when switching to edit mode: textPreviewEl is unmounted at that
+		// point so offsetHeight would be stale/zero, causing a spurious resize.
+		// The override set during hover/selection remains valid while editing.
+		if (isEditing) return;
+		tick().then(() => {
+			if (!textPreviewEl || isEditing) return;
+			const taskPaddingPx = 20;      // padding: 10px 0 on .task
+			const containerPaddingPx = 16; // padding: 8px 0 on .task-text-container.expanded
+			context.setTaskHeightOverride(
+				taskId,
+				Math.max(80, 2 * textPreviewEl.offsetHeight + taskPaddingPx + containerPaddingPx - 35)
+			);
+		});
+	});
+
 	onMount(() => {
 		if(!isEditing && textPreviewEl) {
 			renderMarkdown();
@@ -194,6 +235,7 @@
 	class="task-text-container"
 	class:selected={isSelected}
 	class:not-selected={!isSelected}
+	class:expanded={(isHovered || isSelected) || isEditing}
 	role="group"
 	onpointerup={handlePreviewClick}
 >
@@ -201,7 +243,6 @@
 		<textarea
 			class="text-edit tasktext"
 			class:unselect={isUnselected}
-			maxlength="28"
 			bind:this={textEditEl}
 			onblur={handleBlur}
 			onkeydown={handleKeydown}
@@ -211,6 +252,7 @@
 		<div
 			class="text-preview tasktext"
 			class:unselect={isUnselected}
+			class:expanded={isTextExpanded}
 			role="group"
 			bind:this={textPreviewEl}
 			onpointermove={handlePreviewMouseOver}
@@ -229,13 +271,19 @@
 	}
 	.task-text-container {
 		width: var(--task-width);
-		height: var(--task-height);
+		max-height: var(--task-height);
 		display: flex;
 		justify-content: center;
-		align-items: center;
-		position: absolute;
-		padding: 0;
+		align-items: flex-start;
+		position: relative;
+		padding: 8px 0;
 		gap: 0;
+		overflow: hidden;
+		transition: max-height 0.2s ease;
+	}
+	.task-text-container.expanded {
+		max-height: 400px;
+		transition: max-height 0.3s ease;
 	}
 	.task-text-container.selected .tasktext:hover {
 		cursor: text;
@@ -260,7 +308,7 @@
 		outline: none;
 		box-shadow: none;
 		/*padding: 35px;*/
-		position: absolute;
+		position: relative;
 		text-align: center;
 		justify-content: center;
 		align-items: center;
@@ -274,7 +322,7 @@
 	.text-edit {
 		display: flex;
 		field-sizing: content;
-		padding-top: 5px; /* fixes text jumping between text-edit and text-preview */
+		padding-top: 2px; /* fixes text jumping between text-edit and text-preview */
 	}
 	.text-edit:hover {
 		background-color: transparent;
@@ -285,24 +333,25 @@
 		box-shadow: none;
 	}
 	.text-preview {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		overflow-wrap: anywhere;
+		:global(p) {
+			display: inline;
+			margin: 0;
+			padding: 0;
+		}
+	}
+	.text-preview.expanded {
+		display: block;
 		overflow: visible;
-		white-space: pre-wrap;
-		word-wrap: break-word;
-		:global {
-			p {
-				top: 0;
-				width: var(--task-width);
-				height: var(--task-height);
-				line-height: var(--task-line-height);
-				margin: 0;
-				padding: 0;
-				gap: 0;
-				border: none;
-				text-align: center;
-				justify-content: center;
-				align-items: center;
-				overflow: visible;
-			}
+		position: relative;
+		height: auto;
+		:global(p) {
+			display: block;
 		}
 	}
 </style>

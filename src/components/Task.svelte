@@ -27,7 +27,7 @@
 			viewport?.focus();
 		};
 	});
-	
+
 	let taskData = $derived(context.versionedData.getTask(taskId));
 	// let coords = $derived(context.getTaskPosition(taskId));
 	let isHovered = $state(false);
@@ -119,6 +119,7 @@
 	{#key context.updateOnZoomCounter}
 		<div
 			class="task-container"
+			class:elevated={isHovered || isSelected}
 			bind:this={self}
 			role="presentation"
 			style="
@@ -126,8 +127,6 @@
 				left: {coords.x}px;
 				pointer-events={context.taskDraggingManager.isDragging ? 'none' : 'auto'}
 			"
-			onpointerenter={() => isHovered = true}
-			onpointerleave={() => isHovered = false}
 		>
 			<div
 				class={`task ${classStringFromStatusCode(taskData.status)}`}
@@ -140,6 +139,8 @@
 				}
 				class:unselect={isUnselected}
 				class:blocker-highlight={isBlockerHighlight}
+				onpointerenter={() => isHovered = true}
+				onpointerleave={() => isHovered = false}
 				onpointerdown={(e: PointerEvent) => {
 					if (context.editingTaskId === NoTaskId) {
 						context.startTaskDragging(e, taskId);
@@ -151,14 +152,14 @@
 				role="presentation"
 				tabindex="-1"
 			>
-				<TaskText {taskId} {isUnselected} {context}/>
-			</div>
+				<TaskText {taskId} {isUnselected} {isHovered} {context}/>
 			{#if !context.taskDraggingManager.isDragging 
 				 && !context.isReparentingOn()
 				 && !(context.chosenBlockedId !== NoTaskId)
 				 && !(context.chosenBlockerId !== NoTaskId)}
 				<AddTaskButton {context} {taskId} />
 			{/if}
+			</div>
 			{#if (context.versionedData.getChildren(taskId).length > 0)
 				 && !context.isReparentingOn()
 				 && !(context.chosenBlockedId !== NoTaskId)
@@ -207,6 +208,9 @@
 		z-index: 3; /* over lines*/
 		position: absolute;
 	}
+	.task-container.elevated {
+		z-index: 10;
+	}
 	.task {
 		/*background: #111;*/
 		/*background-color: #1E1E1E;*/
@@ -222,7 +226,9 @@
 		font-family: var(--font-text);
 		line-height: 1.5;
 		width: 280px;
-		height: 80px;
+		height: auto;
+		min-height: 80px;
+		padding: 10px 0;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -234,7 +240,7 @@
 	}
 	.task.hovered {
 		width: 284px;
-		height: 84px;
+		min-height: 84px;
 		border-width: 4px;
 		transform: translate3d(-2px,-2px,0);
 	}
