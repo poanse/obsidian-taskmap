@@ -2,8 +2,11 @@ import * as v from "valibot";
 import type { FlatErrors } from "valibot";
 import { StatusCode, type BlockerPair, type TaskData } from "../types";
 
-/** Bump when the on-disk JSON shape changes (migrations can branch on this). */
-export const TASKMAP_FILE_SCHEMA_VERSION = 1 as const;
+/**
+ * Bump when the on-disk JSON shape changes (migrations can branch on this).
+ * v2: normalize sibling priorities after reparent
+ */
+export const TASKMAP_FILE_SCHEMA_VERSION = 2 as const;
 
 const statusCodeSchema = v.picklist([
 	StatusCode.DRAFT,
@@ -45,6 +48,7 @@ export const projectFileSchema = v.object({
 });
 
 export type ProjectFileParsed = {
+	schemaVersion: number | undefined;
 	tasks: TaskData[];
 	blockerPairs: BlockerPair[];
 	folderPath: string | undefined;
@@ -89,6 +93,7 @@ export function parseProjectFileJson(parsed: unknown): ProjectFileParsed {
 	}
 	const o = result.output;
 	return {
+		schemaVersion: o.schemaVersion,
 		tasks: o.tasks,
 		blockerPairs: o.blockerPairs ?? [],
 		folderPath: o.folderPath,

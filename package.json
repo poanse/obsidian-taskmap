@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-taskmap",
-	"version": "0.1.6",
+	"version": "0.1.7",
 	"description": "Taskmap plugin for Obsidian (https://obsidian.md)",
 	"main": "main.js",
 	"scripts": {
@@ -9,6 +9,7 @@
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"svelte-check": "svelte-check --tsconfig tsconfig.json",
 		"perf:tasks": "tsx scripts/perf-tasks.ts",
+		"test": "tsx --test tests/reparent-priorities.test.ts",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix"
 	},
