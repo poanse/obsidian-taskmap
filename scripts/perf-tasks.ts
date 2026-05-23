@@ -87,6 +87,7 @@ function randomTaskIds(count: number, picks: number): TaskId[] {
 
 function createProjectData(tasks: TaskData[]): ProjectData {
 	return new ProjectData({
+		schemaVersion: undefined,
 		tasks: tasks.map((t) => ({ ...t })),
 		blockerPairs: [],
 		folderPath: undefined,

@@ -234,7 +234,7 @@ export class ChangeParentAction implements Action {
 	do(data: ProjectData) {
 		this.oldParentId = data.getTask(this.taskId).parentId;
 		this.oldPriority = data.getTask(this.taskId).priority;
-		data.getTask(this.taskId).priority = -1;
+		data.getTask(this.taskId).priority = data.getChildren(this.newParentId).length;
 		data.changeParent(this.taskId, this.newParentId);
 		data.recalcPriorities(this.newParentId);
 		data.recalcPriorities(this.oldParentId);

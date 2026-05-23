@@ -2,7 +2,10 @@ import * as v from "valibot";
 import type { FlatErrors } from "valibot";
 import { StatusCode, type BlockerPair, type TaskData } from "../types";
 
-/** Bump when the on-disk JSON shape changes (migrations can branch on this). */
+/**
+ * Bump when the on-disk JSON shape changes (migrations can branch on this).
+ * v2: normalize sibling priorities after reparent
+ */
 export const TASKMAP_FILE_SCHEMA_VERSION = 2 as const;
 
 const statusCodeSchema = v.picklist([

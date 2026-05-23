@@ -44,7 +44,9 @@ export class ProjectData {
 		}
 		this.rebuildCaches();
 		if ((obj.schemaVersion ?? 0) < TASKMAP_FILE_SCHEMA_VERSION) {
-			this.tasks.forEach((t) => this.recalcPriorities(t.taskId));
+			for (const parentId of this.childrenCache.keys()) {
+				this.recalcPriorities(parentId);
+			}
 		}
 	}
 
