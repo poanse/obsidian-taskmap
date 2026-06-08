@@ -16,6 +16,9 @@ export function serializeProjectData(projectData: ProjectData) {
 			blockerPairs: projectData.blockerPairs,
 			folderPath: projectData.folderPath,
 			curTaskId: projectData.curTaskId,
+			taskSizeOverrides: [...projectData.taskSizeOverrides.entries()].map(
+				([taskId, { x, y }]) => ({ taskId, x, y }),
+			),
 		},
 		null,
 		2,

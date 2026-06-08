@@ -1,5 +1,10 @@
 ﻿import { HistoryManager } from "./HistoryManager.svelte";
-import { type BlockerPair, StatusCode, type TaskId } from "../types";
+import {
+	type BlockerPair,
+	StatusCode,
+	type TaskId,
+	type Vector2,
+} from "../types";
 import { ProjectData } from "./ProjectData.svelte";
 import {
 	AddTaskAction,
@@ -124,6 +129,26 @@ export class VersionedData {
 		);
 	};
 
+	public setTaskSizeOverride = (taskId: TaskId, size: Vector2) => {
+		this.data.setTaskSizeOverride(taskId, size);
+	};
+
+	public clearTaskSizeOverride = (taskId: TaskId) => {
+		this.data.deleteTaskSizeOverride(taskId);
+	};
+
+	public getTaskSizeOverride = (taskId: TaskId): Vector2 | undefined => {
+		return this.data.getTaskSizeOverride(taskId);
+	};
+
+	public hasTaskSizeOverride = (taskId: TaskId): boolean => {
+		return this.data.hasTaskSizeOverride(taskId);
+	};
+
+	public getTaskSizeOverrides = (): Map<TaskId, Vector2> => {
+		return this.data.taskSizeOverrides;
+	};
+
 	public getFolderPath = (): string | undefined => {
 		return this.data.getFolderPath();
 	};
@@ -136,8 +161,12 @@ export class VersionedData {
 		return this.data.getTasks(includeDeleted);
 	};
 
-	public getTasksVersion = () => {
-		return this.data.tasksVersion;
+	public getViewUpdateCounter = () => {
+		return this.data.tasksViewUpdateCounter;
+	};
+
+	public getConnectionsVersion = () => {
+		return this.data.connectionsViewUpdateCounter;
 	};
 
 	public getTask = (taskId: TaskId) => {

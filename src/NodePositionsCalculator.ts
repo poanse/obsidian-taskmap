@@ -1,5 +1,6 @@
 ﻿// Assumed types and constants based on usage
 import type { TaskData, TaskId, Vector2 } from "./types";
+import { TASK_SIZE } from "./Constants";
 
 export const NoTaskId = -1 as TaskId;
 export const RootTaskId = 0 as TaskId;
@@ -28,10 +29,36 @@ export enum AlgorithmEnum {
 	DoubleRow,
 }
 
-export const ParentToChildHorizontalShift = 400;
+// Horizontal shift between parent and child: width + gap
+export const ParentToChildHorizontalGap = 120;
+
+type Node = {
+	id: TaskId;
+	size: Vector2;
+	subtreeSize: Vector2 | undefined;
+	siblingShift: Vector2 | undefined;
+	parentAlignmentShift: Vector2 | undefined;
+	finalShiftInParentFrame: Vector2 | undefined;
+};
 
 export class NodePositionsCalculator {
-	public readonly SiblingDelta = 90;
+	/**
+	 * Vertical shift between siblings: height + gap
+	 */
+	public readonly SiblingVerticalGap = 10;
+	/**
+	 * Additional gap between subtrees to distinguish between subtrees in a long vertical list of tasks
+	 */
+	public readonly SiblingParentsVerticalGap = 5;
+	/**
+	 * Position of the parent node relative to the height of the subtree. 0 - top, 0.5 - center, 1 - bottom
+	 */
+	public readonly AlignmentRatio = 0.5;
+
+	private readonly DefaultNodeSize = {
+		x: TASK_SIZE.width,
+		y: TASK_SIZE.height,
+	};
 	public Algorithm: AlgorithmEnum = AlgorithmEnum.DefaultTree;
 	public subtreeWidthByHalfPriority: Map<number, number> = new Map<
 		number,
@@ -47,9 +74,9 @@ export class NodePositionsCalculator {
 	public CalculatePositionsInGlobalFrame(
 		tasks: TaskData[],
 		rootPosition: Vector2,
-		taskHeightOverrides: Map<TaskId, number> = new Map(),
+		sizes: Map<TaskId, Vector2> | undefined = undefined,
 	): Map<TaskId, Vector2> {
-		const rootFrame = this.CalculatePositionsInRootFrame(tasks, taskHeightOverrides);
+		const rootFrame = this.CalculatePositionsInRootFrame(tasks, sizes);
 		const result: Map<TaskId, Vector2> = new Map<TaskId, Vector2>();
 
 		for (const [key, value] of rootFrame) {
@@ -63,10 +90,12 @@ export class NodePositionsCalculator {
 	 */
 	private CalculatePositionsInRootFrame(
 		tasks: TaskData[],
-		taskHeightOverrides: Map<TaskId, number>,
+		sizes: Map<TaskId, Vector2> | undefined = undefined,
 	): Map<TaskId, Vector2> {
-		const parentFramePositions =
-			this.CalculatePositionsInParentFrame(tasks, taskHeightOverrides);
+		const parentFramePositions = this.CalculatePositionsInParentFrame(
+			tasks,
+			sizes,
+		);
 		const positions: Map<TaskId, Vector2> = new Map<TaskId, Vector2>();
 		positions.set(NoTaskId, V2.Zero);
 
@@ -94,6 +123,13 @@ export class NodePositionsCalculator {
 			}
 			positions.set(t.taskId, V2.add(parentPos, relativePos));
 		});
+		// Make root unmovable
+		const rootShift = positions.get(RootTaskId);
+		if (rootShift) {
+			tasks.forEach((t) => {
+				positions.set(t.taskId, V2.sub(positions.get(t.taskId)!, rootShift));
+			});
+		}
 
 		this.RootFramePositions = positions;
 		return positions;
@@ -104,16 +140,10 @@ export class NodePositionsCalculator {
 	 */
 	private CalculatePositionsInParentFrame(
 		tasks: TaskData[],
-		taskHeightOverrides: Map<TaskId, number>,
+		sizes: Map<TaskId, Vector2> | undefined = undefined,
 	): Map<TaskId, Vector2> {
-		// Position of the parent node relative to the height of the subtree. 0 - top, 0.5 - center, 1 - bottom
-		const alignmentRatio: Vector2 = { x: 0, y: 0.5 };
-		// Additional shift in the form of a fraction of siblingDelta, so that siblings' children do not merge into a single list
-		const parentDelta: Vector2 = { x: 0, y: 0.15 };
-
-		//// Helper data structures
+		// Helper data structures
 		// Sort tasks to simplify the implementation of DP: depth DESC, parentId ASC/DESC, priority ASC
-		// TODO: maybe support order sorting in DataModel?
 		const sortedTasks = [...tasks].sort((a, b) => {
 			if (b.depth !== a.depth) {
 				return b.depth - a.depth;
@@ -143,244 +173,166 @@ export class NodePositionsCalculator {
 
 		//// Calculations
 		// key - root id of the subtree
-		const subtreeSizeByNodeId: Map<TaskId, Vector2> = new Map<
-			TaskId,
-			Vector2
-		>();
+		const nodes: Map<TaskId, Node> = new Map<TaskId, Node>();
+		tasks.forEach((t) =>
+			nodes.set(t.taskId, {
+				id: t.taskId,
+				size: sizes?.get(t.taskId) ?? this.DefaultNodeSize,
+				subtreeSize: undefined,
+				finalShiftInParentFrame: undefined,
+				parentAlignmentShift: undefined,
+				siblingShift: undefined,
+			}),
+		);
 
-		const allIdsToProcess = [...sortedTasks.map((t) => t.taskId), NoTaskId];
+		this.CalculateSubtreeSizes(nodes, sortedTasks, childrenIdsByParentId);
 
-		const defaultHeightPx = 80;
-		const gapPx = this.SiblingDelta - defaultHeightPx;
+		// Shift of children nodes relative to the top-left point of the subtree rectangle
+		this.CalculateSiblingShift(nodes, parentIds, childrenIdsByParentId);
 
+		// Shift of the parent relative to the top-left point of the subtree rectangle.
+		// Subtract parentDelta, so that the parent is aligned with the children
+		this.CalculateParentAlignmentShift(nodes, parentIds);
+
+		// Shift of children nodes relative to the parent
+		// in pixels - not in relative coordinates
+		this.CalculateFinalShiftInParentFrame(nodes, sortedTasks);
+
+		const res = new Map<TaskId, Vector2>();
+		nodes.forEach((node) => {
+			res.set(node.id, node.finalShiftInParentFrame!);
+		});
+		return res;
+	}
+	/**
+	 * Size of subtree in integer amounts of tasks
+	 */
+	private CalculateSubtreeSizes(
+		nodes: Map<TaskId, Node>,
+		sortedTasks: TaskData[],
+		childrenIdsByParentId: Map<TaskId, TaskId[]>,
+	): void {
+		const allIdsToProcess = sortedTasks.map((t) => t.taskId);
 		allIdsToProcess.forEach((id) => {
-			const heightPx = taskHeightOverrides.get(id as TaskId) ?? defaultHeightPx;
-			const minYFromHeight = (heightPx + gapPx) / this.SiblingDelta;
-
-			if (childrenIdsByParentId.has(id)) {
-				const childrenIds = childrenIdsByParentId.get(id)!;
-				const xAgg =
-					Math.max(
-						...childrenIds.map(
-							(x) => subtreeSizeByNodeId.get(x)!.x,
-						),
-					) + 1;
-				const yAgg = childrenIds
-					.map((x) => subtreeSizeByNodeId.get(x)!.y)
-					.reduce((a, b) => a + b, 0);
-				// If this task has a height override, ensure its allocated region is
-				// tall enough for the expanded card to fit without overlapping siblings.
-				subtreeSizeByNodeId.set(
-					id,
-					V2.add({ x: xAgg, y: Math.max(yAgg, minYFromHeight) }, parentDelta),
-				);
+			const childrenIds = childrenIdsByParentId.get(id) ?? [];
+			const node = nodes.get(id);
+			if (node === undefined) {
+				throw new Error(`${id} not found in nodes`);
+			}
+			if (childrenIds.length == 0) {
+				node.subtreeSize = node.size;
 			} else {
-				const ySizeUnits = minYFromHeight;
-				subtreeSizeByNodeId.set(id, { x: 1, y: ySizeUnits });
+				const childrenSizes = childrenIds.map(
+					(x) => nodes.get(x)!.subtreeSize!,
+				);
+				const maxSubtreeXSize = Math.max(
+					...childrenSizes.map((s) => s.x),
+				);
+				const nodeYsize =
+					childrenSizes.map((s) => s.y).reduce((a, b) => a + b, 0) +
+					(childrenSizes.length - 1) * this.SiblingVerticalGap;
+				node.subtreeSize = {
+					x:
+						maxSubtreeXSize +
+						node.size.x +
+						ParentToChildHorizontalGap,
+					y: Math.max(nodeYsize, node.size.y),
+				};
 			}
 		});
+	}
 
-		// Shift of children nodes relative to the left-top point of the rectangle
-		const siblingShiftsRel: Map<TaskId, Vector2> = new Map<
-			TaskId,
-			Vector2
-		>();
+	private CalculateSiblingShift(
+		nodes: Map<TaskId, Node>,
+		parentIds: TaskId[],
+		childrenIdsByParentId: Map<TaskId, TaskId[]>,
+	): void {
 		parentIds.forEach((parentId) => {
 			const children = childrenIdsByParentId.get(parentId)!;
 			children.forEach((childId, idx) => {
-				let s = V2.mult(
-					subtreeSizeByNodeId.get(childId)!,
-					alignmentRatio,
-				);
-				if (idx > 0) {
-					const previousSibling = children[idx - 1];
-					const prevSize = V2.mult(
-						subtreeSizeByNodeId.get(previousSibling)!,
-						V2.sub(V2.One, alignmentRatio),
-					);
-					s = V2.add(s, prevSize);
-					s = V2.add(s, siblingShiftsRel.get(previousSibling)!);
-				}
-				// Additional shift for drawing blockers
-				// var blockerCount = BlockerDataManager.GetConnections()
-				//      .Count(x => x.Item1 == childId);
-				// s += blockerCount;
-				siblingShiftsRel.set(childId, s);
-			});
-		});
+				const childNode = nodes.get(childId)!;
+				const xShift = childNode.size.x + ParentToChildHorizontalGap;
+				if (idx == 0) {
+					const parentNodeSize =
+						nodes.get(parentId)?.size ?? this.DefaultNodeSize; // in case of -1
+					const childrenYSumWithGaps =
+						children
+							.map((x) => nodes.get(x)!.size.y)
+							.reduce((a, b) => a + b, 0) +
+						(children.length - 1) * this.SiblingVerticalGap;
+					childNode.siblingShift = {
+						x: xShift,
+						y: Math.max(
+							0,
+							(parentNodeSize.y - childrenYSumWithGaps) / 2,
+						),
+					};
+				} else if (idx > 0) {
+					const prevSiblingId = children[idx - 1];
+					const prevSiblingNode = nodes.get(prevSiblingId)!;
+					const siblingBranchesHaveChildren =
+						(childrenIdsByParentId.get(childId)?.length ?? 0) > 0 &&
+						(childrenIdsByParentId.get(prevSiblingId)?.length ??
+							0) > 0;
 
-		// Shift of the parent relative to the left-top point of the rectangle.
-		// Subtract parentDelta, so that the parent is aligned with the children
-		const parentAlignmentShift: Map<TaskId, Vector2> = new Map<
-			TaskId,
-			Vector2
-		>();
-		parentIds.forEach((parentId) => {
-			if (!subtreeSizeByNodeId.has(parentId)) {
-				throw new Error(
-					`Failed to calculate layout: taskId [${parentId}] not in subtreeSizeByNodeId`,
-				);
-			}
-			parentAlignmentShift.set(
-				parentId,
-				V2.mult(
-					V2.sub(subtreeSizeByNodeId.get(parentId)!, parentDelta),
-					alignmentRatio,
-				),
-			);
-		});
-
-		// Shift of children nodes relative to the parent and already in normal coordinates
-		const finalChildShifts: Map<TaskId, Vector2> = new Map<
-			TaskId,
-			Vector2
-		>();
-		sortedTasks.forEach((t) => {
-			const parentShift = parentAlignmentShift.get(t.parentId);
-			const siblingShift = siblingShiftsRel.get(t.taskId);
-			if (parentShift === undefined) {
-				throw new Error();
-			}
-			if (siblingShift === undefined) {
-				throw new Error();
-			}
-
-			const verticalComponent = V2.mult(
-				{ x: 0, y: this.SiblingDelta },
-				V2.sub(siblingShift, parentShift),
-			);
-
-			finalChildShifts.set(
-				t.taskId,
-				V2.add(
-					{ x: ParentToChildHorizontalShift, y: 0 },
-					verticalComponent,
-				),
-			);
-		});
-
-		const rootTaskHasMultipleVisibleChildren =
-			(childrenIdsByParentId.get(RootTaskId)! || []).length > 1;
-
-		if (
-			rootTaskHasMultipleVisibleChildren &&
-			[AlgorithmEnum.SingleRow, AlgorithmEnum.DoubleRow].includes(
-				this.Algorithm,
-			)
-		) {
-			const rowMinYShift = 0.3;
-			const depthOneTasks = sortedTasks.filter((x) => x.depth === 1);
-
-			// Group by RowIndex
-			const depthOneTasksByRow: Map<number, TaskData[]> = new Map<
-				number,
-				TaskData[]
-			>();
-			depthOneTasks.forEach((t) => {
-				const idx = this.RowIndex(t);
-				if (!depthOneTasksByRow.has(idx)) {
-					depthOneTasksByRow.set(idx, []);
-				}
-				depthOneTasksByRow.get(idx)!.push(t);
-			});
-
-			const yShiftByRowId: Map<number, number> = new Map<
-				number,
-				number
-			>();
-			[...depthOneTasksByRow.keys()].forEach((key) => {
-				const rowIdx = Number(key);
-				const elements = depthOneTasksByRow.get(rowIdx)!;
-
-				const shifts = elements.map((n) =>
-					parentAlignmentShift.has(n.taskId)
-						? parentAlignmentShift.get(n.taskId)!.y
-						: V2.mult(alignmentRatio, V2.One).y,
-				);
-
-				const maxYShift = shifts.length > 0 ? Math.max(...shifts) : 0; // MaxOrDefault(0) equivalent
-				yShiftByRowId.set(
-					rowIdx,
-					(maxYShift + rowMinYShift) * this.SiblingDelta,
-				);
-			});
-
-			if (this.Algorithm === AlgorithmEnum.SingleRow) {
-				let subtreeRelWidthAccumulator = this.xshift;
-				depthOneTasks.forEach((x) => {
-					finalChildShifts.set(x.taskId, {
-						x:
-							finalChildShifts.get(x.taskId)!.x +
-							subtreeRelWidthAccumulator *
-								ParentToChildHorizontalShift,
-						y: yShiftByRowId.get(this.RowIndex(x))!,
-					});
-					subtreeRelWidthAccumulator +=
-						subtreeSizeByNodeId.get(x.taskId)!.x + this.xshift;
-				});
-			} else if (this.Algorithm === AlgorithmEnum.DoubleRow) {
-				// Sizes of subtrees by x. If 2 tasks are above each other, the larger one is used.
-				this.subtreeWidthByHalfPriority = new Map<number, number>();
-
-				const rootChildrenByPriority: Map<number, TaskId> = new Map<
-					number,
-					TaskId
-				>();
-				const rootChildren =
-					childrenIdsByParentId.get(RootTaskId) ?? [];
-				rootChildren.forEach((id, idx) => {
-					// reenumerate priorities based on index
-					rootChildrenByPriority.set(idx, id);
-				});
-
-				rootChildrenByPriority.forEach((_priority, chId) => {
-					const x = taskById.get(chId)!;
-					if (this.RowIndex(x) === 0) {
-						const neighbourId =
-							rootChildrenByPriority.get(x.priority + 1) ??
-							x.taskId;
-
-						this.subtreeWidthByHalfPriority.set(
-							Math.floor(x.priority / 2),
-							Math.max(
-								subtreeSizeByNodeId.get(x.taskId)!.x,
-								subtreeSizeByNodeId.get(neighbourId)!.x,
-							),
-						);
-					}
-				});
-
-				depthOneTasks.forEach((x) => {
-					const t = [...this.subtreeWidthByHalfPriority]
-						.filter(([k, _]) => k < Math.floor(x.priority / 2))
-						.map(([_, v]) => v);
-
-					const tSum = t.reduce((a, b) => a + b, 0);
-
-					finalChildShifts.set(x.taskId, {
-						x:
-							finalChildShifts.get(x.taskId)!.x +
-							(this.xshift + this.xshift * t.length + tSum) *
-								ParentToChildHorizontalShift,
+					childNode.siblingShift = {
+						x: xShift,
 						y:
-							this.RowIndex(x) === 0
-								? yShiftByRowId.get(this.RowIndex(x))!
-								: -yShiftByRowId.get(this.RowIndex(x))!,
-					});
-				});
-			}
-		}
-		return finalChildShifts;
+							prevSiblingNode.siblingShift!.y +
+							prevSiblingNode.subtreeSize!.y +
+							this.SiblingVerticalGap +
+							(siblingBranchesHaveChildren
+								? this.SiblingParentsVerticalGap
+								: 0),
+					};
+				}
+			});
+		});
 	}
 
-	public RowIndex(node: TaskData): number {
-		switch (this.Algorithm) {
-			case AlgorithmEnum.SingleRow:
-				return 0;
-			case AlgorithmEnum.DoubleRow:
-				return node.priority % 2;
-			default:
-				throw new Error("AssumptionViolation");
-		}
+	private CalculateParentAlignmentShift(
+		nodes: Map<TaskId, Node>,
+		parentIds: TaskId[],
+	) {
+		parentIds
+			.filter((p) => p != NoTaskId)
+			.forEach((taskId) => {
+				const node = nodes.get(taskId);
+				if (node === undefined) {
+					throw new Error(`Task id ${taskId} is missing from nodes`);
+				}
+				if (!node?.subtreeSize) {
+					throw new Error(
+						`Failed to calculate layout: taskId [${taskId}] not in subtreeSizeByNodeId`,
+					);
+				}
+				if (this.AlignmentRatio == 0.5) {
+					const yShift = (node.subtreeSize.y - node.size.y) / 2;
+					node.parentAlignmentShift = { x: 0, y: yShift };
+				} else {
+					throw new Error("Not implemented");
+				}
+			});
+	}
+
+	private CalculateFinalShiftInParentFrame(
+		nodes: Map<TaskId, Node>,
+		sortedTasks: TaskData[],
+	) {
+		sortedTasks
+			.filter((t) => t.taskId != NoTaskId)
+			.forEach((t) => {
+				const parentNode = nodes.get(t.parentId);
+				const parentShift = parentNode?.parentAlignmentShift ?? V2.Zero;
+				const taskNode = nodes.get(t.taskId)!;
+
+				taskNode.finalShiftInParentFrame = V2.sub(
+					V2.add(
+						taskNode.siblingShift!,
+						taskNode.parentAlignmentShift ?? V2.Zero,
+					),
+					parentShift,
+				);
+			});
 	}
 }

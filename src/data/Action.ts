@@ -1,4 +1,9 @@
-﻿import { type BlockerPair, StatusCode, type TaskId } from "../types";
+﻿import {
+	type BlockerPair,
+	StatusCode,
+	type TaskId,
+	type Vector2,
+} from "../types";
 import { ProjectData } from "./ProjectData.svelte";
 
 export interface Action {
@@ -70,7 +75,7 @@ export class RemoveTaskSingleAction implements Action {
 		});
 		data.recalcPriorities(task.parentId);
 		data.recalcStatusRecursive(task.parentId);
-		data.markTasksUpdated();
+		data.updateTasksView();
 	}
 
 	undo(data: ProjectData) {
@@ -159,6 +164,8 @@ export class SetTaskNameAction implements Action {
 	private newPath?: string;
 	private oldName?: string;
 	private oldPath?: string;
+	// undefined = not yet recorded; null = no override existed; Vector2 = override existed
+	private oldSizeOverride: Vector2 | null | undefined = undefined;
 
 	constructor(taskId: TaskId, newName: string, path?: string) {
 		this.taskId = taskId;
@@ -169,20 +176,29 @@ export class SetTaskNameAction implements Action {
 	do(data: ProjectData): void {
 		this.oldName = data.getTask(this.taskId).name;
 		this.oldPath = data.getTask(this.taskId).path;
+		this.oldSizeOverride = data.getTaskSizeOverride(this.taskId) ?? null;
 		const task = data.getTask(this.taskId);
 		task.name = this.newName;
 		task.path = this.newPath;
+		data.updateConnectionsView();
 	}
 
 	undo(data: ProjectData): void {
-		if (this.oldName === undefined) {
+		if (this.oldName === undefined || this.oldSizeOverride === undefined) {
 			throw new Error();
 		}
 		const task = data.getTask(this.taskId);
 		task.name = this.oldName;
 		task.path = this.oldPath;
+		if (this.oldSizeOverride !== null) {
+			data.setTaskSizeOverride(this.taskId, this.oldSizeOverride);
+		} else {
+			data.deleteTaskSizeOverride(this.taskId);
+		}
+		data.updateConnectionsView();
 		this.oldName = undefined;
 		this.oldPath = undefined;
+		this.oldSizeOverride = undefined;
 	}
 
 	shouldCombine(newAction: SetTaskNameAction) {

@@ -1,5 +1,4 @@
 ﻿<script lang="ts">
-	import { TASK_SIZE } from "../Constants";
 	import { StatusCode } from "../types";
 	import { Context } from "../Context.svelte.js";
 
@@ -21,7 +20,7 @@
 	role="group"
 	onpointerenter={() => entered = true}
 	onpointerleave={() => entered = false}
-	style="left: {TASK_SIZE.width - 50/2}px;"
+	style="left: {context.getTaskSize(taskId).x - 50/2}px;"
 >
 	{#if entered}
 		<svg

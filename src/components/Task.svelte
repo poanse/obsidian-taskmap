@@ -142,7 +142,7 @@
 				onpointerenter={() => isHovered = true}
 				onpointerleave={() => isHovered = false}
 				onpointerdown={(e: PointerEvent) => {
-					if (context.editingTaskId === NoTaskId) {
+					if (context.canStartTaskDragging(taskId)) {
 						context.startTaskDragging(e, taskId);
 					}
 					e.stopPropagation();
@@ -152,7 +152,7 @@
 				role="presentation"
 				tabindex="-1"
 			>
-				<TaskText {taskId} {isUnselected} {isHovered} {context}/>
+				<TaskText {taskId} {isUnselected} {context}/>
 			{#if !context.taskDraggingManager.isDragging 
 				 && !context.isReparentingOn()
 				 && !(context.chosenBlockedId !== NoTaskId)

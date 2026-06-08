@@ -11,16 +11,15 @@
 		taskPathFromFile
 	} from "../LinkManager";
 	import {NoTaskId} from "../NodePositionsCalculator";
+	import {TASK_SIZE} from "../Constants";
 
 	let {
 		taskId,
 		isUnselected,
-		isHovered,
 		context,
 	}: {
 		taskId: number,
 		isUnselected: boolean,
-		isHovered: boolean,
 		context: Context,
 	} = $props();
 
@@ -33,44 +32,6 @@
 	let textEditEl = $state<HTMLTextAreaElement | undefined>(undefined);
 	let component = new Component(); // Required by Obsidian to manage render lifecycle
 	let isDragging = $derived(context.taskDraggingManager.isDragging);
-
-	// Delayed collapse so the max-height animation is visible before text re-clamps
-	const COLLAPSE_DELAY_MS = 200;
-	let isTextExpanded = $state(false);
-	let collapseTimer: ReturnType<typeof setTimeout> | undefined;
-	$effect(() => {
-		if ((isHovered || isSelected) || isEditing) {
-			clearTimeout(collapseTimer);
-			collapseTimer = undefined;
-			isTextExpanded = true;
-		} else if (isTextExpanded) {
-			collapseTimer = setTimeout(() => {
-				isTextExpanded = false;
-				collapseTimer = undefined;
-			}, COLLAPSE_DELAY_MS);
-		}
-	});
-	// Measure the actual rendered text height after DOM settles and report to the layout engine
-	$effect(() => {
-		const active = (isHovered || isSelected) || isEditing;
-		if (!active) {
-			context.clearTaskHeightOverride(taskId);
-			return;
-		}
-		// Don't re-measure when switching to edit mode: textPreviewEl is unmounted at that
-		// point so offsetHeight would be stale/zero, causing a spurious resize.
-		// The override set during hover/selection remains valid while editing.
-		if (isEditing) return;
-		tick().then(() => {
-			if (!textPreviewEl || isEditing) return;
-			const taskPaddingPx = 20;      // padding: 10px 0 on .task
-			const containerPaddingPx = 16; // padding: 8px 0 on .task-text-container.expanded
-			context.setTaskHeightOverride(
-				taskId,
-				Math.max(80, 2 * textPreviewEl.offsetHeight + taskPaddingPx + containerPaddingPx - 35)
-			);
-		});
-	});
 
 	onMount(() => {
 		if(!isEditing && textPreviewEl) {
@@ -93,6 +54,27 @@
 
 		// Cleanup function for when component is unmounted
 		return () => document.body.classList.remove('is-dragging-task');
+	});
+
+	// Measure the actual rendered text height after DOM settles and report to the layout engine
+	$effect(() => {
+		// Don't re-measure when editing: textPreviewEl is unmounted at that point so
+		// offsetHeight would be stale/zero, causing a spurious resize.
+		// The override set before editing remains valid while editing.
+		if (isEditing) return;
+		tick().then(() => {
+			if (!textPreviewEl || isEditing) return;
+			const taskEl = textPreviewEl.closest('.task') as HTMLElement | null;
+			if (!taskEl) return;
+			const height = taskEl.offsetHeight;
+			const isHeightExpanded = height > TASK_SIZE.height_hovered;
+			if (isHeightExpanded) {
+				context.setTaskHeightOverride(taskId, height);
+			} else {
+				// noop if no override present
+				context.clearTaskHeightOverride(taskId);
+			}
+		});
 	});
 	
 	function handlePreviewClick(e: PointerEvent) {
@@ -175,10 +157,11 @@
 		if (!el) {
 			return;
 		}
-		if (e.key === "Enter") {
-			e.preventDefault();
-			el.blur(); // Triggers handleBlur
-		} else if (e.key === "Tab" && suggest !== null) {
+		// if (e.key === "Enter") {
+		// 	e.preventDefault();
+		// 	el.blur(); // Triggers handleBlur
+		// } else 
+		if (e.key === "Tab" && suggest !== null) {
 			// another hack to select suggest on tab
 			e.preventDefault();
 			el.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
@@ -232,10 +215,9 @@
 </script>
 
 <div
-	class="task-text-container"
+	class="task-text-container expanded"
 	class:selected={isSelected}
 	class:not-selected={!isSelected}
-	class:expanded={(isHovered || isSelected) || isEditing}
 	role="group"
 	onpointerup={handlePreviewClick}
 >
@@ -250,9 +232,8 @@
 		>{taskData.path ? linkFromFilePath(taskData.path) : taskData.name}</textarea>
 	{:else}
 		<div
-			class="text-preview tasktext"
+			class="text-preview tasktext expanded"
 			class:unselect={isUnselected}
-			class:expanded={isTextExpanded}
 			role="group"
 			bind:this={textPreviewEl}
 			onpointermove={handlePreviewMouseOver}
@@ -266,24 +247,18 @@
 		--task-width: 180px;
 		--task-height: 60px;
 		--task-line-height: 1.1;
-		/*--task-line-height: 1.5;*/
 		--task-font-size: 20px;
 	}
 	.task-text-container {
 		width: var(--task-width);
-		max-height: var(--task-height);
+		max-height: 400px;
 		display: flex;
 		justify-content: center;
 		align-items: flex-start;
 		position: relative;
-		padding: 8px 0;
+		padding: 0;
 		gap: 0;
 		overflow: hidden;
-		transition: max-height 0.2s ease;
-	}
-	.task-text-container.expanded {
-		max-height: 400px;
-		transition: max-height 0.3s ease;
 	}
 	.task-text-container.selected .tasktext:hover {
 		cursor: text;
@@ -320,9 +295,9 @@
 	}
 
 	.text-edit {
-		display: flex;
+		display: block;
 		field-sizing: content;
-		padding-top: 2px; /* fixes text jumping between text-edit and text-preview */
+		padding-top: 1px; /* fixes text jumping between text-edit and text-preview */
 	}
 	.text-edit:hover {
 		background-color: transparent;
@@ -332,26 +307,20 @@
 		outline: none;
 		box-shadow: none;
 	}
-	.text-preview {
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		overflow-wrap: anywhere;
-		:global(p) {
-			display: inline;
-			margin: 0;
-			padding: 0;
-		}
-	}
 	.text-preview.expanded {
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
 		display: block;
-		overflow: visible;
-		position: relative;
+		line-clamp: 2;
 		height: auto;
+		overflow: visible;
+		overflow-wrap: anywhere;
+		padding-top: 1px;
+		position: relative;
 		:global(p) {
 			display: block;
+			margin: 0 !important;
+			padding: 0 !important;
 		}
 	}
 </style>

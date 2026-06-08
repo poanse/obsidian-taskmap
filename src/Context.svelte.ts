@@ -63,7 +63,6 @@ export class Context {
 	// svg elements are pixelated zooming from scale < 1 to scale > 1, so we force a redraw manually
 	updateOnZoomCounter = $state(0);
 	scale = $state(1);
-	private taskHeightOverrides = new Map<TaskId, number>();
 
 	// parameters for animating task movement
 	private springOptions = { stiffness: 0.07, damping: 0.7 };
@@ -107,6 +106,12 @@ export class Context {
 		this.hoveredBlockedId = NoTaskId;
 		this.pressedButtonCode = -1;
 
+		for (const taskId of projectData.taskSizeOverrides.keys()) {
+			const size = projectData.taskSizeOverrides.get(taskId);
+			if (size) {
+				this.versionedData.setTaskSizeOverride(taskId, size);
+			}
+		}
 		const sel = this.versionedData.getTaskOption(this.selectedTaskId);
 		if (sel === undefined || sel.deleted) {
 			this.selectedTaskId = NoTaskId;
@@ -172,6 +177,10 @@ export class Context {
 		} else {
 			return false;
 		}
+	};
+
+	public canStartTaskDragging = (taskId: TaskId) => {
+		return this.editingTaskId == NoTaskId && taskId != RootTaskId;
 	};
 
 	public startTaskDragging = (e: PointerEvent, taskId: TaskId) => {
@@ -288,15 +297,33 @@ export class Context {
 	}
 
 	public setTaskHeightOverride(taskId: TaskId, heightPx: number) {
-		this.taskHeightOverrides.set(taskId, heightPx);
+		this.versionedData.setTaskSizeOverride(taskId, {
+			x: TASK_SIZE.width,
+			y: heightPx,
+		});
 		this.updateTaskPositions();
+		this.save();
+	}
+
+	public hasTaskHeightOverride(taskId: TaskId) {
+		return this.versionedData.hasTaskSizeOverride(taskId);
 	}
 
 	public clearTaskHeightOverride(taskId: TaskId) {
-		if (this.taskHeightOverrides.has(taskId)) {
-			this.taskHeightOverrides.delete(taskId);
+		if (this.versionedData.hasTaskSizeOverride(taskId)) {
+			this.versionedData.clearTaskSizeOverride(taskId);
 			this.updateTaskPositions();
+			this.save();
 		}
+	}
+
+	public getTaskSize(taskId: TaskId) {
+		return (
+			this.versionedData.getTaskSizeOverride(taskId) ?? {
+				x: TASK_SIZE.width,
+				y: TASK_SIZE.height,
+			}
+		);
 	}
 
 	public updateTaskPositions(draggingOnly = false) {
@@ -310,7 +337,7 @@ export class Context {
 						x: 0,
 						y: (innerHeight.current ?? 0) / 2 - TASK_SIZE.height,
 					},
-					this.taskHeightOverrides,
+					this.versionedData.getTaskSizeOverrides(),
 				);
 
 			if (this.taskDraggingManager.isDragging) {
@@ -406,7 +433,15 @@ export class Context {
 			)
 			.sort((left, right) => {
 				if (left.tween !== null && right.tween !== null) {
-					return left.tween?.target.y - right.tween?.target.y;
+					// если я перемещаю правую вверх, то сравнивать правую верхнюю и левую центральную точки
+					// если я перемещаю правую вниз, то правую нижнюю и левую центральную.
+					const leftY =
+						left.tween?.target.y -
+						this.getTaskSize(left.taskId).y / 2;
+					const rightY =
+						right.tween?.target.y -
+						this.getTaskSize(right.taskId).y / 2;
+					return leftY - rightY;
 				}
 				return 0;
 			})

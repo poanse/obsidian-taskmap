@@ -3,7 +3,7 @@ import type { FlatErrors } from "valibot";
 import { StatusCode, type BlockerPair, type TaskData } from "../types";
 
 /** Bump when the on-disk JSON shape changes (migrations can branch on this). */
-export const TASKMAP_FILE_SCHEMA_VERSION = 2 as const;
+export const TASKMAP_FILE_SCHEMA_VERSION = 3 as const;
 
 const statusCodeSchema = v.picklist([
 	StatusCode.DRAFT,
@@ -29,6 +29,14 @@ const blockerPairSchema = v.object({
 	blocked: v.pipe(v.number(), v.integer()),
 });
 
+const taskSizeOverrideSchema = v.object({
+	taskId: v.pipe(v.number(), v.integer()),
+	x: v.number(),
+	y: v.number(),
+});
+
+export type TaskSizeOverrideEntry = { taskId: number; x: number; y: number };
+
 export const projectFileSchema = v.object({
 	schemaVersion: v.optional(
 		v.pipe(
@@ -42,6 +50,7 @@ export const projectFileSchema = v.object({
 	blockerPairs: v.optional(v.array(blockerPairSchema)),
 	folderPath: v.optional(v.string()),
 	curTaskId: v.pipe(v.number(), v.integer()),
+	taskSizeOverrides: v.optional(v.array(taskSizeOverrideSchema)),
 });
 
 export type ProjectFileParsed = {
@@ -50,6 +59,7 @@ export type ProjectFileParsed = {
 	blockerPairs: BlockerPair[];
 	folderPath: string | undefined;
 	curTaskId: number;
+	taskSizeOverrides: TaskSizeOverrideEntry[];
 };
 
 export class TaskmapDataError extends Error {
@@ -95,5 +105,6 @@ export function parseProjectFileJson(parsed: unknown): ProjectFileParsed {
 		blockerPairs: o.blockerPairs ?? [],
 		folderPath: o.folderPath,
 		curTaskId: o.curTaskId,
+		taskSizeOverrides: o.taskSizeOverrides ?? [],
 	};
 }

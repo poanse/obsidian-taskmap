@@ -3,6 +3,7 @@
 	StatusCode,
 	type TaskData,
 	type TaskId,
+	type Vector2,
 } from "../types";
 import { SvelteMap } from "svelte/reactivity";
 import { NoTaskId, RootTaskId } from "../NodePositionsCalculator";
@@ -18,10 +19,12 @@ export class ProjectData {
 	childrenCache = new SvelteMap<TaskId, TaskId[]>();
 	ancestorsCache = new SvelteMap<TaskId, TaskId[]>();
 	descendantsCache = new SvelteMap<TaskId, TaskId[]>();
-	tasksVersion: number;
+	tasksViewUpdateCounter: number;
+	connectionsViewUpdateCounter: number;
 	blockerPairs: Array<BlockerPair>;
 	folderPath: string | undefined;
 	curTaskId = RootTaskId;
+	taskSizeOverrides: SvelteMap<TaskId, Vector2>;
 
 	public static getDefault(): ProjectData {
 		return new ProjectData({
@@ -30,26 +33,44 @@ export class ProjectData {
 			blockerPairs: new Array<BlockerPair>(),
 			folderPath: undefined,
 			curTaskId: 0,
+			taskSizeOverrides: [],
 		});
 	}
 
 	constructor(obj: ProjectFileParsed) {
+		// persistent data from disk
 		this.tasks = $state(obj.tasks);
 		this.blockerPairs = $state(obj.blockerPairs ?? []);
-		this.tasksVersion = $state(0);
 		this.folderPath = obj.folderPath;
 		this.curTaskId = obj.curTaskId;
+		this.taskSizeOverrides = new SvelteMap(
+			(obj.taskSizeOverrides ?? []).map(({ taskId, x, y }) => [
+				taskId,
+				{ x, y },
+			]),
+		);
+		// temporary in-memory properties
+		this.tasksViewUpdateCounter = $state(0);
+		this.connectionsViewUpdateCounter = $state(0);
+		// root task must always be present
 		if (this.tasks.length == 0) {
 			this.addRootTask();
 		}
+		// initialize auxiliary data structures
 		this.rebuildCaches();
+		// fix broken priorities in old project versions
 		if ((obj.schemaVersion ?? 0) < TASKMAP_FILE_SCHEMA_VERSION) {
 			this.tasks.forEach((t) => this.recalcPriorities(t.taskId));
 		}
 	}
 
-	public markTasksUpdated() {
-		this.tasksVersion += 1;
+	public updateTasksView() {
+		this.tasksViewUpdateCounter += 1;
+		this.updateConnectionsView();
+	}
+
+	public updateConnectionsView() {
+		this.connectionsViewUpdateCounter += 1;
 	}
 
 	private rebuildCaches() {
@@ -117,7 +138,7 @@ export class ProjectData {
 	public addTask(task: TaskData) {
 		this.tasks.push(task);
 		this.rebuildCaches();
-		this.markTasksUpdated();
+		this.updateTasksView();
 		this.curTaskId++;
 	}
 
@@ -125,7 +146,7 @@ export class ProjectData {
 		const task = this.tasks.pop();
 		if (task) {
 			this.rebuildCaches();
-			this.markTasksUpdated();
+			this.updateTasksView();
 			this.curTaskId--;
 		}
 	}
@@ -293,6 +314,22 @@ export class ProjectData {
 	public addBlockerPair = (blockerPair: BlockerPair) => {
 		this.blockerPairs.push(blockerPair);
 	};
+
+	public setTaskSizeOverride(taskId: TaskId, size: Vector2) {
+		this.taskSizeOverrides.set(taskId, size);
+	}
+
+	public deleteTaskSizeOverride(taskId: TaskId) {
+		this.taskSizeOverrides.delete(taskId);
+	}
+
+	public getTaskSizeOverride(taskId: TaskId): Vector2 | undefined {
+		return this.taskSizeOverrides.get(taskId);
+	}
+
+	public hasTaskSizeOverride(taskId: TaskId): boolean {
+		return this.taskSizeOverrides.has(taskId);
+	}
 
 	public getFolderPath = (): string | undefined => {
 		return this.folderPath;
