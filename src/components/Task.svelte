@@ -119,7 +119,6 @@
 	{#key context.updateOnZoomCounter}
 		<div
 			class="task-container"
-			class:elevated={isHovered || isSelected}
 			bind:this={self}
 			role="presentation"
 			style="
@@ -207,9 +206,6 @@
 	.task-container {
 		z-index: 3; /* over lines*/
 		position: absolute;
-	}
-	.task-container.elevated {
-		z-index: 10;
 	}
 	.task {
 		/*background: #111;*/

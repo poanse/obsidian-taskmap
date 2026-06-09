@@ -147,10 +147,6 @@
 		if (!el) {
 			return;
 		}
-		// if (e.key === "Enter") {
-		// 	e.preventDefault();
-		// 	el.blur(); // Triggers handleBlur
-		// } else 
 		if (e.key === "Tab" && suggest !== null) {
 			// another hack to select suggest on tab
 			e.preventDefault();
@@ -205,7 +201,7 @@
 </script>
 
 <div
-	class="task-text-container expanded"
+	class="task-text-container"
 	class:selected={isSelected}
 	class:not-selected={!isSelected}
 	role="group"
@@ -222,7 +218,7 @@
 		>{taskData.path ? linkFromFilePath(taskData.path) : taskData.name}</textarea>
 	{:else}
 		<div
-			class="text-preview tasktext expanded"
+			class="text-preview tasktext"
 			class:unselect={isUnselected}
 			role="group"
 			bind:this={textPreviewEl}
@@ -297,7 +293,7 @@
 		outline: none;
 		box-shadow: none;
 	}
-	.text-preview.expanded {
+	.text-preview {
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		display: block;

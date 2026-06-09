@@ -433,15 +433,7 @@ export class Context {
 			)
 			.sort((left, right) => {
 				if (left.tween !== null && right.tween !== null) {
-					// если я перемещаю правую вверх, то сравнивать правую верхнюю и левую центральную точки
-					// если я перемещаю правую вниз, то правую нижнюю и левую центральную.
-					const leftY =
-						left.tween?.target.y -
-						this.getTaskSize(left.taskId).y / 2;
-					const rightY =
-						right.tween?.target.y -
-						this.getTaskSize(right.taskId).y / 2;
-					return leftY - rightY;
+					return left.tween?.target.y - right.tween?.target.y;
 				}
 				return 0;
 			})
