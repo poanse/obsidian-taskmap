@@ -127,7 +127,10 @@ export class NodePositionsCalculator {
 		const rootShift = positions.get(RootTaskId);
 		if (rootShift) {
 			tasks.forEach((t) => {
-				positions.set(t.taskId, V2.sub(positions.get(t.taskId)!, rootShift));
+				positions.set(
+					t.taskId,
+					V2.sub(positions.get(t.taskId)!, rootShift),
+				);
 			});
 		}
 
@@ -257,7 +260,7 @@ export class NodePositionsCalculator {
 						nodes.get(parentId)?.size ?? this.DefaultNodeSize; // in case of -1
 					const childrenYSumWithGaps =
 						children
-							.map((x) => nodes.get(x)!.size.y)
+							.map((x) => nodes.get(x)!.subtreeSize!.y)
 							.reduce((a, b) => a + b, 0) +
 						(children.length - 1) * this.SiblingVerticalGap;
 					childNode.siblingShift = {

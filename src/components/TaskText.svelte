@@ -34,49 +34,23 @@
 	let isDragging = $derived(context.taskDraggingManager.isDragging);
 
 	onMount(() => {
-		if(!isEditing && textPreviewEl) {
-			renderMarkdown();
-		}
+		renderMarkdown();
 		return () => {
 			// Clean up Obsidian component references to prevent memory leaks
 			component.unload();
 		};
 	});
 	$effect(() => {
-		if (textPreviewEl) {
-			renderMarkdown();
-		}
+		renderMarkdown();
 		if (context.taskDraggingManager.isDragging) {
 			document.body.classList.add('is-dragging-task');
 		} else {
 			document.body.classList.remove('is-dragging-task');
 		}
-
 		// Cleanup function for when component is unmounted
 		return () => document.body.classList.remove('is-dragging-task');
 	});
 
-	// Measure the actual rendered text height after DOM settles and report to the layout engine
-	$effect(() => {
-		// Don't re-measure when editing: textPreviewEl is unmounted at that point so
-		// offsetHeight would be stale/zero, causing a spurious resize.
-		// The override set before editing remains valid while editing.
-		if (isEditing) return;
-		tick().then(() => {
-			if (!textPreviewEl || isEditing) return;
-			const taskEl = textPreviewEl.closest('.task') as HTMLElement | null;
-			if (!taskEl) return;
-			const height = taskEl.offsetHeight;
-			const isHeightExpanded = height > TASK_SIZE.height_hovered;
-			if (isHeightExpanded) {
-				context.setTaskHeightOverride(taskId, height);
-			} else {
-				// noop if no override present
-				context.clearTaskHeightOverride(taskId);
-			}
-		});
-	});
-	
 	function handlePreviewClick(e: PointerEvent) {
 		if (isDragging) {
 			return;
@@ -121,7 +95,7 @@
 	}
 	
 	async function renderMarkdown() {
-		if (!textPreviewEl) {
+		if (!textPreviewEl || isEditing) {
 			return;
 		}
 		textPreviewEl.empty(); // Clear previous render
@@ -140,6 +114,22 @@
 			// Optional: prevent dragging on the specific link level too
 			(link as HTMLElement).ondragstart = (e) => e.preventDefault();
 		});
+
+		// Guard after async gap: isEditing may have become true while renderMarkdown was awaiting.
+		// textPreviewEl would be unmounted at that point, so offsetHeight would be zero/stale.
+		// The override set before editing remains valid while editing.
+		if (isEditing) return;
+		const taskEl = textPreviewEl.closest('.task') as HTMLElement | null;
+		if (taskEl) {
+			const height = taskEl.offsetHeight;
+			const isHeightExpanded = height > TASK_SIZE.height_hovered;
+			if (isHeightExpanded) {
+				context.setTaskHeightOverride(taskId, height);
+			} else {
+				// noop if no override present
+				context.clearTaskHeightOverride(taskId);
+			}
+		}
 	}
 
 	async function toggleEdit() {
