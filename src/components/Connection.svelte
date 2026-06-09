@@ -1,8 +1,7 @@
 ﻿<script lang="ts">
 	import type {TaskId, Vector2} from "../types";
-	import {NoTaskId, ParentToChildHorizontalShift, V2} from "../NodePositionsCalculator";
+	import {NoTaskId, ParentToChildHorizontalGap, V2} from "../NodePositionsCalculator";
 	import type {Context} from "../Context.svelte";
-	import {TASK_SIZE} from "../Constants";
 
 	let {startTaskId, endTaskId, context, isBlockerConnection}: {
 		startTaskId: TaskId,
@@ -15,25 +14,28 @@
 		return context.versionedData.getTask(start).depth <= context.versionedData.getTask(end).depth;
 	}
 
-	function getConnectionPointShift(start: TaskId, end: TaskId) {
-		return {
-			x: isStartTaskDepthLE(start, end) ? TASK_SIZE.width : 0,
-			y: TASK_SIZE.height/2
-		};
-	}
+	let startTaskSize = $derived(context.getTaskSize(startTaskId));
+	let endTaskSize = $derived(context.getTaskSize(endTaskId));
+
 	let startPoint = $derived(V2.add(
 		context.getCurrentTaskPosition(startTaskId),
-		getConnectionPointShift(startTaskId, endTaskId)
+		{
+			x: isStartTaskDepthLE(startTaskId, endTaskId) ? startTaskSize.x : 0,
+			y: startTaskSize.y / 2
+		}
 	));
 	let endPoint = $derived(V2.add(
 		context.getCurrentTaskPosition(endTaskId),
-		getConnectionPointShift(endTaskId, startTaskId)
+		{
+			x: isStartTaskDepthLE(endTaskId, startTaskId) ? endTaskSize.x : 0,
+			y: endTaskSize.y / 2
+		}
 	));
 	let midX = $derived(
 		isBlockerConnection
 		? (context.chosenBlockerId !== NoTaskId
-			? endPoint.x + (isStartTaskDepthLE(endTaskId, startTaskId) ? 1 : -1) * (ParentToChildHorizontalShift - TASK_SIZE.width) / 2
-			: startPoint.x + (isStartTaskDepthLE(startTaskId, endTaskId) ? 1 : -1) * (ParentToChildHorizontalShift - TASK_SIZE.width) / 2
+			? endPoint.x + (isStartTaskDepthLE(endTaskId, startTaskId) ? 1 : -1) * ParentToChildHorizontalGap / 2
+			: startPoint.x + (isStartTaskDepthLE(startTaskId, endTaskId) ? 1 : -1) * ParentToChildHorizontalGap / 2
 		)
 		: (startPoint.x + endPoint.x) / 2
 	);

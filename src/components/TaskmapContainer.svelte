@@ -170,20 +170,20 @@
 				</marker>
 			</defs>
 			<g class="svg-group">
-				{#key context.versionedData.getTasksVersion()}
-					{#each (context.versionedData.getTasks()
-							.filter(t => !context.isTaskHidden(t.taskId))
-							.filter(t => t.taskId !== RootTaskId)
-							.filter(t => !context.versionedData.isBranchHidden(t.taskId))
-					) as task (task.taskId)}
-						<Connection
-							startTaskId={task.parentId}
-							endTaskId={task.taskId}
-							{context}
-							isBlockerConnection={false}
-						/>
-					{/each}
-				{/key}
+			{#key context.versionedData.getConnectionsVersion()}
+				{#each (context.versionedData.getTasks()
+						.filter(t => !context.isTaskHidden(t.taskId))
+						.filter(t => t.taskId !== RootTaskId)
+						.filter(t => !context.versionedData.isBranchHidden(t.taskId))
+				) as task (task.taskId)}
+					<Connection
+						startTaskId={task.parentId}
+						endTaskId={task.taskId}
+						{context}
+						isBlockerConnection={false}
+					/>
+				{/each}
+			{/key}
 			</g>
 		</svg>
 		
@@ -191,7 +191,7 @@
 			class="task-layer"
 			role="presentation"
 		>
-			{#key context.versionedData.getTasksVersion()}
+			{#key context.versionedData.getViewUpdateCounter()}
 				{#each context.versionedData.getTasks().filter(t => !context.isTaskHidden(t.taskId)) as task (task.taskId)}
 					<Task taskId={task.taskId} {context} coords={context.getCurrentTaskPosition(task.taskId)}/>
 				{/each}

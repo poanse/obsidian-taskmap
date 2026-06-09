@@ -1,7 +1,6 @@
 ﻿<script lang="ts">
-	import { TASK_SIZE } from "../Constants";
 	import { Context } from "../Context.svelte.js";
-	import {ParentToChildHorizontalShift} from "../NodePositionsCalculator";
+	import {ParentToChildHorizontalGap} from "../NodePositionsCalculator";
 	import { Eye, EyeClosed  } from 'lucide-svelte';
 
 	const { taskId, context }: { taskId: number, context: Context } = $props();
@@ -15,6 +14,11 @@
 		event.stopPropagation();
 		context.finishTaskDragging(event, true);
 	}
+	// should be in line with css below
+	const buttonHalfSize = 25;
+	let taskSize = $derived(context.getTaskSize(taskId));
+	let left = $derived(taskSize.x + ParentToChildHorizontalGap / 2 - buttonHalfSize);
+	let top = $derived(taskSize.y / 2 - buttonHalfSize);
 </script>
 
 <div
@@ -23,8 +27,8 @@
 	onpointerenter={() => entered = true}
 	onpointerleave={() => entered = false}
 	style="
-		left: {TASK_SIZE.width / 2 + ParentToChildHorizontalShift / 2 - 50/2}px;
-		top: {TASK_SIZE.height / 2 - 50 / 2}px;
+		left: {left}px;
+		top: {top}px;
 	"
 >
 	{#if taskData.hidden}

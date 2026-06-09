@@ -27,7 +27,7 @@
 			viewport?.focus();
 		};
 	});
-	
+
 	let taskData = $derived(context.versionedData.getTask(taskId));
 	// let coords = $derived(context.getTaskPosition(taskId));
 	let isHovered = $state(false);
@@ -126,8 +126,6 @@
 				left: {coords.x}px;
 				pointer-events={context.taskDraggingManager.isDragging ? 'none' : 'auto'}
 			"
-			onpointerenter={() => isHovered = true}
-			onpointerleave={() => isHovered = false}
 		>
 			<div
 				class={`task ${classStringFromStatusCode(taskData.status)}`}
@@ -140,8 +138,10 @@
 				}
 				class:unselect={isUnselected}
 				class:blocker-highlight={isBlockerHighlight}
+				onpointerenter={() => isHovered = true}
+				onpointerleave={() => isHovered = false}
 				onpointerdown={(e: PointerEvent) => {
-					if (context.editingTaskId === NoTaskId) {
+					if (context.canStartTaskDragging(taskId)) {
 						context.startTaskDragging(e, taskId);
 					}
 					e.stopPropagation();
@@ -152,13 +152,13 @@
 				tabindex="-1"
 			>
 				<TaskText {taskId} {isUnselected} {context}/>
-			</div>
 			{#if !context.taskDraggingManager.isDragging 
 				 && !context.isReparentingOn()
 				 && !(context.chosenBlockedId !== NoTaskId)
 				 && !(context.chosenBlockerId !== NoTaskId)}
 				<AddTaskButton {context} {taskId} />
 			{/if}
+			</div>
 			{#if (context.versionedData.getChildren(taskId).length > 0)
 				 && !context.isReparentingOn()
 				 && !(context.chosenBlockedId !== NoTaskId)
@@ -222,7 +222,9 @@
 		font-family: var(--font-text);
 		line-height: 1.5;
 		width: 280px;
-		height: 80px;
+		height: auto;
+		min-height: 80px;
+		padding: 10px 0;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -234,7 +236,7 @@
 	}
 	.task.hovered {
 		width: 284px;
-		height: 84px;
+		min-height: 84px;
 		border-width: 4px;
 		transform: translate3d(-2px,-2px,0);
 	}
