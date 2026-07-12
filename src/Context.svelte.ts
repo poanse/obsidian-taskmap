@@ -106,6 +106,12 @@ export class Context {
 		this.hoveredBlockedId = NoTaskId;
 		this.pressedButtonCode = -1;
 
+		for (const taskId of projectData.taskSizeOverrides.keys()) {
+			const size = projectData.taskSizeOverrides.get(taskId);
+			if (size) {
+				this.versionedData.setTaskSizeOverride(taskId, size);
+			}
+		}
 		const sel = this.versionedData.getTaskOption(this.selectedTaskId);
 		if (sel === undefined || sel.deleted) {
 			this.selectedTaskId = NoTaskId;
@@ -171,6 +177,10 @@ export class Context {
 		} else {
 			return false;
 		}
+	};
+
+	public canStartTaskDragging = (taskId: TaskId) => {
+		return this.editingTaskId == NoTaskId && taskId != RootTaskId;
 	};
 
 	public startTaskDragging = (e: PointerEvent, taskId: TaskId) => {
@@ -286,6 +296,36 @@ export class Context {
 			.includes(taskId);
 	}
 
+	public setTaskHeightOverride(taskId: TaskId, heightPx: number) {
+		this.versionedData.setTaskSizeOverride(taskId, {
+			x: TASK_SIZE.width,
+			y: heightPx,
+		});
+		this.updateTaskPositions();
+		this.save();
+	}
+
+	public hasTaskHeightOverride(taskId: TaskId) {
+		return this.versionedData.hasTaskSizeOverride(taskId);
+	}
+
+	public clearTaskHeightOverride(taskId: TaskId) {
+		if (this.versionedData.hasTaskSizeOverride(taskId)) {
+			this.versionedData.clearTaskSizeOverride(taskId);
+			this.updateTaskPositions();
+			this.save();
+		}
+	}
+
+	public getTaskSize(taskId: TaskId) {
+		return (
+			this.versionedData.getTaskSizeOverride(taskId) ?? {
+				x: TASK_SIZE.width,
+				y: TASK_SIZE.height,
+			}
+		);
+	}
+
 	public updateTaskPositions(draggingOnly = false) {
 		if (!draggingOnly) {
 			const newPositions =
@@ -297,6 +337,7 @@ export class Context {
 						x: 0,
 						y: (innerHeight.current ?? 0) / 2 - TASK_SIZE.height,
 					},
+					this.versionedData.getTaskSizeOverrides(),
 				);
 
 			if (this.taskDraggingManager.isDragging) {

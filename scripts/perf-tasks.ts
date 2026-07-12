@@ -92,6 +92,7 @@ function createProjectData(tasks: TaskData[]): ProjectData {
 		blockerPairs: [],
 		folderPath: undefined,
 		curTaskId: tasks.length,
+		taskSizeOverrides: [],
 	});
 }
 

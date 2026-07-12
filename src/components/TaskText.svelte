@@ -11,6 +11,7 @@
 		taskPathFromFile
 	} from "../LinkManager";
 	import {NoTaskId} from "../NodePositionsCalculator";
+	import {TASK_SIZE} from "../Constants";
 
 	let {
 		taskId,
@@ -31,29 +32,25 @@
 	let textEditEl = $state<HTMLTextAreaElement | undefined>(undefined);
 	let component = new Component(); // Required by Obsidian to manage render lifecycle
 	let isDragging = $derived(context.taskDraggingManager.isDragging);
+
 	onMount(() => {
-		if(!isEditing && textPreviewEl) {
-			renderMarkdown();
-		}
+		renderMarkdown();
 		return () => {
 			// Clean up Obsidian component references to prevent memory leaks
 			component.unload();
 		};
 	});
 	$effect(() => {
-		if (textPreviewEl) {
-			renderMarkdown();
-		}
+		renderMarkdown();
 		if (context.taskDraggingManager.isDragging) {
 			document.body.classList.add('is-dragging-task');
 		} else {
 			document.body.classList.remove('is-dragging-task');
 		}
-
 		// Cleanup function for when component is unmounted
 		return () => document.body.classList.remove('is-dragging-task');
 	});
-	
+
 	function handlePreviewClick(e: PointerEvent) {
 		if (isDragging) {
 			return;
@@ -98,7 +95,7 @@
 	}
 	
 	async function renderMarkdown() {
-		if (!textPreviewEl) {
+		if (!textPreviewEl || isEditing) {
 			return;
 		}
 		textPreviewEl.empty(); // Clear previous render
@@ -117,6 +114,22 @@
 			// Optional: prevent dragging on the specific link level too
 			(link as HTMLElement).ondragstart = (e) => e.preventDefault();
 		});
+
+		// Guard after async gap: isEditing may have become true while renderMarkdown was awaiting.
+		// textPreviewEl would be unmounted at that point, so offsetHeight would be zero/stale.
+		// The override set before editing remains valid while editing.
+		if (isEditing) return;
+		const taskEl = textPreviewEl.closest('.task') as HTMLElement | null;
+		if (taskEl) {
+			const height = taskEl.offsetHeight;
+			const isHeightExpanded = height > TASK_SIZE.height_hovered;
+			if (isHeightExpanded) {
+				context.setTaskHeightOverride(taskId, height);
+			} else {
+				// noop if no override present
+				context.clearTaskHeightOverride(taskId);
+			}
+		}
 	}
 
 	async function toggleEdit() {
@@ -134,10 +147,7 @@
 		if (!el) {
 			return;
 		}
-		if (e.key === "Enter") {
-			e.preventDefault();
-			el.blur(); // Triggers handleBlur
-		} else if (e.key === "Tab" && suggest !== null) {
+		if (e.key === "Tab" && suggest !== null) {
 			// another hack to select suggest on tab
 			e.preventDefault();
 			el.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
@@ -201,7 +211,6 @@
 		<textarea
 			class="text-edit tasktext"
 			class:unselect={isUnselected}
-			maxlength="28"
 			bind:this={textEditEl}
 			onblur={handleBlur}
 			onkeydown={handleKeydown}
@@ -224,18 +233,18 @@
 		--task-width: 180px;
 		--task-height: 60px;
 		--task-line-height: 1.1;
-		/*--task-line-height: 1.5;*/
 		--task-font-size: 20px;
 	}
 	.task-text-container {
 		width: var(--task-width);
-		height: var(--task-height);
+		max-height: 400px;
 		display: flex;
 		justify-content: center;
-		align-items: center;
-		position: absolute;
+		align-items: flex-start;
+		position: relative;
 		padding: 0;
 		gap: 0;
+		overflow: hidden;
 	}
 	.task-text-container.selected .tasktext:hover {
 		cursor: text;
@@ -260,7 +269,7 @@
 		outline: none;
 		box-shadow: none;
 		/*padding: 35px;*/
-		position: absolute;
+		position: relative;
 		text-align: center;
 		justify-content: center;
 		align-items: center;
@@ -272,9 +281,9 @@
 	}
 
 	.text-edit {
-		display: flex;
+		display: block;
 		field-sizing: content;
-		padding-top: 5px; /* fixes text jumping between text-edit and text-preview */
+		padding-top: 1px; /* fixes text jumping between text-edit and text-preview */
 	}
 	.text-edit:hover {
 		background-color: transparent;
@@ -285,24 +294,19 @@
 		box-shadow: none;
 	}
 	.text-preview {
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		display: block;
+		line-clamp: 2;
+		height: auto;
 		overflow: visible;
-		white-space: pre-wrap;
-		word-wrap: break-word;
-		:global {
-			p {
-				top: 0;
-				width: var(--task-width);
-				height: var(--task-height);
-				line-height: var(--task-line-height);
-				margin: 0;
-				padding: 0;
-				gap: 0;
-				border: none;
-				text-align: center;
-				justify-content: center;
-				align-items: center;
-				overflow: visible;
-			}
+		overflow-wrap: anywhere;
+		padding-top: 1px;
+		position: relative;
+		:global(p) {
+			display: block;
+			margin: 0 !important;
+			padding: 0 !important;
 		}
 	}
 </style>
