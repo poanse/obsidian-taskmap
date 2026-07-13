@@ -212,17 +212,93 @@ export class ProjectData {
 		return this.getTask(taskId).deleted;
 	}
 
-	public changeParent(taskId: TaskId, newParentId: TaskId) {
-		const taskData = this.getTask(taskId);
-		const oldParentId = taskData.parentId;
-		taskData.parentId = newParentId;
-		this.rebuildCaches();
-		this.recalcStatusRecursive(oldParentId);
-		this.recalcStatusRecursive(newParentId);
-		this.getDescendantIds(taskId).forEach((taskId) => {
-			const task = this.getTask(taskId);
-			task.depth = this.getTask(task.parentId).depth + 1;
-		});
+	// Normalize a parent's child priorities and refresh its status upward.
+	public recalcParent(parentId: TaskId) {
+		this.recalcPriorities(parentId);
+		this.recalcStatusRecursive(parentId);
+	}
+
+	public reparentChild(
+		taskId: TaskId,
+		newParentId: TaskId,
+		insertPriority?: number,
+	) {
+		this.reparentChildren([taskId], newParentId, insertPriority);
+	}
+
+	/**
+	 * Reparent tasks under newParentId with a single cache rebuild. Updates
+	 * subtree depths and inserts the batch into the new parent's priority
+	 * ordering, preserving the batch's own relative order while existing
+	 * siblings shift to make room. When insertPriority is omitted the batch is
+	 * appended after the current siblings.
+	 *
+	 * When taskIds is empty, recalcParent runs for newParentId and its parent.
+	 */
+	public reparentChildren(
+		taskIds: TaskId[],
+		newParentId: TaskId,
+		insertPriority?: number,
+	) {
+		const oldParentIds: TaskId[] = [];
+		for (const taskId of taskIds) {
+			const parentId = this.getTask(taskId).parentId;
+			if (!oldParentIds.includes(parentId)) {
+				oldParentIds.push(parentId);
+			}
+		}
+		if (taskIds.length > 0) {
+			// Capture the batch's relative order before assigning new priorities.
+			const ordered = [...taskIds].sort(
+				(a, b) => this.getTask(a).priority - this.getTask(b).priority,
+			);
+			for (const taskId of taskIds) {
+				this.getTask(taskId).parentId = newParentId;
+			}
+			this.rebuildCaches();
+			for (const taskId of taskIds) {
+				this.getDescendantIds(taskId).forEach((descendantId) => {
+					const descendant = this.getTask(descendantId);
+					descendant.depth =
+						this.getTask(descendant.parentId).depth + 1;
+				});
+			}
+			const siblings = this.getChildren(newParentId).filter(
+				(id) => !taskIds.includes(id),
+			);
+			const insertAt =
+				insertPriority ??
+				siblings.reduce(
+					(max, id) => Math.max(max, this.getTask(id).priority + 1),
+					0,
+				);
+			siblings.forEach((id) => {
+				const sibling = this.getTask(id);
+				if (sibling.priority >= insertAt) {
+					sibling.priority += taskIds.length;
+				}
+			});
+			ordered.forEach((id, idx) => {
+				this.getTask(id).priority = insertAt + idx;
+			});
+		}
+		const parentsToRecalc: TaskId[] = [];
+		const addParent = (parentId: TaskId) => {
+			if (!parentsToRecalc.includes(parentId)) {
+				parentsToRecalc.push(parentId);
+			}
+		};
+		addParent(newParentId);
+		oldParentIds.forEach(addParent);
+		if (taskIds.length === 0) {
+			const parentId = this.getTask(newParentId).parentId;
+			if (parentId !== NoTaskId) {
+				addParent(parentId);
+			}
+		}
+		for (const parentId of parentsToRecalc) {
+			this.recalcParent(parentId);
+		}
 	}
 
 	public recalcStatusRecursive(taskId: TaskId) {

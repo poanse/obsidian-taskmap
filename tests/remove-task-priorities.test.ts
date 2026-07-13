@@ -1,7 +1,7 @@
 import * as assert from "node:assert/strict";
 import { test } from "node:test";
 import { NoTaskId } from "../src/NodePositionsCalculator";
-import { ChangeParentAction } from "../src/data/Action";
+import { RemoveTaskSingleAction } from "../src/data/Action";
 import { ProjectData } from "../src/data/ProjectData.svelte";
 import { TASKMAP_FILE_SCHEMA_VERSION } from "../src/data/ProjectDataSchema";
 import { StatusCode, type TaskData, type TaskId } from "../src/types";
@@ -31,22 +31,29 @@ function task(
 	};
 }
 
+// Tree:
+//   root (0)
+//     A (1)
+//       B (2)   prio 0
+//         C (4) prio 0
+//         D (5) prio 1
+//       E (3)   prio 1
+//       F (6)   prio 2
 function createProjectData(): ProjectData {
 	return new ProjectData({
 		schemaVersion: TASKMAP_FILE_SCHEMA_VERSION,
 		tasks: [
 			task(0, NoTaskId, 0, 0, "root"),
-			task(1, 0, 1, 0, "old parent"),
-			task(2, 0, 1, 1, "new parent"),
-			task(3, 1, 2, 0, "old child before moved"),
-			task(4, 1, 2, 1, "moved child"),
-			task(5, 1, 2, 2, "old child after moved"),
-			task(6, 2, 2, 0, "new child first"),
-			task(7, 2, 2, 1, "new child second"),
+			task(1, 0, 1, 0, "A"),
+			task(2, 1, 2, 0, "B"),
+			task(3, 1, 2, 1, "E"),
+			task(4, 2, 3, 0, "C"),
+			task(5, 2, 3, 1, "D"),
+			task(6, 1, 2, 2, "F"),
 		],
 		blockerPairs: [],
 		folderPath: undefined,
-		curTaskId: 8,
+		curTaskId: 7,
 		taskSizeOverrides: [],
 	});
 }
@@ -73,26 +80,31 @@ function assertChildrenByPriority(
 	);
 }
 
-void test("reparenting normalizes sibling priorities for both parents", () => {
+void test("removing a task promotes its children into its slot with contiguous priorities", () => {
 	const data = createProjectData();
 
-	assert.equal(data.getTask(4).parentId, 1);
-	new ChangeParentAction(4, 2).do(data);
+	// Delete B (id 2). Its children C (4) and D (5) should be promoted into A,
+	// taking B's slot, giving order C, D, E, F with priorities 0, 1, 2, 3.
+	new RemoveTaskSingleAction(2).do(data);
 
-	assert.equal(data.getTask(4).parentId, 2);
-	assertChildrenByPriority(data, 1, [3, 5]);
-	// Reparented task is inserted at the beginning of the new parent's children.
-	assertChildrenByPriority(data, 2, [4, 6, 7]);
+	assert.equal(data.isTaskDeleted(2), true);
+	assert.equal(data.getTask(4).parentId, 1);
+	assert.equal(data.getTask(5).parentId, 1);
+	assert.equal(data.getTask(4).depth, 2);
+	assert.equal(data.getTask(5).depth, 2);
+	assertChildrenByPriority(data, 1, [4, 5, 3, 6]);
 });
 
-void test("undoing a reparent restores the original sibling priority", () => {
+void test("undoing a task removal restores the original tree structure and priorities", () => {
 	const data = createProjectData();
-	const action = new ChangeParentAction(4, 2);
+	const action = new RemoveTaskSingleAction(2);
 
 	action.do(data);
 	action.undo(data);
 
-	assert.equal(data.getTask(4).parentId, 1);
-	assertChildrenByPriority(data, 1, [3, 4, 5]);
-	assertChildrenByPriority(data, 2, [6, 7]);
+	assert.equal(data.isTaskDeleted(2), false);
+	assert.equal(data.getTask(4).parentId, 2);
+	assert.equal(data.getTask(5).parentId, 2);
+	assertChildrenByPriority(data, 1, [2, 3, 6]);
+	assertChildrenByPriority(data, 2, [4, 5]);
 });
