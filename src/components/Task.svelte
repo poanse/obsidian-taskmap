@@ -119,6 +119,7 @@
 	{#key context.updateOnZoomCounter}
 		<div
 			class="task-container"
+			class:editing={context.editingTaskId === taskId}
 			bind:this={self}
 			role="presentation"
 			style="
@@ -206,6 +207,9 @@
 	.task-container {
 		z-index: 3; /* over lines*/
 		position: absolute;
+	}
+	.task-container.editing {
+		z-index: 4; /* raise the task being renamed above its siblings */
 	}
 	.task {
 		/*background: #111;*/
