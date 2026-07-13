@@ -9,9 +9,7 @@ export class FolderSuggest extends AbstractInputSuggest<TFolder> {
 	textInputEl: HTMLInputElement;
 
 	constructor(app: App, textInputEl: HTMLInputElement) {
-		// Cast the textarea to HTMLInputElement to satisfy TypeScript.
-		// This is a dirty hack, but runtime behavior is compatible
-		super(app, textInputEl as unknown as HTMLInputElement);
+		super(app, textInputEl);
 		this.textInputEl = textInputEl;
 	}
 

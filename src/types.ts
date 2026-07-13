@@ -55,7 +55,7 @@ export const classStringFromStatusCode = (code: StatusCode) => {
 };
 
 export const toIconCode = (s: StatusCode) => {
-	return (s + IconCode.STATUS_DRAFT) as IconCode;
+	return s + IconCode.STATUS_DRAFT;
 };
 
 export const toStatusCode = (s: IconCode) => {

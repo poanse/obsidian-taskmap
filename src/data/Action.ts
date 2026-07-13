@@ -58,23 +58,15 @@ export class RemoveTaskSingleAction implements Action {
 
 	do(data: ProjectData): void {
 		const task = data.getTask(this.taskId);
-		const parentTask = data.getTask(task.parentId);
+		const parentId = task.parentId;
 		task.deleted = true;
 		this.children = data.getChildren(this.taskId);
-		data.getChildren(task.parentId).forEach((taskId) => {
-			const t = data.getTask(taskId);
-			if (t.priority > task.priority) {
-				t.priority += this.children!.length;
-			}
-		});
-		this.children.forEach((taskId) => {
-			const t = data.getTask(taskId);
-			t.priority += task.priority;
-			t.parentId = parentTask.taskId;
-			t.depth = parentTask.depth + 1;
-		});
-		data.recalcPriorities(task.parentId);
-		data.recalcStatusRecursive(task.parentId);
+		// Promote the children into the deleted task's slot, or recalc the parent.
+		data.reparentChildren(
+			this.children,
+			parentId,
+			task.priority,
+		);
 		data.updateTasksView();
 	}
 
@@ -84,14 +76,7 @@ export class RemoveTaskSingleAction implements Action {
 		}
 		const task = data.getTask(this.taskId);
 		task.deleted = false;
-		this.children.forEach((taskId) => {
-			const t = data.getTask(taskId);
-			t.parentId = task.taskId;
-			t.depth = task.depth + 1;
-		});
-		data.recalcPriorities(task.parentId);
-		data.recalcPriorities(task.taskId);
-		data.recalcStatusRecursive(task.taskId);
+		data.reparentChildren(this.children, task.taskId);
 		this.children = undefined;
 	}
 }
@@ -250,22 +235,16 @@ export class ChangeParentAction implements Action {
 	do(data: ProjectData) {
 		this.oldParentId = data.getTask(this.taskId).parentId;
 		this.oldPriority = data.getTask(this.taskId).priority;
-		data.getTask(this.taskId).priority = -1;
-		data.changeParent(this.taskId, this.newParentId);
-		data.recalcPriorities(this.newParentId);
-		data.recalcPriorities(this.oldParentId);
+		// Insert at the beginning of the new parent's children.
+		data.reparentChild(this.taskId, this.newParentId, 0);
 	}
 
 	undo(data: ProjectData) {
 		if (this.oldParentId === undefined || this.oldPriority === undefined) {
 			throw new Error();
 		}
-		// Use oldPriority - 0.5 so recalcPriorities places task exactly at oldPriority
-		// (sibling priorities are always whole numbers, so this slots in unambiguously)
-		data.getTask(this.taskId).priority = this.oldPriority - 0.5;
-		data.changeParent(this.taskId, this.oldParentId);
-		data.recalcPriorities(this.oldParentId);
-		data.recalcPriorities(this.newParentId);
+		// Restore the task to its exact original slot among its old siblings.
+		data.reparentChild(this.taskId, this.oldParentId, this.oldPriority);
 		this.oldParentId = undefined;
 		this.oldPriority = undefined;
 	}
