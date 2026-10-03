@@ -116,13 +116,13 @@
 		position: absolute;
 		transition: stroke 0.2s;
 		pointer-events: none; /* Let clicks pass through to nodes below */
-		stroke: #7E7E7E;
+		stroke: var(--tm-connection);
 		stroke-width: 3;
 	}
 	.connection.unselect {
-		stroke: color-mix(in srgb, #7E7E7E 100%, #000000 50%);
+		stroke: color-mix(in srgb, var(--tm-connection) 100%, var(--tm-dim-target) 50%);
 	}
 	.connection.isBlockerConnection {
-		stroke: #E9973F;
+		stroke: var(--tm-connection-blocker);
 	}
 </style>

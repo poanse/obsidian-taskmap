@@ -25,5 +25,18 @@ Canvas-style visualization, zero manual positioning.
 - Color-coded status visualization
 - Automatic parent status from children
 - Link tasks outside of tree structure using blocker system
+- Theme support for the active Obsidian theme, with light and dark overrides
+
+## Theme
+
+The taskmap follows Obsidian's base color scheme, including Adapt to system and community themes.
+
+Set **Theme** in the plugin settings:
+
+- **Obsidian** uses the colors of the active theme.
+- **Light** forces the plugin's light palette.
+- **Dark** forces the plugin's dark palette. This was the only variant before theme support.
+
+Colors change with the theme. Sizes stay the same.
 
 ![screenshot.png](.github/screenshot.png)

@@ -12,6 +12,7 @@ import {
 import type TaskmapPlugin from "./main";
 import { VersionedData } from "./data/VersionedData";
 import { HistoryManager } from "./data/HistoryManager.svelte";
+import { THEME_CLASS, type ThemeChoice } from "./TaskmapSettings";
 
 export const TASKMAP_VIEW_TYPE = "taskmap-view";
 
@@ -31,6 +32,14 @@ export class TaskmapView extends TextFileView {
 
 	getViewType() {
 		return TASKMAP_VIEW_TYPE;
+	}
+
+	/** Applies the Theme setting to this view. */
+	applyTheme() {
+		const theme = this.plugin.settings.theme;
+		for (const choice of Object.keys(THEME_CLASS) as ThemeChoice[]) {
+			this.contentEl.toggleClass(THEME_CLASS[choice], choice === theme);
+		}
 	}
 
 	async refreshUi(save: boolean = true) {
@@ -62,6 +71,7 @@ export class TaskmapView extends TextFileView {
 			new NodePositionsCalculator(),
 		);
 		this.contentEl.addClass("taskmap-view-container");
+		this.applyTheme();
 		this.taskmapContainer = mount(TaskmapContainer, {
 			target: this.contentEl,
 			props: {

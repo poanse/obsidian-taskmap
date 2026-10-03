@@ -99,7 +99,7 @@
 			transition: stroke 0.2s;
 			width: 14px;
 			height: 14px;
-			stroke: #bbb;
+			stroke: var(--tm-icon);
 			fill: none;
 			stroke-width: 2;
 			stroke-linecap: round;
@@ -109,28 +109,28 @@
 	}
 
 	.button.disabled {
-		color: color-mix(in srgb, #7E7E7E 100%, #000000 50%);
+		color: color-mix(in srgb, var(--tm-text-muted) 100%, var(--tm-dim-target) 50%);
 		
 		:global(svg) {
-			stroke: grey;			
+			stroke: var(--tm-icon-disabled);
 		}
 		:global(svg.done) {
-			stroke: color-mix(in srgb, #30623E 100%, #000000 50%);
+			stroke: color-mix(in srgb, var(--tm-done-icon) 100%, var(--tm-dim-target) 50%);
 		}
 	}
 	
 	.button:hover:not(.disabled){
-		background-color: #343434;
+		background-color: var(--tm-surface-hover);
 		/*border-color: red;*/
 		border-width: 0;
 		outline: none;
 	}
 	
 	.button.is-pressed-down:not(.disabled){
-		background-color: #343434;
-		color: white;
+		background-color: var(--tm-surface-hover);
+		color: var(--tm-icon-active);
 		:global(svg) {
-			stroke: white;
+			stroke: var(--tm-icon-active);
 		}
 	}
 </style>

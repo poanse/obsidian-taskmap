@@ -221,7 +221,7 @@
 		border-radius: 20px;
 		/*padding: 35px;*/
 		text-align: center;
-		color: white;
+		color: var(--tm-text);
 		font-size: 20px;
 		font-family: var(--font-text);
 		line-height: 1.5;
@@ -245,42 +245,43 @@
 		transform: translate3d(-2px,-2px,0);
 	}
 	.task.draft {
-		border-color: #7E7E7E;
-		background-color: #1E1E1E;
+		border-color: var(--tm-draft-border);
+		background-color: var(--tm-draft-bg);
 	}
 	.task.ready {
-		border-color: #A1383D;
-		background-color: #2E2122;
+		border-color: var(--tm-ready-border);
+		background-color: var(--tm-ready-bg);
 	}
 	.task.ready.unselect {
-		border-color: color-mix(in srgb, #672D2F 100%, #000000 50%);
-		background-color: color-mix(in srgb, #2E2122 100%, #000000 50%);
+		border-color: color-mix(in srgb, var(--tm-ready-icon) 100%, var(--tm-dim-target) 50%);
+		background-color: color-mix(in srgb, var(--tm-ready-bg) 100%, var(--tm-dim-target) 50%);
 	}
 	.task.in-progress {
-		border-color: #A6A45D;
-		background-color: #2C2C24;
+		border-color: var(--tm-in-progress-border);
+		background-color: var(--tm-in-progress-bg);
 	}
 	.task.in-progress.unselect {
-		border-color: color-mix(in srgb, #898740 100%, #000000 50%);
-		background-color: color-mix(in srgb, #2C2C24 100%, #000000 50%);
+		border-color: color-mix(in srgb, var(--tm-in-progress-icon) 100%, var(--tm-dim-target) 50%);
+		background-color: color-mix(in srgb, var(--tm-in-progress-bg) 100%, var(--tm-dim-target) 50%);
 	}
 	.task.done {
-		border-color: #3E9959;
-		background-color: #212B24;
+		border-color: var(--tm-done-border);
+		background-color: var(--tm-done-bg);
 	}
 	.task.done.unselect {
-		border-color: color-mix(in srgb, #30623E 100%, #000000 50%);
-		background-color: color-mix(in srgb, #212B24 100%, #000000 50%);
+		border-color: color-mix(in srgb, var(--tm-done-icon) 100%, var(--tm-dim-target) 50%);
+		background-color: color-mix(in srgb, var(--tm-done-bg) 100%, var(--tm-dim-target) 50%);
 	}
 	.task.blocker-highlight {
-		border-color: #E9973F;
-		background-color: #2C2720;
+		--tm-blocker-stripe: color-mix(in srgb, var(--tm-blocker-border) 10%, transparent);
+		border-color: var(--tm-blocker-border);
+		background-color: var(--tm-blocker-bg);
 		background-image: repeating-linear-gradient(
 			-75deg,
 			transparent,
 			transparent 20px,
-			rgba(233, 151, 63, 0.1) 20px,
-			rgba(233, 151, 63, 0.1) 22px
+			var(--tm-blocker-stripe) 20px,
+			var(--tm-blocker-stripe) 22px
 		);
 	}
 	.icon-container {
@@ -294,31 +295,31 @@
 		pointer-events: auto;
 
 		:global(svg.draft) {
-			stroke: #7E7E7E;
+			stroke: var(--tm-draft-icon);
 		}
 		:global(svg.draft.unselect) {
-			stroke: color-mix(in srgb, #7E7E7E 100%, #000000 50%);
+			stroke: color-mix(in srgb, var(--tm-draft-icon) 100%, var(--tm-dim-target) 50%);
 		}
 		:global(svg.ready) {
-			stroke: #672D2F;
+			stroke: var(--tm-ready-icon);
 		}
 		:global(svg.ready.unselect) {
-			stroke: color-mix(in srgb, #672D2F 100%, #000000 50%);
+			stroke: color-mix(in srgb, var(--tm-ready-icon) 100%, var(--tm-dim-target) 50%);
 		}
 		:global(svg.in-progress) {
-			stroke: #898740;
+			stroke: var(--tm-in-progress-icon);
 		}
 		:global(svg.in-progress.unselect) {
-			stroke: color-mix(in srgb, #898740 100%, #000000 50%);
+			stroke: color-mix(in srgb, var(--tm-in-progress-icon) 100%, var(--tm-dim-target) 50%);
 		}
 		:global(svg.done) {
-			stroke: #30623E;
+			stroke: var(--tm-done-icon);
 		}
 		:global(svg.done.unselect) {
-			stroke: color-mix(in srgb, #30623E 100%, #000000 50%);
+			stroke: color-mix(in srgb, var(--tm-done-icon) 100%, var(--tm-dim-target) 50%);
 		}
 		:global(svg.blocker-highlight) {
-			stroke: #8A5F2F;
+			stroke: var(--tm-blocker-icon);
 		}
 	}
 </style>

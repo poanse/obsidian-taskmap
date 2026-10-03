@@ -1,0 +1,154 @@
+/*
+ * Color tokens for the taskmap view. Only colors belong here; sizes must
+ * not differ between themes.
+ *
+ * The Theme setting picks the palette:
+ * - Obsidian (default): .tm-theme-obsidian uses Obsidian's variables, so
+ *   the app's dark/light/system choice and community themes apply.
+ * - Light / Dark: .tm-theme-light and .tm-theme-dark force the plugin's
+ *   own palette, including when the app scheme is the other way.
+ * The body.theme-* rules are the fallback before that class is set.
+ *
+ * "Unselect"/disabled variants mix a color toward --tm-dim-target, so they
+ * fade into the background in both themes.
+ */
+
+.theme-dark .taskmap-view-container,
+.theme-light .taskmap-view-container.tm-theme-dark,
+.theme-dark .taskmap-view-container.tm-theme-dark {
+	--tm-dim-target: #000000;
+
+	--tm-canvas-bg: #1c1c1c;
+	--tm-canvas-bg-unselect: #181818;
+
+	--tm-surface-bg: #0f0f0f;
+	--tm-surface-border: #343434;
+	--tm-surface-hover: #343434;
+
+	--tm-panel-bg: #1e1e1e;
+	--tm-panel-shadow: rgba(0, 0, 0, 1);
+
+	--tm-icon: #bbbbbb;
+	--tm-icon-disabled: #808080;
+	--tm-icon-active: #ffffff;
+
+	--tm-text: #ffffff;
+	--tm-text-muted: #7e7e7e;
+
+	--tm-connection: #7e7e7e;
+	--tm-connection-blocker: #e9973f;
+
+	--tm-draft-border: #7e7e7e;
+	--tm-draft-bg: #1e1e1e;
+	--tm-draft-icon: #7e7e7e;
+
+	--tm-ready-border: #a1383d;
+	--tm-ready-bg: #2e2122;
+	--tm-ready-icon: #672d2f;
+
+	--tm-in-progress-border: #a6a45d;
+	--tm-in-progress-bg: #2c2c24;
+	--tm-in-progress-icon: #898740;
+
+	--tm-done-border: #3e9959;
+	--tm-done-bg: #212b24;
+	--tm-done-icon: #30623e;
+
+	--tm-blocker-border: #e9973f;
+	--tm-blocker-bg: #2c2720;
+	--tm-blocker-icon: #8a5f2f;
+}
+
+.theme-light .taskmap-view-container,
+.theme-dark .taskmap-view-container.tm-theme-light,
+.theme-light .taskmap-view-container.tm-theme-light {
+	--tm-dim-target: #ffffff;
+
+	--tm-canvas-bg: #f6f6f6;
+	--tm-canvas-bg-unselect: #eeeeee;
+
+	--tm-surface-bg: #ffffff;
+	--tm-surface-border: #dadada;
+	--tm-surface-hover: #e6e6e6;
+
+	--tm-panel-bg: #ffffff;
+	--tm-panel-shadow: rgba(0, 0, 0, 0.15);
+
+	--tm-icon: #555555;
+	--tm-icon-disabled: #a0a0a0;
+	--tm-icon-active: #111111;
+
+	--tm-text: #222222;
+	--tm-text-muted: #8a8a8a;
+
+	--tm-connection: #9a9a9a;
+	--tm-connection-blocker: #e08a2e;
+
+	--tm-draft-border: #9a9a9a;
+	--tm-draft-bg: #ffffff;
+	--tm-draft-icon: #9a9a9a;
+
+	--tm-ready-border: #c8474d;
+	--tm-ready-bg: #fbe7e8;
+	--tm-ready-icon: #d98a8e;
+
+	--tm-in-progress-border: #a8a238;
+	--tm-in-progress-bg: #f6f4da;
+	--tm-in-progress-icon: #c9c47a;
+
+	--tm-done-border: #3e9959;
+	--tm-done-bg: #e3f3e8;
+	--tm-done-icon: #8cc79e;
+
+	--tm-blocker-border: #e08a2e;
+	--tm-blocker-bg: #fceedd;
+	--tm-blocker-icon: #edb57a;
+}
+
+/* Wins over the fixed palettes above: one extra class in the selector. */
+.theme-dark .taskmap-view-container.tm-theme-obsidian,
+.theme-light .taskmap-view-container.tm-theme-obsidian {
+	--tm-dim-target: var(--background-primary);
+
+	--tm-canvas-bg: var(--background-primary);
+	/* Darker in both schemes, like the fixed palettes. */
+	--tm-canvas-bg-unselect: color-mix(in srgb, var(--background-primary) 92%, #000000);
+
+	--tm-surface-bg: var(--background-secondary);
+	--tm-surface-border: var(--background-modifier-border);
+	/* --background-modifier-hover is a translucent overlay; this must be opaque. */
+	--tm-surface-hover: color-mix(in srgb, var(--text-normal) 12%, var(--background-secondary));
+
+	--tm-panel-bg: var(--background-secondary);
+	--tm-panel-shadow: var(--background-modifier-box-shadow);
+
+	--tm-icon: var(--text-muted);
+	--tm-icon-disabled: var(--text-faint);
+	--tm-icon-active: var(--text-normal);
+
+	--tm-text: var(--text-normal);
+	--tm-text-muted: var(--text-muted);
+
+	--tm-connection: var(--text-faint);
+	--tm-connection-blocker: var(--color-orange);
+
+	--tm-draft-border: var(--text-faint);
+	--tm-draft-bg: var(--background-primary);
+	--tm-draft-icon: var(--text-faint);
+
+	--tm-ready-border: var(--color-red);
+	--tm-ready-bg: color-mix(in srgb, var(--color-red) 16%, var(--background-primary));
+	--tm-ready-icon: color-mix(in srgb, var(--color-red) 75%, var(--background-primary));
+
+	--tm-in-progress-border: var(--color-yellow);
+	--tm-in-progress-bg: color-mix(in srgb, var(--color-yellow) 18%, var(--background-primary));
+	--tm-in-progress-icon: color-mix(in srgb, var(--color-yellow) 75%, var(--background-primary));
+
+	--tm-done-border: var(--color-green);
+	--tm-done-bg: color-mix(in srgb, var(--color-green) 16%, var(--background-primary));
+	--tm-done-icon: color-mix(in srgb, var(--color-green) 75%, var(--background-primary));
+
+	--tm-blocker-border: var(--color-orange);
+	--tm-blocker-bg: color-mix(in srgb, var(--color-orange) 16%, var(--background-primary));
+	--tm-blocker-icon: color-mix(in srgb, var(--color-orange) 75%, var(--background-primary));
+}

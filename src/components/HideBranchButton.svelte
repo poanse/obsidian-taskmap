@@ -64,7 +64,7 @@
 			transition: stroke 0.2s;
 			width: 41px;
 			height: 41px;
-			stroke: #bbb;
+			stroke: var(--tm-icon);
 			fill: none;
 			stroke-width: 2;
 			stroke-linecap: round;

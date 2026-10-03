@@ -1,10 +1,15 @@
 import { addIcon, Plugin } from "obsidian";
 import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
-import { DEFAULT_SETTINGS, type TaskmapSettings } from "./TaskmapSettings";
+import {
+	DEFAULT_SETTINGS,
+	isThemeChoice,
+	type TaskmapSettings,
+} from "./TaskmapSettings";
 import { TaskmapSettingTab } from "./TaskmapSettingTab";
 import { FileWatcherWithCache } from "./FileWatcherWithCache";
 import { LOGO_CONTENT, LOGO_NAME } from "./Constants";
 import { DEFAULT_DATA } from "./SaveManager";
+import "./theme.css";
 
 export const FILE_EXTENSION = "taskmap";
 
@@ -57,9 +62,23 @@ export default class TaskmapPlugin extends Plugin {
 			DEFAULT_SETTINGS,
 			await this.loadData(),
 		) as TaskmapSettings;
+		if (!isThemeChoice(this.settings.theme)) {
+			this.settings.theme = DEFAULT_SETTINGS.theme;
+		}
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		this.applyThemeToOpenViews();
+	}
+
+	applyThemeToOpenViews() {
+		this.app.workspace
+			.getLeavesOfType(TASKMAP_VIEW_TYPE)
+			.forEach((leaf) => {
+				if (leaf.view instanceof TaskmapView) {
+					leaf.view.applyTheme();
+				}
+			});
 	}
 }

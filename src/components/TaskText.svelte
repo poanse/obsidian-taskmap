@@ -273,11 +273,11 @@
 		text-align: center;
 		justify-content: center;
 		align-items: center;
-		color: white;
+		color: var(--tm-text);
 		overflow: hidden;
 	}
 	.tasktext.unselect {
-		color: color-mix(in srgb, #7E7E7E 100%, #000000 50%);
+		color: color-mix(in srgb, var(--tm-text-muted) 100%, var(--tm-dim-target) 50%);
 	}
 
 	.text-edit {

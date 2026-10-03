@@ -250,11 +250,11 @@
 		height: 100%;
 		overflow: hidden;
 		position: relative;
-		background: #1C1C1C;
+		background: var(--tm-canvas-bg);
 		touch-action: none; /* Prevents mobile browser interference */
 	}
 	.viewport.unselect {
-		background: #181818;
+		background: var(--tm-canvas-bg-unselect);
 	}
 	.viewport.is-panning {
 		cursor: grabbing !important;

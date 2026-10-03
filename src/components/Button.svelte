@@ -166,7 +166,7 @@
 		border-radius: 8px;
 		user-select: none;
 
-		background: #0f0f0fff;
+		background: var(--tm-surface-bg);
 		/*background-color: #1E1E1E;*/
 
 		/* This handles the smooth color change for the SVG and Text */
@@ -176,7 +176,7 @@
 			transition: stroke 0.2s;
 			width: 24px;
 			height: 24px;
-			stroke: #bbb;
+			stroke: var(--tm-icon);
 			fill: none;
 			stroke-width: 2;
 			stroke-linecap: round;
@@ -185,60 +185,60 @@
 		}
 		.custom-svg {
 			stroke-width: 0.083;
-			fill: #bbb;
+			fill: var(--tm-icon);
 		}
 		:global(svg.focus) {
 			width: 24px;
 			height: 24px;
 		}
 		:global(svg.draft) {
-			stroke: #7E7E7E;
-			fill: #1E1E1E;
+			stroke: var(--tm-draft-border);
+			fill: var(--tm-draft-bg);
 		}
 		:global(svg.ready) {
-			stroke: #A1383D;
-			fill: #2E2122;
+			stroke: var(--tm-ready-border);
+			fill: var(--tm-ready-bg);
 		}
 		:global(svg.in-progress) {
-			stroke: #A6A45D;
-			fill: #2C2C24;
+			stroke: var(--tm-in-progress-border);
+			fill: var(--tm-in-progress-bg);
 		}
 		:global(svg.done) {
-			stroke: #3E9959;
-			fill: #212B24;
+			stroke: var(--tm-done-border);
+			fill: var(--tm-done-bg);
 		}
 	}
 
 	.button.disabled {
-		color: color-mix(in srgb, #7E7E7E 100%, #000000 50%);
+		color: color-mix(in srgb, var(--tm-text-muted) 100%, var(--tm-dim-target) 50%);
 		
 		:global(svg) {
-			stroke: grey;			
+			stroke: var(--tm-icon-disabled);
 		}
 		:global(svg.done) {
-			stroke: color-mix(in srgb, #30623E 100%, #000000 50%);
+			stroke: color-mix(in srgb, var(--tm-done-icon) 100%, var(--tm-dim-target) 50%);
 		}
 	}
 	
 	.button:hover:not(.disabled){
-		background-color: #343434;
+		background-color: var(--tm-surface-hover);
 		/*border-color: red;*/
 		border-width: 0;
 		outline: none;
 	}
 	
 	.button.is-pressed-down:not(.disabled){
-		background-color: #343434;
-		color: white;
+		background-color: var(--tm-surface-hover);
+		color: var(--tm-icon-active);
 		:global(svg) {
-			stroke: white;
+			stroke: var(--tm-icon-active);
 		}
 	}
 	.button.is-pressed-up:not(.disabled){
-		background-color: #343434;
-		color: white;
+		background-color: var(--tm-surface-hover);
+		color: var(--tm-icon-active);
 		:global(svg) {
-			stroke: white;
+			stroke: var(--tm-icon-active);
 		}
 	}
 </style>

@@ -65,9 +65,9 @@
 			fill: var(--button-fill, none);
 			stroke: var(--button-stroke, currentColor);
 		}
-		.button-add.draft       { --button-stroke: #7E7E7E; --button-fill: #1E1E1E; }
-		.button-add.ready       { --button-stroke: #A1383D; --button-fill: #2E2122; }
-		.button-add.in-progress { --button-stroke: #A6A45D; --button-fill: #2C2C24; }
-		.button-add.done        { --button-stroke: #3E9959; --button-fill: #212B24; }
+		.button-add.draft       { --button-stroke: var(--tm-draft-border);       --button-fill: var(--tm-draft-bg); }
+		.button-add.ready       { --button-stroke: var(--tm-ready-border);       --button-fill: var(--tm-ready-bg); }
+		.button-add.in-progress { --button-stroke: var(--tm-in-progress-border); --button-fill: var(--tm-in-progress-bg); }
+		.button-add.done        { --button-stroke: var(--tm-done-border);        --button-fill: var(--tm-done-bg); }
 	}
 </style>

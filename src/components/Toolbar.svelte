@@ -164,10 +164,10 @@
 		gap: 2px;
 		padding: 4px 4px;
 		/*background: #181818;*/
-		background: #0f0f0fff;
+		background: var(--tm-surface-bg);
 		/*background-color: #1E1E1E;*/
 		border-radius: 8px;
-		border-color: #343434;
+		border-color: var(--tm-surface-border);
 		border-style: solid;
 		border-width: 2px;
 		display: flex;
@@ -186,11 +186,11 @@
 		/*border: 1px solid #ccc;*/
 		/*background: #181818;*/
 
-		border-color: #343434;
+		border-color: var(--tm-surface-border);
 		border-style: solid;
 		border-width: 2px;
 		border-radius: 8px;
-		background: #0f0f0fff;
+		background: var(--tm-surface-bg);
 		/*background-color: #1E1E1E;*/
 		overflow: hidden; /* Important for slide animations to look clean */
 		display: flex;

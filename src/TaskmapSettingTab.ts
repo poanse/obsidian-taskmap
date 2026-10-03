@@ -1,6 +1,7 @@
 import { PluginSettingTab, App, Setting, TFolder } from "obsidian";
 import type TaskmapPlugin from "./main";
 import { FolderSuggest } from "./helpers/FolderSuggest";
+import { isThemeChoice } from "./TaskmapSettings";
 
 export class TaskmapSettingTab extends PluginSettingTab {
 	plugin: TaskmapPlugin;
@@ -15,6 +16,25 @@ export class TaskmapSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
+		new Setting(containerEl)
+			.setName("Theme")
+			.setDesc(
+				"Obsidian follows the active theme. Light and dark use the plugin's own colors.",
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("obsidian", "Obsidian")
+					.addOption("light", "Light")
+					.addOption("dark", "Dark")
+					.setValue(this.plugin.settings.theme)
+					.onChange(async (value) => {
+						if (!isThemeChoice(value)) {
+							return;
+						}
+						this.plugin.settings.theme = value;
+						await this.plugin.saveSettings();
+					}),
+			);
 		new Setting(containerEl)
 			.setName("Zoom sensitivity (touchpad)")
 			.setDesc("As a percentage")

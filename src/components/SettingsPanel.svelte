@@ -29,12 +29,12 @@
 <style>
 	/* Figma: x 0, y 2, blur 4, spread 0, color #000000 (use the same opacity as in Figma) */
 	.settings-panel {
-		box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 1);
+		box-shadow: 0px 4px 8px 0px var(--tm-panel-shadow);
 		gap: 72px;
 		padding: 4px 4px;
-		background: #1E1E1E;
+		background: var(--tm-panel-bg);
 		border-radius: 4px;
-		border-color: #1E1E1E;
+		border-color: var(--tm-panel-bg);
 		border-style: solid;
 		border-width: 2px;
 		display: flex;
