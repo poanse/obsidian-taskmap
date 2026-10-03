@@ -21,6 +21,10 @@ export const DEFAULT_SETTINGS: TaskmapSettings = {
 	theme: "obsidian",
 };
 
+export function isSettingKey(key: string): key is keyof TaskmapSettings {
+	return Object.keys(DEFAULT_SETTINGS).includes(key);
+}
+
 export function isThemeChoice(value: unknown): value is ThemeChoice {
 	return value === "obsidian" || value === "light" || value === "dark";
 }

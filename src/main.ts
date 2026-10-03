@@ -14,7 +14,7 @@ import "./theme.css";
 export const FILE_EXTENSION = "taskmap";
 
 export default class TaskmapPlugin extends Plugin {
-	settings: TaskmapSettings;
+	declare settings: TaskmapSettings;
 	private readonly filewatcher = new FileWatcherWithCache();
 
 	async onload() {
