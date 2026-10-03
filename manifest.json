@@ -6,5 +6,5 @@
 	"description": "Plan projects via interactive GUI task trees with automatic layout.",
 	"author": "poanse",
 	"authorUrl": "https://github.com/poanse",
-	"isDesktopOnly": false
+	"isDesktopOnly": true
 }
