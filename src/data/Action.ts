@@ -91,7 +91,9 @@ export class RemoveTaskBranchAction implements Action {
 
 	do(data: ProjectData): void {
 		// Memorize descendents that are being removed on this call, because other descendants that were removed earlier can exist
-		this.descendants = data.getDescendantIds(this.taskId);
+		this.descendants = data
+			.getDescendantIds(this.taskId)
+			.filter((id) => !data.isTaskDeleted(id));
 		this.toggleDeleted(this.descendants, true, data);
 	}
 
@@ -109,6 +111,7 @@ export class RemoveTaskBranchAction implements Action {
 		data: ProjectData,
 	) {
 		descendants.forEach((taskId) => (data.getTask(taskId).deleted = value));
+		data.rebuildCaches();
 		const parentId = data.getTask(this.taskId).parentId;
 		data.recalcPriorities(parentId);
 		data.recalcStatusRecursive(parentId);

@@ -1,7 +1,11 @@
 import * as assert from "node:assert/strict";
 import { test } from "node:test";
 import { NoTaskId } from "../src/NodePositionsCalculator";
-import { RemoveTaskSingleAction } from "../src/data/Action";
+import {
+	AddTaskAction,
+	RemoveTaskBranchAction,
+	RemoveTaskSingleAction,
+} from "../src/data/Action";
 import { ProjectData } from "../src/data/ProjectData.svelte";
 import { TASKMAP_FILE_SCHEMA_VERSION } from "../src/data/ProjectDataSchema";
 import { StatusCode, type TaskData, type TaskId } from "../src/types";
@@ -107,4 +111,34 @@ void test("undoing a task removal restores the original tree structure and prior
 	assert.equal(data.getTask(5).parentId, 2);
 	assertChildrenByPriority(data, 1, [2, 3, 6]);
 	assertChildrenByPriority(data, 2, [4, 5]);
+});
+
+void test("undoing a branch removal restores the branch in the tree caches", () => {
+	const data = createProjectData();
+	const removeBranch = new RemoveTaskBranchAction(2);
+	removeBranch.do(data);
+	// Any action that rebuilds the caches in between must not lose the branch.
+	const addTask = new AddTaskAction(0);
+	addTask.do(data);
+	addTask.undo(data);
+	removeBranch.undo(data);
+
+	assertChildrenByPriority(data, 1, [2, 3, 6]);
+	assertChildrenByPriority(data, 2, [4, 5]);
+	assert.deepEqual(data.getAncestorIds(4), [2, 1, 0]);
+	assert.ok(data.getDescendantIds(0).includes(4));
+	assert.ok(data.getDescendantIds(1).includes(2));
+});
+
+void test("undoing a branch removal keeps earlier removed tasks deleted", () => {
+	const data = createProjectData();
+	new RemoveTaskSingleAction(5).do(data);
+	const removeBranch = new RemoveTaskBranchAction(2);
+	removeBranch.do(data);
+	removeBranch.undo(data);
+
+	assert.equal(data.isTaskDeleted(2), false);
+	assert.equal(data.isTaskDeleted(4), false);
+	assert.equal(data.isTaskDeleted(5), true);
+	assertChildrenByPriority(data, 2, [4]);
 });

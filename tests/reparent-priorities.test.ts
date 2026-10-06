@@ -85,6 +85,34 @@ void test("reparenting normalizes sibling priorities for both parents", () => {
 	assertChildrenByPriority(data, 2, [4, 6, 7]);
 });
 
+void test("reparenting onto a childless task keeps the caches UI subscribers listen to", () => {
+	const data = new ProjectData({
+		schemaVersion: TASKMAP_FILE_SCHEMA_VERSION,
+		tasks: [
+			task(0, NoTaskId, 0, 0, "root"),
+			task(1, 0, 1, 0, "leaf"),
+			task(2, 0, 1, 1, "moved"),
+		],
+		blockerPairs: [],
+		folderPath: undefined,
+		curTaskId: 3,
+		taskSizeOverrides: [],
+	});
+	const childrenCache = data.childrenCache;
+	const ancestorsCache = data.ancestorsCache;
+	const descendantsCache = data.descendantsCache;
+
+	assert.deepEqual(data.getChildren(1), []);
+	new ChangeParentAction(2, 1).do(data);
+
+	assert.equal(data.childrenCache, childrenCache);
+	assert.equal(data.ancestorsCache, ancestorsCache);
+	assert.equal(data.descendantsCache, descendantsCache);
+	assert.deepEqual(data.getChildren(1), [2]);
+	assert.deepEqual(data.getAncestorIds(2), [1, 0]);
+	assert.ok(data.getDescendantIds(1).includes(2));
+});
+
 void test("undoing a reparent restores the original sibling priority", () => {
 	const data = createProjectData();
 	const action = new ChangeParentAction(4, 2);

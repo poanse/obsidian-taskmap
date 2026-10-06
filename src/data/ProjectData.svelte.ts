@@ -16,9 +16,9 @@ export class ProjectData {
 	// cannot use just SvelteMap<TaskId, Task> because it breaks reactivity
 	tasks: Array<TaskData>;
 	taskIndexCache = new SvelteMap<TaskId, number>();
-	childrenCache = new SvelteMap<TaskId, TaskId[]>();
-	ancestorsCache = new SvelteMap<TaskId, TaskId[]>();
-	descendantsCache = new SvelteMap<TaskId, TaskId[]>();
+	readonly childrenCache = new SvelteMap<TaskId, TaskId[]>();
+	readonly ancestorsCache = new SvelteMap<TaskId, TaskId[]>();
+	readonly descendantsCache = new SvelteMap<TaskId, TaskId[]>();
 	tasksViewUpdateCounter: number;
 	connectionsViewUpdateCounter: number;
 	blockerPairs: Array<BlockerPair>;
@@ -73,7 +73,7 @@ export class ProjectData {
 		this.connectionsViewUpdateCounter += 1;
 	}
 
-	private rebuildCaches() {
+	public rebuildCaches() {
 		this.taskIndexCache.clear();
 		this.tasks.forEach((value, index) => {
 			this.taskIndexCache.set(value.taskId, index);
@@ -84,18 +84,37 @@ export class ProjectData {
 		this.rebuildDescendantsCache();
 	}
 
-	private rebuildChildrenCache() {
-		this.childrenCache = new SvelteMap<TaskId, TaskId[]>();
-		for (const task of this.getTasks()) {
-			const children = this.childrenCache.get(task.parentId) ?? [];
-			children.push(task.taskId);
-			this.childrenCache.set(task.parentId, children);
+	// Keep the same SvelteMap instances. Replacing them drops UI subscribers,
+	// so controls that depend on children (the hide-branch button) stay stale
+	// after a reparent until something else remounts the task.
+	private writeCache<K, V>(
+		cache: SvelteMap<K, V>,
+		entries: Iterable<readonly [K, V]>,
+	) {
+		cache.clear();
+		for (const [key, value] of entries) {
+			cache.set(key, value);
 		}
+	}
+
+	private rebuildChildrenCache() {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local scratch map, copied into the reactive cache
+		const next = new Map<TaskId, TaskId[]>();
+		for (const task of this.getTasks()) {
+			const children = next.get(task.parentId);
+			if (children === undefined) {
+				next.set(task.parentId, [task.taskId]);
+			} else {
+				children.push(task.taskId);
+			}
+		}
+		this.writeCache(this.childrenCache, next);
 	}
 
 	// Rebuild ancestors by traversing childrenCache top-down from root.
 	private rebuildAncestorsCache() {
-		this.ancestorsCache = new SvelteMap<TaskId, TaskId[]>();
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local scratch map, copied into the reactive cache
+		const next = new Map<TaskId, TaskId[]>();
 		const queue: TaskId[] = [RootTaskId];
 
 		while (queue.length > 0) {
@@ -105,34 +124,33 @@ export class ProjectData {
 			}
 			const task = this.getTask(taskId);
 			if (task.depth === 0) {
-				this.ancestorsCache.set(taskId, []);
+				next.set(taskId, []);
 			} else {
-				const parentAncestors =
-					this.ancestorsCache.get(task.parentId) ?? [];
-				this.ancestorsCache.set(taskId, [
-					task.parentId,
-					...parentAncestors,
-				]);
+				const parentAncestors = next.get(task.parentId) ?? [];
+				next.set(taskId, [task.parentId, ...parentAncestors]);
 			}
 			queue.push(...(this.childrenCache.get(taskId) ?? []));
 		}
+		this.writeCache(this.ancestorsCache, next);
 	}
 
 	private rebuildDescendantsCache() {
-		this.descendantsCache = new SvelteMap<TaskId, TaskId[]>();
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local scratch map, copied into the reactive cache
+		const next = new Map<TaskId, TaskId[]>();
 
 		for (const task of this.getTasks()) {
-			this.descendantsCache.set(task.taskId, [task.taskId]);
+			next.set(task.taskId, [task.taskId]);
 		}
 
 		for (const taskId of this.tasks.keys()) {
 			for (const ancestorId of this.getAncestorIds(taskId)) {
-				const descendants = this.descendantsCache.get(ancestorId);
+				const descendants = next.get(ancestorId);
 				if (descendants !== undefined) {
 					descendants.push(taskId);
 				}
 			}
 		}
+		this.writeCache(this.descendantsCache, next);
 	}
 
 	public addTask(task: TaskData) {
