@@ -1,42 +1,186 @@
-# Obsidian Taskmap Plugin
-Plan projects via interactive GUI task trees.
-No need to move tasks around manually — the automatic layout keeps your structure visually clear and easy to edit.
+# Taskmap
 
-## How to install
+Plan projects as visual task trees in Obsidian.
+Taskmap lays out the tree automatically, so you never have to drag boxes around to keep it readable.
 
-Taskmap is available via obsidian community portal https://community.obsidian.md/plugins/taskmap and "Community plugins" option in the obsidian app.
+![A Taskmap project showing task statuses and dependencies](.github/screenshot.png)
+
+**Draft** is gray, **Ready** is red, **In progress** is yellow, and **Done** is green.
 
 ## Why Taskmap?
 
-Get your project state at a glance.
+Large Kanban boards get hard to read. Taskmap shows your project as a color-coded tree, so you can see at a glance:
 
-Large Kanban boards overwhelm. Taskmap's color-coded tree instantly shows:
-- Blocked areas
-- Progress status
-- Dependency flow
+- Which tasks are done, in progress, or ready to start
+- Which tasks are blocked, and by what
+- How the work breaks down from goals into subtasks
 
-Canvas-style visualization, zero manual positioning.
+## How to install
 
-## Key Features
+Install Taskmap from its [Obsidian plugin page](https://community.obsidian.md/plugins/taskmap), or open **Settings → Community plugins → Browse** in Obsidian and search for **Taskmap**.
 
-- Automatic layout
-- Tree navigation via temporarily hiding irrelevant branches
-- Link tasks to obsidian notes for rich description
-- Color-coded status visualization
-- Automatic parent status from children
-- Link tasks outside of tree structure using blocker system
-- Theme support for the active Obsidian theme, with light and dark overrides
+Obsidian Sync skips `.taskmap` files by default. To sync them, turn on **Sync all other types** in **Settings → Sync** on each device.
 
-## Theme
+## How to use
 
-The taskmap follows Obsidian's base color scheme, including Adapt to system and community themes.
+- Click the Taskmap ribbon icon or run **Taskmap: Create new map** from the command palette to create a map in the vault root. To create one in a specific folder, right-click the folder in the file explorer and click **New taskmap**. The map is named `Example <date and time>.taskmap` and opens in a new tab.
+- Hover a task and click **+** to add a child. The new task is named `task` and starts as **Ready**.
+- Select a task to open its toolbar. Hover a toolbar button to see its name.
+- Select a task, then click its name to rename it.
+- Drag a task vertically to reorder it among its siblings.
+- Hover a task and click the eye icon to hide its children.
 
-Set **Theme** in the plugin settings:
+## Feature reference
 
-- **Obsidian** uses the colors of the active theme.
-- **Light** forces the plugin's light palette.
-- **Dark** forces the plugin's dark palette. This was the only variant before theme support.
+### Root task
 
-Colors change with the theme. Sizes stay the same.
+Every map starts with a task named `root`, with status **In progress**. Rename it to your project's name. The root can't be reparented, removed, or used as a blocker.
 
-![screenshot.png](.github/screenshot.png)
+### Rename a task
+
+Select a task, then click its name. Press **Escape** or click somewhere else to apply the name. **Enter** adds a line break. This works the same way for every task, including the root.
+
+Long names wrap, and the box grows with the text. The tree lays itself out again to fit.
+
+### Pan and zoom
+
+Drag an empty area of the map with the left or middle mouse button to pan. Scroll with a mouse wheel or touchpad to zoom, from 10% to 300%.
+
+### Statuses
+
+Each task has one of four statuses: **Draft**, **Ready**, **In progress**, or **Done**. The colors are listed under the screenshot.
+
+To change a status, select the task, then click **Status** in its toolbar and choose a status.
+
+Leaf tasks (tasks without children) can be set to any status. A parent task's status is calculated from its children:
+
+- **Done** if all children are done
+- **In progress** if at least one child is done or in progress
+- **Draft** if all children are drafts
+- **Ready** otherwise
+
+A parent's **Status** menu offers only **Draft** and its calculated status. A parent set to **Draft** stays a draft whatever its children do, until you click its calculated status again.
+
+### Blockers
+
+Select a task, then:
+
+- Click **Add blocker task**, then click the task that blocks the selected one.
+- Click **Block another task**, then click the task that the selected one blocks.
+
+Press **Escape** or click an empty area to cancel.
+
+While **Add blocker task** or **Block another task** is active, click a task that is already connected to remove that connection. A task can't be connected to itself, to an ancestor, to a descendant, or to a task that is **Done**.
+
+A blocked task cannot be marked done until all its blockers are done. A key icon marks a task that blocks others, and a lock icon marks a task that is blocked.
+
+Blocker connections are drawn as orange lines. They appear while **Add blocker task** or **Block another task** is active, and when you hover a task's icons:
+
+- Hover the key icon to highlight the tasks it blocks.
+- Hover the lock icon to highlight the tasks that block it.
+
+### Move a task to another parent
+
+Select a task, click **Reparent**, then click the new parent on the map. The task moves with all its children. The new parent can't be the task itself, its current parent, or one of its descendants. Press **Escape** or click an empty area to cancel.
+
+### Remove tasks
+
+Select a task, click **Remove** in its toolbar, then choose:
+
+- **Remove single task** removes only the selected task. Its children move up and take its place under its parent.
+- **Remove task branch** removes the selected task and all its descendants.
+
+Pressing **Delete** removes the selected task the same way as **Remove single task**.
+
+### Hide and focus
+
+Hide collapses a task's descendants. Hidden tasks stay in the file; click the eye icon again to show them.
+
+Focus temporarily shows only the selected branch and its ancestors; click **Focus** again to return to the full map.
+
+### Linked notes
+
+Click **Add link** to create a note named after the task and link the two. If a note with that name already exists, it's linked instead.
+
+New notes go to the project's note folder, then the plugin's default note folder. If neither is set, they follow Obsidian's **Default location for new notes** setting.
+
+To link an existing note, type `[[` in the task name and choose a note from the suggestions. Typing `[[Meeting notes]]` renames the task to that note and links it. Press **Tab** to choose the highlighted suggestion.
+
+Click the link while the task is not selected to open or focus the note. Hover the link to show Obsidian's link preview. If the task is already selected, clicking its name starts editing, and the link is not followed.
+
+Once a task is linked to a note:
+
+- Renaming the note renames the task.
+- Moving the note or renaming its folder keeps the link.
+- Deleting the note removes the link; the task keeps its name.
+- Renaming the task breaks the link; the note is left unchanged.
+
+A task name can also be any Markdown link, such as `[Design doc](https://example.com/design)`.
+
+### Undo and redo
+
+Use the undo and redo controls in the bottom-left corner of the map, or press **Ctrl+Z** to undo and **Ctrl+R** to redo. The shortcuts use Ctrl on macOS too.
+
+Undo history is cleared when you close the file.
+
+### Settings
+
+Plugin settings are in **Settings → Taskmap**:
+
+- **Theme**: **Obsidian** (default) uses the active Obsidian theme's red, yellow, and green, and its faint text color for drafts, so community themes can change the exact shades. **Light** and **Dark** force Taskmap's own light and dark shades.
+- Zoom sensitivity, set separately for mouse and touchpad
+- Default folder for linked notes
+
+Project settings override the note folder for a single map. To open them, click **Settings** next to the undo and redo controls.
+
+## Files
+
+A `.taskmap` file is JSON stored in the vault. Rename or move it in the file explorer; an open map follows the file.
+
+Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned on in **Settings → Sync**.
+
+## Current limitations
+
+- Works only in the Obsidian desktop app.
+- Has no sharing or collaboration features.
+- Tasks have no due dates or assignees.
+- Tasks are stored only in the `.taskmap` file and don't sync with Markdown checkboxes or task plugins.
+- The interface is available only in English.
+
+## Bugs and missing features
+
+- **A parent can get stuck as Draft.** When all of a parent's children are drafts, the parent becomes **Draft** automatically and then stops updating: changing a child's status or adding a child doesn't change it. To fix it, click the parent's calculated status in its **Status** menu.
+- **The root task's status never updates.** It starts as **In progress** and changes only when you set it in its **Status** menu, not when its children change. Other parent tasks update as described in [Statuses](#statuses).
+- **Creating two maps 12 hours apart can fail.** New maps are named after the creation time on a 12-hour clock without AM or PM, so a map created exactly 12 hours after another gets the same name and isn't created. Try again a second later.
+- **No mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
+- **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
+
+## Development
+
+Clone the repository into your vault's `.obsidian/plugins/` folder, then install dependencies and start the watcher:
+
+```bash
+npm install
+npm run dev
+```
+
+Enable Taskmap in **Settings → Community plugins**, and reload Obsidian after each rebuild to load the changes.
+
+Other commands:
+
+```bash
+npm run build
+npm test
+npm run lint
+npm run perf:tasks
+```
+
+`npm run dev` rebuilds the plugin as you edit. `npm run build` writes a production `main.js`. `npm test` runs the tests. `npm run lint` runs the linter. `npm run perf:tasks` benchmarks task lookup and layout.
+
+## Links
+
+- [Obsidian plugin page](https://community.obsidian.md/plugins/taskmap)
+- [Report an issue](https://github.com/poanse/obsidian-taskmap/issues)
+- [Source code](https://github.com/poanse/obsidian-taskmap)
+- [License](https://github.com/poanse/obsidian-taskmap/blob/master/LICENSE)
+- [Buy me a coffee](https://www.buymeacoffee.com/poanse)

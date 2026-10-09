@@ -538,11 +538,13 @@ export class Context {
 	public async createLinkedNote(taskId: TaskId, plugin: TaskmapPlugin) {
 		const projectNoteFolder = this.versionedData.getFolderPath();
 		const pluginNoteFolder = plugin.settings.newNoteFolder;
-		const taskmapPath =
-			plugin.app.workspace.getActiveViewOfType(TaskmapView)?.file?.parent
-				?.path;
+		const taskmapFilePath =
+			plugin.app.workspace.getActiveViewOfType(TaskmapView)?.file?.path ??
+			"";
 		const folderPath =
-			projectNoteFolder || pluginNoteFolder || taskmapPath || "";
+			projectNoteFolder ||
+			pluginNoteFolder ||
+			this.app.fileManager.getNewFileParent(taskmapFilePath).path;
 
 		const filepath = this.filePathFromTask(taskId, folderPath);
 

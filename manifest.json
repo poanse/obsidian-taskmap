@@ -3,7 +3,7 @@
 	"name": "Taskmap",
 	"version": "0.1.10",
 	"minAppVersion": "1.12.4",
-	"description": "Plan projects via interactive GUI task trees with automatic layout.",
+	"description": "Plan projects as visual task trees with automatic layout.",
 	"author": "poanse",
 	"authorUrl": "https://github.com/poanse",
 	"fundingUrl": {

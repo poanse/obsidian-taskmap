@@ -1,4 +1,4 @@
-import { addIcon, Plugin } from "obsidian";
+import { addIcon, normalizePath, Plugin, TFolder } from "obsidian";
 import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
 import {
 	DEFAULT_SETTINGS,
@@ -29,6 +29,25 @@ export default class TaskmapPlugin extends Plugin {
 		this.addRibbonIcon(LOGO_NAME, "New taskmap", (_evt: MouseEvent) => {
 			void this.createAndOpenDrawing();
 		});
+		this.addCommand({
+			id: "create-map",
+			name: "Create new map",
+			callback: () => void this.createAndOpenDrawing(),
+		});
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (!(file instanceof TFolder)) {
+					return;
+				}
+				menu.addItem((item) =>
+					item
+						.setSection("action-primary")
+						.setTitle("New taskmap")
+						.setIcon(LOGO_NAME)
+						.onClick(() => void this.createAndOpenDrawing(file.path)),
+				);
+			}),
+		);
 
 		this.addSettingTab(new TaskmapSettingTab(this.app, this));
 
@@ -36,9 +55,10 @@ export default class TaskmapPlugin extends Plugin {
 		this.filewatcher.registerTaskmapVaultHooks(this);
 	}
 
-	public async createAndOpenDrawing(): Promise<string> {
+	public async createAndOpenDrawing(folderPath = ""): Promise<string> {
+		const fileName = `Example ${window.moment().format("YY-MM-DD hh.mm.ss")}.${FILE_EXTENSION}`;
 		const file = await this.app.vault.create(
-			`Example ${window.moment().format("YY-MM-DD hh.mm.ss")}.${FILE_EXTENSION}`,
+			normalizePath(`${folderPath}/${fileName}`),
 			DEFAULT_DATA,
 		);
 
