@@ -1,4 +1,5 @@
 ﻿<script lang="ts">
+	import { Platform } from "obsidian";
 	import { StatusCode } from "../types";
 	import { Context } from "../Context.svelte.js";
 
@@ -6,6 +7,9 @@
 
 	let taskData = $derived(context.versionedData.getTask(taskId));
 	let entered = $state(false);
+	// Touch UI has no hover, so the button follows selection. Desktop stays hover-only.
+	const isMobile = Platform.isMobile;
+	let showButton = $derived(isMobile ? context.isSelected(taskId) : entered);
 
 	function addButtonPressed(event: PointerEvent) {
 		console.debug('addButtonPressed');
@@ -22,7 +26,7 @@
 	onpointerleave={() => entered = false}
 	style="left: {context.getTaskSize(taskId).x - 50/2}px;"
 >
-	{#if entered}
+	{#if showButton}
 		<svg
 			role="button"
 			tabindex="0"
