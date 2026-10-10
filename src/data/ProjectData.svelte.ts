@@ -58,6 +58,8 @@ export class ProjectData {
 		}
 		// initialize auxiliary data structures
 		this.rebuildCaches();
+		// older versions never recalculated the root's status
+		this.recalcStatusRecursive(RootTaskId);
 		// fix broken priorities in old project versions
 		if ((obj.schemaVersion ?? 0) < TASKMAP_FILE_SCHEMA_VERSION) {
 			this.tasks.forEach((t) => this.recalcPriorities(t.taskId));
@@ -173,7 +175,7 @@ export class ProjectData {
 		const task = {
 			taskId: this.curTaskId,
 			parentId: NoTaskId,
-			status: StatusCode.IN_PROGRESS,
+			status: StatusCode.DRAFT,
 			name: "root",
 			priority: 0,
 			depth: 0,
@@ -320,7 +322,7 @@ export class ProjectData {
 	}
 
 	public recalcStatusRecursive(taskId: TaskId) {
-		if (taskId == RootTaskId) {
+		if (taskId == NoTaskId) {
 			return;
 		}
 		const task = this.getTask(taskId);

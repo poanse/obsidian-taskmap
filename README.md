@@ -34,7 +34,7 @@ Obsidian Sync skips `.taskmap` files by default. To sync them, turn on **Sync al
 
 ### Root task
 
-Every map starts with a task named `root`, with status **In progress**. Rename it to your project's name. The root can't be reparented, removed, or used as a blocker.
+Every map starts with a task named `root`, with status **Draft**. Like any parent set to **Draft**, it stays a draft after you add children, until you click its calculated status in its **Status** menu. Rename it to your project's name. The root can't be reparented, removed, or used as a blocker.
 
 ### Rename a task
 
@@ -150,7 +150,6 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 ## Bugs and missing features
 
 - **A parent can get stuck as Draft.** When all of a parent's children are drafts, the parent becomes **Draft** automatically and then stops updating: changing a child's status or adding a child doesn't change it. To fix it, click the parent's calculated status in its **Status** menu.
-- **The root task's status never updates.** It starts as **In progress** and changes only when you set it in its **Status** menu, not when its children change. Other parent tasks update as described in [Statuses](#statuses).
 - **Creating two maps 12 hours apart can fail.** New maps are named after the creation time on a 12-hour clock without AM or PM, so a map created exactly 12 hours after another gets the same name and isn't created. Try again a second later.
 - **No mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
