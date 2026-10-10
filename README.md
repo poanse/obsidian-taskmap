@@ -42,62 +42,25 @@ Select a task, then click its name. Press **Escape** or click somewhere else to 
 
 Long names wrap, and the box grows with the text. The tree lays itself out again to fit.
 
+### Reorder tasks
+
+Drag a task up or down to change its place among the other tasks under the same parent. The task stays under that parent, and its children move with it. The root can't be dragged.
+
+As you drag, the other tasks shift to make room. Release the mouse button to leave the task in its new place.
+
+### Hide tasks
+
+Hover a task and click the eye icon to collapse its descendants. Hidden tasks stay in the file; click the eye icon again to show them.
+
 ### Pan and zoom
 
 Drag an empty area of the map with the left or middle mouse button to pan. Scroll with a mouse wheel or touchpad to zoom, from 10% to 300%.
 
-### Statuses
+### Toolbar
 
-Each task has one of four statuses: **Draft**, **Ready**, **In progress**, or **Done**. The colors are listed under the screenshot.
+Select a task to open its toolbar. Hover a button to see its name. The root's toolbar has only **Add link**, **Focus**, and **Status**.
 
-To change a status, select the task, then click **Status** in its toolbar and choose a status.
-
-Leaf tasks (tasks without children) can be set to any status. A parent task's status is calculated from its children:
-
-- **Done** if all children are done
-- **In progress** if at least one child is done or in progress
-- **Ready** otherwise, including when all children are drafts
-
-A parent's **Status** menu offers only **Draft** and its calculated status. A task you set to **Draft** stays a draft whatever its children do, until you click its calculated status.
-
-### Blockers
-
-Select a task, then:
-
-- Click **Add blocker task**, then click the task that blocks the selected one.
-- Click **Block another task**, then click the task that the selected one blocks.
-
-Press **Escape** or click an empty area to cancel.
-
-While **Add blocker task** or **Block another task** is active, click a task that is already connected to remove that connection. A task can't be connected to itself, to an ancestor, to a descendant, or to a task that is **Done**.
-
-A blocked task cannot be marked done until all its blockers are done. A key icon marks a task that blocks others, and a lock icon marks a task that is blocked.
-
-Blocker connections are drawn as orange lines. They appear while **Add blocker task** or **Block another task** is active, and when you hover a task's icons:
-
-- Hover the key icon to highlight the tasks it blocks.
-- Hover the lock icon to highlight the tasks that block it.
-
-### Move a task to another parent
-
-Select a task, click **Reparent**, then click the new parent on the map. The task moves with all its children. The new parent can't be the task itself, its current parent, or one of its descendants. Press **Escape** or click an empty area to cancel.
-
-### Remove tasks
-
-Select a task, click **Remove** in its toolbar, then choose:
-
-- **Remove single task** removes only the selected task. Its children move up and take its place under its parent.
-- **Remove task branch** removes the selected task and all its descendants.
-
-Pressing **Delete** removes the selected task the same way as **Remove single task**.
-
-### Hide and focus
-
-Hide collapses a task's descendants. Hidden tasks stay in the file; click the eye icon again to show them.
-
-Focus temporarily shows only the selected branch and its ancestors; click **Focus** again to return to the full map.
-
-### Linked notes
+#### Linked notes
 
 Click **Add link** to create a note named after the task and link the two. If a note with that name already exists, it's linked instead.
 
@@ -115,6 +78,55 @@ Once a task is linked to a note:
 - Renaming the task breaks the link; the note is left unchanged.
 
 A task name can also be any Markdown link, such as `[Design doc](https://example.com/design)`.
+
+#### Remove tasks
+
+Select a task, click **Remove** in its toolbar, then choose:
+
+- **Remove single task** removes only the selected task. Its children move up and take its place under its parent.
+- **Remove task branch** removes the selected task and all its descendants.
+
+Pressing **Delete** removes the selected task the same way as **Remove single task**.
+
+#### Move a task to another parent
+
+Select a task, click **Reparent**, then click the new parent on the map. The task moves with all its children. The new parent can't be the task itself, its current parent, or one of its descendants. Press **Escape** or click an empty area to cancel.
+
+#### Blockers
+
+Select a task, then:
+
+- Click **Add blocker task**, then click the task that blocks the selected one.
+- Click **Block another task**, then click the task that the selected one blocks.
+
+Press **Escape** or click an empty area to cancel.
+
+While **Add blocker task** or **Block another task** is active, click a task that is already connected to remove that connection. A task can't be connected to itself, to an ancestor, to a descendant, or to a task that is **Done**.
+
+A blocked task cannot be marked done until all its blockers are done. A key icon marks a task that blocks others, and a lock icon marks a task that is blocked.
+
+Blocker connections are drawn as orange lines. They appear while **Add blocker task** or **Block another task** is active, and when you hover a task's icons:
+
+- Hover the key icon to highlight the tasks it blocks.
+- Hover the lock icon to highlight the tasks that block it.
+
+#### Focus
+
+Focus temporarily shows only the selected branch and its ancestors; click **Focus** again to return to the full map.
+
+#### Statuses
+
+Each task has one of four statuses: **Draft**, **Ready**, **In progress**, or **Done**. The colors are listed under the screenshot.
+
+To change a status, select the task, then click **Status** in its toolbar and choose a status.
+
+Leaf tasks (tasks without children) can be set to any status. A parent task's status is calculated from its children:
+
+- **Done** if all children are done
+- **In progress** if at least one child is done or in progress
+- **Ready** otherwise, including when all children are drafts
+
+A parent's **Status** menu offers only **Draft** and its calculated status. A task you set to **Draft** stays a draft whatever its children do, until you click its calculated status.
 
 ### Undo and redo
 
@@ -148,8 +160,9 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 
 ## Bugs and missing features
 
-- **No mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
+- **No alternative layouts.** The root's direct children are always stacked in a single column to its right. Other arrangements aren't available yet.
+- **No mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
 
 ## Development
 

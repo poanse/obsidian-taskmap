@@ -33,6 +33,36 @@ export class ProjectSettingsModal extends Modal {
 						}
 					});
 			});
+
+		// Modal.open focuses the first control after onOpen returns. That
+		// focuses the note folder field and opens its suggestions.
+		this.suppressInitialFocus();
+	}
+
+	/** Leave the note folder field inactive until its text input is clicked. */
+	private suppressInitialFocus() {
+		const controls = Array.from(
+			this.contentEl.querySelectorAll<HTMLElement>(
+				"input, select, textarea",
+			),
+		);
+		const previous = controls.map((control) =>
+			control.getAttribute("tabindex"),
+		);
+		for (const control of controls) {
+			control.tabIndex = -1;
+		}
+		const view = this.contentEl.ownerDocument.defaultView ?? window;
+		view.setTimeout(() => {
+			controls.forEach((control, index) => {
+				const prior = previous[index];
+				if (prior === null) {
+					control.removeAttribute("tabindex");
+				} else {
+					control.setAttribute("tabindex", prior);
+				}
+			});
+		}, 0);
 	}
 
 	onClose() {
