@@ -23,7 +23,7 @@ Obsidian Sync skips `.taskmap` files by default. To sync them, turn on **Sync al
 
 ## How to use
 
-- Click the Taskmap ribbon icon or run **Taskmap: Create new map** from the command palette to create a map in the vault root. To create one in a specific folder, right-click the folder in the file explorer and click **New taskmap**. The map is named `Example <date and time>.taskmap` and opens in a new tab.
+- Click the Taskmap ribbon icon or run **Taskmap: Create new map** from the command palette to create a map in the vault root. To create one in a specific folder, right-click the folder in the file explorer and click **New taskmap**. The map is named like `Example_26-10-10_03.44.12.taskmap`, with `_1`, `_2`, and so on added if that name is taken, and opens in a new tab.
 - Hover a task and click **+** to add a child. The new task is named `task` and starts as **Ready**.
 - Select a task to open its toolbar. Hover a toolbar button to see its name.
 - Select a task, then click its name to rename it.
@@ -150,7 +150,6 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 ## Bugs and missing features
 
 - **A parent can get stuck as Draft.** When all of a parent's children are drafts, the parent becomes **Draft** automatically and then stops updating: changing a child's status or adding a child doesn't change it. To fix it, click the parent's calculated status in its **Status** menu.
-- **Creating two maps 12 hours apart can fail.** New maps are named after the creation time on a 12-hour clock without AM or PM, so a map created exactly 12 hours after another gets the same name and isn't created. Try again a second later.
 - **No mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
 

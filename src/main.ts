@@ -1,4 +1,4 @@
-import { addIcon, normalizePath, Plugin, TFolder } from "obsidian";
+import { addIcon, normalizePath, Notice, Plugin, TFolder } from "obsidian";
 import { TASKMAP_VIEW_TYPE, TaskmapView } from "./TaskmapView";
 import {
 	DEFAULT_SETTINGS,
@@ -12,6 +12,7 @@ import { DEFAULT_DATA } from "./SaveManager";
 import "./theme.css";
 
 export const FILE_EXTENSION = "taskmap";
+const MAX_NAME_SUFFIX = 10;
 
 export default class TaskmapPlugin extends Plugin {
 	declare settings: TaskmapSettings;
@@ -55,12 +56,18 @@ export default class TaskmapPlugin extends Plugin {
 		this.filewatcher.registerTaskmapVaultHooks(this);
 	}
 
-	public async createAndOpenDrawing(folderPath = ""): Promise<string> {
-		const fileName = `Example ${window.moment().format("YY-MM-DD hh.mm.ss")}.${FILE_EXTENSION}`;
-		const file = await this.app.vault.create(
-			normalizePath(`${folderPath}/${fileName}`),
-			DEFAULT_DATA,
-		);
+	public async createAndOpenDrawing(
+		folderPath = "",
+	): Promise<string | null> {
+		const baseName = `Example_${window.moment().format("YY-MM-DD_hh.mm.ss")}`;
+		const path = this.getAvailableTaskmapPath(folderPath, baseName);
+		if (path === null) {
+			new Notice(
+				"Couldn't create a taskmap: too many files with the same name.",
+			);
+			return null;
+		}
+		const file = await this.app.vault.create(path, DEFAULT_DATA);
 
 		const leaf = this.app.workspace.getLeaf("tab");
 
@@ -74,6 +81,22 @@ export default class TaskmapPlugin extends Plugin {
 		await this.app.workspace.revealLeaf(leaf);
 
 		return file.path;
+	}
+
+	private getAvailableTaskmapPath(
+		folderPath: string,
+		baseName: string,
+	): string | null {
+		for (let i = 0; i <= MAX_NAME_SUFFIX; i++) {
+			const name = i === 0 ? baseName : `${baseName}_${i}`;
+			const path = normalizePath(
+				`${folderPath}/${name}.${FILE_EXTENSION}`,
+			);
+			if (!this.app.vault.getAbstractFileByPath(path)) {
+				return path;
+			}
+		}
+		return null;
 	}
 
 	async loadSettings() {
