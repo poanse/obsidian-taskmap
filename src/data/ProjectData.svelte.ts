@@ -346,11 +346,8 @@ export class ProjectData {
 			return StatusCode.IN_PROGRESS;
 		} else if (counts[StatusCode.IN_PROGRESS] > 0) {
 			return StatusCode.IN_PROGRESS;
-		} else if (counts[StatusCode.DRAFT] == children.length) {
-			return StatusCode.DRAFT;
-		} else if (counts[StatusCode.READY] == children.length) {
-			return StatusCode.READY;
 		} else {
+			// Draft is never calculated: a Draft parent means the user chose it.
 			return StatusCode.READY;
 		}
 	}

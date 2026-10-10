@@ -56,10 +56,9 @@ Leaf tasks (tasks without children) can be set to any status. A parent task's st
 
 - **Done** if all children are done
 - **In progress** if at least one child is done or in progress
-- **Draft** if all children are drafts
-- **Ready** otherwise
+- **Ready** otherwise, including when all children are drafts
 
-A parent's **Status** menu offers only **Draft** and its calculated status. A parent set to **Draft** stays a draft whatever its children do, until you click its calculated status again.
+A parent's **Status** menu offers only **Draft** and its calculated status. A task you set to **Draft** stays a draft whatever its children do, until you click its calculated status.
 
 ### Blockers
 
@@ -149,7 +148,6 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 
 ## Bugs and missing features
 
-- **A parent can get stuck as Draft.** When all of a parent's children are drafts, the parent becomes **Draft** automatically and then stops updating: changing a child's status or adding a child doesn't change it. To fix it, click the parent's calculated status in its **Status** menu.
 - **No mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
 
