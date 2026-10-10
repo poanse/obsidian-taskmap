@@ -161,8 +161,9 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 ## Bugs and missing features
 
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
-- **No alternative layouts.** The root's direct children are always stacked in a single column to its right. Other arrangements aren't available yet.
-- **No mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
+- **Alternative layouts.** The root's direct children are always stacked in a single column to its right. Other arrangements aren't available yet.
+- **Plugin mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
+- **Standalone website.** Taskmap projects can only be viewed and edited in Obsidian. A website where you can work on them without Obsidian and share them with others via a link is planned.
 
 ## Development
 
