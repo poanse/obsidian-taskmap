@@ -238,8 +238,8 @@ export class ChangeParentAction implements Action {
 	do(data: ProjectData) {
 		this.oldParentId = data.getTask(this.taskId).parentId;
 		this.oldPriority = data.getTask(this.taskId).priority;
-		// Insert at the beginning of the new parent's children.
-		data.reparentChild(this.taskId, this.newParentId, 0);
+		// Append as the last child, matching a newly added task.
+		data.reparentChild(this.taskId, this.newParentId);
 	}
 
 	undo(data: ProjectData) {

@@ -90,7 +90,7 @@ Pressing **Delete** removes the selected task the same way as **Remove single ta
 
 #### Move a task to another parent
 
-Select a task, click **Reparent**, then click the new parent on the map. The task moves with all its children. The new parent can't be the task itself, its current parent, or one of its descendants. Press **Escape** or click an empty area to cancel.
+Select a task, click **Reparent**, then click the new parent on the map. The task moves with all its children and becomes the last child of the new parent. The new parent can't be the task itself, its current parent, or one of its descendants. Press **Escape** or click an empty area to cancel.
 
 #### Blockers
 
@@ -160,6 +160,7 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 
 ## Bugs and missing features
 
+- **Obsidian sync support**
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
 - **Alternative layouts.** The root's direct children are always stacked in a single column to its right. Other arrangements aren't available yet.
 - **Plugin mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.

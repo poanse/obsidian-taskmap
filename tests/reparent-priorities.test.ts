@@ -81,8 +81,8 @@ void test("reparenting normalizes sibling priorities for both parents", () => {
 
 	assert.equal(data.getTask(4).parentId, 2);
 	assertChildrenByPriority(data, 1, [3, 5]);
-	// Reparented task is inserted at the beginning of the new parent's children.
-	assertChildrenByPriority(data, 2, [4, 6, 7]);
+	// Reparented task is appended as the last child of the new parent.
+	assertChildrenByPriority(data, 2, [6, 7, 4]);
 });
 
 void test("reparenting onto a childless task keeps the caches UI subscribers listen to", () => {
