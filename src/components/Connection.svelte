@@ -1,6 +1,7 @@
 ﻿<script lang="ts">
 	import type {TaskId, Vector2} from "../types";
 	import {NoTaskId, ParentToChildHorizontalGap, V2} from "../NodePositionsCalculator";
+	import {parentChildCurvePath} from "../parentChildCurve";
 	import type {Context} from "../Context.svelte";
 
 	let {startTaskId, endTaskId, context, isBlockerConnection}: {
@@ -31,15 +32,6 @@
 			y: endTaskSize.y / 2
 		}
 	));
-	let midX = $derived(
-		isBlockerConnection
-		? (context.chosenBlockerId !== NoTaskId
-			? endPoint.x + (isStartTaskDepthLE(endTaskId, startTaskId) ? 1 : -1) * ParentToChildHorizontalGap / 2
-			: startPoint.x + (isStartTaskDepthLE(startTaskId, endTaskId) ? 1 : -1) * ParentToChildHorizontalGap / 2
-		)
-		: (startPoint.x + endPoint.x) / 2
-	);
-	
 	let isUnselected = $derived(
 		context.chosenBlockedId !== NoTaskId
 		|| context.chosenBlockerId !== NoTaskId
@@ -86,15 +78,16 @@
 	// Calculate the path string reactively
 	let pathData = $derived.by(() => {
 		if (isBlockerConnection) {
+			const midX = context.chosenBlockerId !== NoTaskId
+				? endPoint.x + (isStartTaskDepthLE(endTaskId, startTaskId) ? 1 : -1) * ParentToChildHorizontalGap / 2
+				: startPoint.x + (isStartTaskDepthLE(startTaskId, endTaskId) ? 1 : -1) * ParentToChildHorizontalGap / 2;
 			return createBlockerPath(
 				startPoint,
 				endPoint,
 				midX
 			);
 		} else {
-			// M = Move to start
-			// C = Cubic Bezier (ControlPoint1, ControlPoint2, EndPoint)
-			return `M ${startPoint.x} ${startPoint.y} C ${midX} ${startPoint.y}, ${midX} ${endPoint.y}, ${endPoint.x} ${endPoint.y}`;
+			return parentChildCurvePath(startPoint, endPoint);
 		}
 	});
 </script>

@@ -27,7 +27,7 @@ Obsidian Sync skips `.taskmap` files by default. To sync them, turn on **Sync al
 - Hover a task and click **+** to add a child. The new task is named `task` and starts as **Ready**.
 - Select a task to open its toolbar. Hover a toolbar button to see its name.
 - Select a task, then click its name to rename it.
-- Drag a task vertically to reorder it among its siblings.
+- Drag a task to reorder it among its siblings.
 - Hover a task and click the eye icon to hide its children.
 
 ## Feature reference
@@ -36,9 +36,16 @@ Obsidian Sync skips `.taskmap` files by default. To sync them, turn on **Sync al
 
 Every map starts with a task named `root`, with status **Draft**. Like any parent set to **Draft**, it stays a draft after you add children, until you click its calculated status in its **Status** menu. Rename it to your project's name. The root can't be reparented, removed, or used as a blocker.
 
+### Layouts
+
+To choose a layout for a map, click **Settings** next to the undo and redo controls, then choose a **Layout**:
+
+- **Tree** (default): the root's children sit in one column to the right of the root.
+- **Double row**: the root's children alternate between a row above the root and a row below it. Use it when the root has many children and one column gets too tall.
+
 ### Rename a task
 
-Select a task, then click its name. Press **Escape** or click somewhere else to apply the name. **Enter** adds a line break. This works the same way for every task, including the root.
+Select a task, then click its name. Click somewhere else to apply the name. This works the same way for every task, including the root.
 
 Long names wrap, and the box grows with the text. The tree lays itself out again to fit.
 
@@ -54,7 +61,7 @@ Hover a task and click the eye icon to collapse its descendants. Hidden tasks st
 
 ### Pan and zoom
 
-Drag an empty area of the map with the left or middle mouse button to pan. Scroll with a mouse wheel or touchpad to zoom, from 10% to 300%.
+Drag an empty area of the map with the left or middle mouse button to pan. Swipe with two fingers on a trackpad to pan. Scroll the mouse wheel, or pinch on a trackpad, to zoom. Zoom ranges from 10% to 300%.
 
 ### Toolbar
 
@@ -66,7 +73,7 @@ Click **Add link** to create a note named after the task and link the two. If a 
 
 New notes go to the project's note folder, then the plugin's default note folder. If neither is set, they follow Obsidian's **Default location for new notes** setting.
 
-To link an existing note, type `[[` in the task name and choose a note from the suggestions. Typing `[[Meeting notes]]` renames the task to that note and links it. Press **Tab** to choose the highlighted suggestion.
+To link an existing note, type `[[` in the task name and choose a note from the suggestions. Typing `[[Meeting notes]]` renames the task to that note and links it.
 
 Click the link while the task is not selected to open or focus the note. Hover the link to show Obsidian's link preview. If the task is already selected, clicking its name starts editing, and the link is not followed.
 
@@ -86,11 +93,9 @@ Select a task, click **Remove** in its toolbar, then choose:
 - **Remove single task** removes only the selected task. Its children move up and take its place under its parent.
 - **Remove task branch** removes the selected task and all its descendants.
 
-Pressing **Delete** removes the selected task the same way as **Remove single task**.
-
 #### Move a task to another parent
 
-Select a task, click **Reparent**, then click the new parent on the map. The task moves with all its children and becomes the last child of the new parent. The new parent can't be the task itself, its current parent, or one of its descendants. Press **Escape** or click an empty area to cancel.
+Select a task, click **Reparent**, then click the new parent on the map. The task moves with all its children and becomes the last child of the new parent. The new parent can't be the task itself, its current parent, or one of its descendants. Click an empty area to cancel.
 
 #### Blockers
 
@@ -99,7 +104,7 @@ Select a task, then:
 - Click **Add blocker task**, then click the task that blocks the selected one.
 - Click **Block another task**, then click the task that the selected one blocks.
 
-Press **Escape** or click an empty area to cancel.
+Click an empty area to cancel.
 
 While **Add blocker task** or **Block another task** is active, click a task that is already connected to remove that connection. A task can't be connected to itself, to an ancestor, to a descendant, or to a task that is **Done**.
 
@@ -112,7 +117,7 @@ Blocker connections are drawn as orange lines. They appear while **Add blocker t
 
 #### Focus
 
-Focus temporarily shows only the selected branch and its ancestors; click **Focus** again to return to the full map.
+Click **Focus** to work on one task and its subtree without distractions. Everything else is hidden for a while, except the chain of parents that leads from the task up to the root. Click **Focus** again to bring back the full map.
 
 #### Statuses
 
@@ -130,19 +135,36 @@ A parent's **Status** menu offers only **Draft** and its calculated status. A ta
 
 ### Undo and redo
 
-Use the undo and redo controls in the bottom-left corner of the map, or press **Ctrl+Z** to undo and **Ctrl+R** to redo. The shortcuts use Ctrl on macOS too.
+Use the undo and redo controls in the bottom-left corner of the map.
 
 Undo history is cleared when you close the file.
+
+### Keyboard shortcuts
+
+Shortcuts work while the map has focus.
+
+| Action | Windows and Linux | macOS |
+| --- | --- | --- |
+| Zoom in | **Ctrl+Up arrow** | **Cmd+Up arrow** |
+| Zoom out | **Ctrl+Down arrow** | **Cmd+Down arrow** |
+| Undo | **Ctrl+Z** | **Cmd+Z** |
+| Redo | **Ctrl+R** or **Ctrl+Shift+Z** | **Cmd+R** or **Cmd+Shift+Z** |
+| Remove the selected task, like **Remove single task** | **Delete** | **Fn+Delete** |
+| Clear the selection, or cancel **Reparent**, **Add blocker task**, or **Block another task** | **Escape** | **Escape** |
+| Apply a task name while renaming | **Escape** | **Escape** |
+| Add a line break while renaming | **Enter** | **Enter** |
+| Choose the highlighted note suggestion | **Tab** | **Tab** |
 
 ### Settings
 
 Plugin settings are in **Settings → Taskmap**:
 
 - **Theme**: **Obsidian** (default) uses the active Obsidian theme's red, yellow, and green, and its faint text color for drafts, so community themes can change the exact shades. **Light** and **Dark** force Taskmap's own light and dark shades.
-- Zoom sensitivity, set separately for mouse and touchpad
+- Zoom sensitivity, set separately for mouse, touchpad, and keyboard
+- **Reverse two-finger pan** (on by default): moves the map opposite to your fingers when you swipe on a touchpad
 - Default folder for linked notes
 
-Project settings override the note folder for a single map. To open them, click **Settings** next to the undo and redo controls.
+Project settings override the note folder for a single map and set its **Layout** (see [Layouts](#layouts)). To open them, click **Settings** next to the undo and redo controls.
 
 ## Files
 
@@ -162,7 +184,9 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 
 - **Obsidian sync support**
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
-- **Alternative layouts.** The root's direct children are always stacked in a single column to its right. Other arrangements aren't available yet.
+- **Zoom buttons.** You can zoom only with the mouse, trackpad, or keyboard. On-screen buttons to zoom in, zoom out, and reset the zoom are planned.
+- **Shortcut reference.** The map doesn't list its keyboard shortcuts. A help panel that describes them, like the one in Canvas, is planned.
+- **Multi-select.** You can select only one task at a time. Selecting several tasks by dragging a box around them with the left mouse button is planned.
 - **Plugin mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
 - **Standalone website.** Taskmap projects can only be viewed and edited in Obsidian. A website where you can work on them without Obsidian and share them with others via a link is planned.
 

@@ -1,5 +1,6 @@
 ﻿<script lang="ts">
 	import {onMount, tick} from "svelte";
+	import {Platform} from "obsidian";
 	import Toolbar from "./Toolbar.svelte";
 	import Task from "./Task.svelte";
 	import Panzoom, {type PanzoomObject} from '@panzoom/panzoom'
@@ -10,6 +11,16 @@
 	import {DraggingManager} from "../DraggingManager.svelte";
 	import {parseNumber} from "../Constants";
 	import SettingsPanel from "./SettingsPanel.svelte";
+	import {
+		historyKeyAction,
+		panDeltaFromWheel,
+		scaleAfterKeyboardZoom,
+		scaleAfterPinch,
+		usesCommandModifier,
+		wheelAction,
+		wheelDeltaYOf,
+		zoomKeyDirection,
+	} from "../viewportInput";
 
 	let {context}: {context: Context} = $props();
 	
@@ -38,8 +49,32 @@
 		});
 	});
 
+	$effect(() => {
+		document.body.classList.toggle('is-dragging-task', context.taskDraggingManager.isDragging);
+		return () => document.body.classList.remove('is-dragging-task');
+	});
+
+	/**
+	 * Keyboard shortcuts are handled on the viewport, so it needs focus. Panning
+	 * and zooming focus it too, since they don't end in a click.
+	 */
+	export function focusViewport() {
+		if (viewportEl && !viewportEl.contains(viewportEl.doc.activeElement)) {
+			viewportEl.focus({preventScroll: true});
+		}
+	}
+
 	async function handleKey(e: KeyboardEvent) {
 		console.debug('handleKey ', e.key);
+		const zoomDirection = usesCommandModifier(e, Platform.isMacOS)
+			? zoomKeyDirection(e)
+			: null;
+		if (zoomDirection !== null) {
+			zoomByKeyboard(zoomDirection);
+			e.preventDefault();
+			e.stopPropagation();
+			return;
+		}
 		if (e.key === "Escape") {
 			context.setSelectedTaskId(NoTaskId);
 			context.cancelReparenting();
@@ -52,9 +87,9 @@
 				context.versionedData.removeTaskSingle(context.selectedTaskId);
 				context.selectedTaskId = NoTaskId;
 			}
-		} else if (e.ctrlKey && e.key === "z") {
+		} else if (historyKeyAction(e, Platform.isMacOS) === "undo") {
 			context.versionedData.undo();
-		} else if (e.ctrlKey && e.key === "r") {
+		} else if (historyKeyAction(e, Platform.isMacOS) === "redo") {
 			context.versionedData.redo();
 		} else {
 			return;
@@ -66,27 +101,67 @@
 		e.preventDefault();
 		await tick();
 	}
-	
-	function onwheel(e: WheelEvent) {
-		let scaleConstant: number;
-		const isTouchpad = Math.abs(e.deltaY) < 50;
-		if (isTouchpad) {
-			scaleConstant = 0.1 * (parseNumber(context.plugin.settings.zoomSensitivityTouchpad) ?? 100) / 100;
-		} else {
-			scaleConstant = 0.5 * (parseNumber(context.plugin.settings.zoomSensitivityMouse) ?? 100) / 100;
-		}
 
-		getPanzoom().zoomWithWheel(e, {step: scaleConstant});
-		context.setScale(getPanzoom().getScale());
-		if (getPanzoom().getScale() > 1) {
+	function zoomByKeyboard(direction: 1 | -1) {
+		if (!viewportEl) {
+			return;
+		}
+		const panzoomEl = getPanzoom();
+		const rect = viewportEl.getBoundingClientRect();
+		const sensitivity = parseNumber(context.plugin.settings.zoomSensitivityKeyboard) ?? 100;
+		panzoomEl.zoomToPoint(scaleAfterKeyboardZoom(panzoomEl.getScale(), direction, sensitivity), {
+			clientX: rect.left + rect.width / 2,
+			clientY: rect.top + rect.height / 2,
+		});
+		syncScale(panzoomEl.getScale());
+	}
+
+	function syncScale(scale: number) {
+		context.setScale(scale);
+		if (scale > 1) {
 			context.incrementUpdateOnZoomCounter();
 		}
+	}
+	
+	function onwheel(e: WheelEvent) {
+		e.preventDefault();
+		focusViewport();
+		const action = wheelAction({
+			ctrlKey: e.ctrlKey,
+			deltaMode: e.deltaMode,
+			deltaX: e.deltaX,
+			deltaY: e.deltaY,
+			wheelDeltaY: wheelDeltaYOf(e),
+		});
+		if (action === "pan") {
+			const panzoomEl = getPanzoom();
+			const pan = panzoomEl.getPan();
+			const delta = panDeltaFromWheel(
+				e.deltaX,
+				e.deltaY,
+				panzoomEl.getScale(),
+				context.plugin.settings.reversePan === true,
+			);
+			panzoomEl.pan(pan.x + delta.x, pan.y + delta.y);
+			e.stopPropagation();
+			return;
+		}
+		const panzoomEl = getPanzoom();
+		if (action === "zoom-touchpad") {
+			const sensitivity = parseNumber(context.plugin.settings.zoomSensitivityTouchpad) ?? 100;
+			panzoomEl.zoomToPoint(scaleAfterPinch(panzoomEl.getScale(), e.deltaY, sensitivity), e);
+		} else {
+			const sensitivity = parseNumber(context.plugin.settings.zoomSensitivityMouse) ?? 100;
+			panzoomEl.zoomWithWheel(e, {step: 0.5 * sensitivity / 100});
+		}
+		syncScale(panzoomEl.getScale());
 		e.stopPropagation();
 	}
 	
 	function onpointerdown(e: PointerEvent) {
 		// prevent auto-scroll
 		e.preventDefault();
+		focusViewport();
 		draggingManager.onPointerDown(e);
 		panstart = getPanzoom().getPan();
 		e.stopPropagation();

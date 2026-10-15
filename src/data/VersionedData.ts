@@ -1,6 +1,7 @@
 ﻿import { HistoryManager } from "./HistoryManager.svelte";
 import {
 	type BlockerPair,
+	type LayoutChoice,
 	StatusCode,
 	type TaskId,
 	type Vector2,
@@ -155,6 +156,14 @@ export class VersionedData {
 
 	public setFolderPath = (path: string | undefined) => {
 		this.data.setFolderPath(path);
+	};
+
+	public getLayout = (): LayoutChoice => {
+		return this.data.getLayout();
+	};
+
+	public setLayout = (layout: LayoutChoice) => {
+		this.data.setLayout(layout);
 	};
 
 	public getTasks = (includeDeleted = false) => {

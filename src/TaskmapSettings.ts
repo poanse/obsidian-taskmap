@@ -1,15 +1,21 @@
-export type ThemeChoice = "obsidian" | "light" | "dark";
+export enum ThemeChoice {
+	Obsidian = "obsidian",
+	Light = "light",
+	Dark = "dark",
+}
 
 /** Classes set on the view by the Theme setting. See theme.css. */
 export const THEME_CLASS: Record<ThemeChoice, string> = {
-	obsidian: "tm-theme-obsidian",
-	light: "tm-theme-light",
-	dark: "tm-theme-dark",
+	[ThemeChoice.Obsidian]: "tm-theme-obsidian",
+	[ThemeChoice.Light]: "tm-theme-light",
+	[ThemeChoice.Dark]: "tm-theme-dark",
 };
 
 export interface TaskmapSettings {
 	zoomSensitivityTouchpad: string;
 	zoomSensitivityMouse: string;
+	zoomSensitivityKeyboard: string;
+	reversePan: boolean;
 	newNoteFolder: string;
 	theme: ThemeChoice;
 }
@@ -17,8 +23,10 @@ export interface TaskmapSettings {
 export const DEFAULT_SETTINGS: TaskmapSettings = {
 	zoomSensitivityTouchpad: "100",
 	zoomSensitivityMouse: "100",
+	zoomSensitivityKeyboard: "100",
+	reversePan: true,
 	newNoteFolder: "",
-	theme: "obsidian",
+	theme: ThemeChoice.Obsidian,
 };
 
 export function isSettingKey(key: string): key is keyof TaskmapSettings {
@@ -26,5 +34,5 @@ export function isSettingKey(key: string): key is keyof TaskmapSettings {
 }
 
 export function isThemeChoice(value: unknown): value is ThemeChoice {
-	return value === "obsidian" || value === "light" || value === "dark";
+	return Object.values<unknown>(ThemeChoice).includes(value);
 }

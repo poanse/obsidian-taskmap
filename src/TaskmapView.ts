@@ -12,12 +12,14 @@ import {
 import type TaskmapPlugin from "./main";
 import { VersionedData } from "./data/VersionedData";
 import { HistoryManager } from "./data/HistoryManager.svelte";
-import { THEME_CLASS, type ThemeChoice } from "./TaskmapSettings";
+import { THEME_CLASS, ThemeChoice } from "./TaskmapSettings";
 
 export const TASKMAP_VIEW_TYPE = "taskmap-view";
 
+type TaskmapContainerExports = { focusViewport: () => void };
+
 export class TaskmapView extends TextFileView {
-	taskmapContainer: ReturnType<typeof TaskmapContainer> | undefined;
+	taskmapContainer: TaskmapContainerExports | undefined;
 	plugin: TaskmapPlugin;
 	data: string = DEFAULT_DATA;
 	projectData: ProjectData;
@@ -37,7 +39,7 @@ export class TaskmapView extends TextFileView {
 	/** Applies the Theme setting to this view. */
 	applyTheme() {
 		const theme = this.plugin.settings.theme;
-		for (const choice of Object.keys(THEME_CLASS) as ThemeChoice[]) {
+		for (const choice of Object.values(ThemeChoice)) {
 			this.contentEl.toggleClass(THEME_CLASS[choice], choice === theme);
 		}
 	}
@@ -72,15 +74,26 @@ export class TaskmapView extends TextFileView {
 		);
 		this.contentEl.addClass("taskmap-view-container");
 		this.applyTheme();
-		this.taskmapContainer = mount(TaskmapContainer, {
+		const container = mount(TaskmapContainer, {
 			target: this.contentEl,
 			props: {
 				context: this.context,
 			},
-		});
+		}) as TaskmapContainerExports;
+		this.taskmapContainer = container;
+		if (this.app.workspace.getActiveViewOfType(TaskmapView) === this) {
+			container.focusViewport();
+		}
 	}
 
 	protected onOpen(): Promise<void> {
+		this.registerEvent(
+			this.app.workspace.on("active-leaf-change", (leaf) => {
+				if (leaf === this.leaf) {
+					this.taskmapContainer?.focusViewport();
+				}
+			}),
+		);
 		this.registerEvent(
 			this.app.vault.on("modify", async (file) => {
 				if (

@@ -19,6 +19,7 @@ export function serializeProjectData(projectData: ProjectData) {
 			taskSizeOverrides: [...projectData.taskSizeOverrides.entries()].map(
 				([taskId, { x, y }]) => ({ taskId, x, y }),
 			),
+			layout: projectData.layout,
 		},
 		null,
 		2,

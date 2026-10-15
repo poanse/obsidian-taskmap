@@ -34,21 +34,15 @@
 	let isDragging = $derived(context.taskDraggingManager.isDragging);
 
 	onMount(() => {
-		renderMarkdown();
 		return () => {
 			// Clean up Obsidian component references to prevent memory leaks
 			component.unload();
 		};
 	});
+	// Don't read shared state here (such as drag state): a change would re-render
+	// the Markdown of every task at once.
 	$effect(() => {
-		renderMarkdown();
-		if (context.taskDraggingManager.isDragging) {
-			document.body.classList.add('is-dragging-task');
-		} else {
-			document.body.classList.remove('is-dragging-task');
-		}
-		// Cleanup function for when component is unmounted
-		return () => document.body.classList.remove('is-dragging-task');
+		void renderMarkdown();
 	});
 
 	function handlePreviewClick(e: PointerEvent) {

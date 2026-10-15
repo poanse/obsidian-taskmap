@@ -107,3 +107,13 @@ export type BlockerPair = {
 	blocker: TaskId;
 	blocked: TaskId;
 };
+
+/** Placement of the root's children; deeper tasks always grow to the right. */
+export enum LayoutChoice {
+	Tree = "tree",
+	DoubleRow = "double-row",
+}
+
+export function isLayoutChoice(value: unknown): value is LayoutChoice {
+	return Object.values<unknown>(LayoutChoice).includes(value);
+}
