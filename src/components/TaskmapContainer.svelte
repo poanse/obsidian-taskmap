@@ -1,5 +1,6 @@
 ﻿<script lang="ts">
 	import {onMount, tick} from "svelte";
+	import {Platform} from "obsidian";
 	import Toolbar from "./Toolbar.svelte";
 	import Task from "./Task.svelte";
 	import Panzoom, {type PanzoomObject} from '@panzoom/panzoom'
@@ -10,6 +11,14 @@
 	import {DraggingManager} from "../DraggingManager.svelte";
 	import {parseNumber} from "../Constants";
 	import SettingsPanel from "./SettingsPanel.svelte";
+	import {
+		panDeltaFromWheel,
+		scaleAfterKeyboardZoom,
+		usesCommandModifier,
+		wheelAction,
+		wheelDeltaYOf,
+		zoomKeyDirection,
+	} from "../viewportInput";
 
 	let {context}: {context: Context} = $props();
 	
@@ -38,8 +47,24 @@
 		});
 	});
 
+	/** Lets keyboard shortcuts reach the map without clicking it first. */
+	export function focusViewport() {
+		if (viewportEl && !viewportEl.contains(viewportEl.doc.activeElement)) {
+			viewportEl.focus({preventScroll: true});
+		}
+	}
+
 	async function handleKey(e: KeyboardEvent) {
 		console.debug('handleKey ', e.key);
+		const zoomDirection = usesCommandModifier(e, Platform.isMacOS)
+			? zoomKeyDirection(e)
+			: null;
+		if (zoomDirection !== null) {
+			zoomByKeyboard(zoomDirection);
+			e.preventDefault();
+			e.stopPropagation();
+			return;
+		}
 		if (e.key === "Escape") {
 			context.setSelectedTaskId(NoTaskId);
 			context.cancelReparenting();
@@ -52,9 +77,9 @@
 				context.versionedData.removeTaskSingle(context.selectedTaskId);
 				context.selectedTaskId = NoTaskId;
 			}
-		} else if (e.ctrlKey && e.key === "z") {
+		} else if (usesCommandModifier(e, Platform.isMacOS) && e.key === "z") {
 			context.versionedData.undo();
-		} else if (e.ctrlKey && e.key === "r") {
+		} else if (usesCommandModifier(e, Platform.isMacOS) && e.key === "r") {
 			context.versionedData.redo();
 		} else {
 			return;
@@ -66,21 +91,58 @@
 		e.preventDefault();
 		await tick();
 	}
-	
-	function onwheel(e: WheelEvent) {
-		let scaleConstant: number;
-		const isTouchpad = Math.abs(e.deltaY) < 50;
-		if (isTouchpad) {
-			scaleConstant = 0.1 * (parseNumber(context.plugin.settings.zoomSensitivityTouchpad) ?? 100) / 100;
-		} else {
-			scaleConstant = 0.5 * (parseNumber(context.plugin.settings.zoomSensitivityMouse) ?? 100) / 100;
-		}
 
-		getPanzoom().zoomWithWheel(e, {step: scaleConstant});
-		context.setScale(getPanzoom().getScale());
-		if (getPanzoom().getScale() > 1) {
+	function zoomByKeyboard(direction: 1 | -1) {
+		if (!viewportEl) {
+			return;
+		}
+		const panzoomEl = getPanzoom();
+		const rect = viewportEl.getBoundingClientRect();
+		const sensitivity = parseNumber(context.plugin.settings.zoomSensitivityKeyboard) ?? 100;
+		panzoomEl.zoomToPoint(scaleAfterKeyboardZoom(panzoomEl.getScale(), direction, sensitivity), {
+			clientX: rect.left + rect.width / 2,
+			clientY: rect.top + rect.height / 2,
+		});
+		syncScale(panzoomEl.getScale());
+	}
+
+	function syncScale(scale: number) {
+		context.setScale(scale);
+		if (scale > 1) {
 			context.incrementUpdateOnZoomCounter();
 		}
+	}
+	
+	function onwheel(e: WheelEvent) {
+		e.preventDefault();
+		const action = wheelAction({
+			ctrlKey: e.ctrlKey,
+			deltaMode: e.deltaMode,
+			deltaX: e.deltaX,
+			deltaY: e.deltaY,
+			wheelDeltaY: wheelDeltaYOf(e),
+		});
+		if (action === "pan") {
+			const panzoomEl = getPanzoom();
+			const pan = panzoomEl.getPan();
+			const delta = panDeltaFromWheel(
+				e.deltaX,
+				e.deltaY,
+				panzoomEl.getScale(),
+				context.plugin.settings.reversePan === true,
+			);
+			panzoomEl.pan(pan.x + delta.x, pan.y + delta.y);
+			e.stopPropagation();
+			return;
+		}
+		const sensitivity = action === "zoom-touchpad"
+			? context.plugin.settings.zoomSensitivityTouchpad
+			: context.plugin.settings.zoomSensitivityMouse;
+		const base = action === "zoom-touchpad" ? 0.1 : 0.5;
+		const scaleConstant = base * (parseNumber(sensitivity) ?? 100) / 100;
+
+		getPanzoom().zoomWithWheel(e, {step: scaleConstant});
+		syncScale(getPanzoom().getScale());
 		e.stopPropagation();
 	}
 	

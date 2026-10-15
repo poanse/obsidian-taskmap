@@ -20,7 +20,7 @@ type SettingKey = keyof TaskmapSettings;
 /** Control types display() can render on Obsidian versions older than 1.13. */
 type TaskmapControl = Extract<
 	SettingControl<SettingKey>,
-	{ type: "dropdown" | "text" | "folder" }
+	{ type: "dropdown" | "text" | "folder" | "toggle" }
 >;
 
 type TaskmapSettingDefinition = SettingDefinitionControl<SettingKey> & {
@@ -56,7 +56,7 @@ export class TaskmapSettingTab extends PluginSettingTab {
 			},
 			{
 				name: "Zoom sensitivity (touchpad)",
-				desc: "As a percentage",
+				desc: "Pinch to zoom, as a percentage",
 				control: {
 					type: "text",
 					key: "zoomSensitivityTouchpad",
@@ -65,11 +65,28 @@ export class TaskmapSettingTab extends PluginSettingTab {
 			},
 			{
 				name: "Zoom sensitivity (mouse)",
-				desc: "As a percentage",
+				desc: "Mouse wheel zoom, as a percentage",
 				control: {
 					type: "text",
 					key: "zoomSensitivityMouse",
 					placeholder: "100",
+				},
+			},
+			{
+				name: "Zoom sensitivity (keyboard)",
+				desc: "Ctrl/Cmd + Up and Down arrow zoom, as a percentage",
+				control: {
+					type: "text",
+					key: "zoomSensitivityKeyboard",
+					placeholder: "100",
+				},
+			},
+			{
+				name: "Reverse two-finger pan",
+				desc: "Move the map opposite to your fingers when you swipe on a touchpad.",
+				control: {
+					type: "toggle",
+					key: "reversePan",
 				},
 			},
 			{
@@ -125,7 +142,15 @@ export class TaskmapSettingTab extends PluginSettingTab {
 	 * from plugin.settings directly because getControlValue() does not exist there.
 	 */
 	private renderControl(setting: Setting, control: TaskmapControl) {
-		const value = this.plugin.settings[control.key];
+		if (control.type === "toggle") {
+			setting.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings[control.key] === true)
+					.onChange((next) => this.setControlValue(control.key, next)),
+			);
+			return;
+		}
+		const value = String(this.plugin.settings[control.key]);
 		const commit = async (next: string) => {
 			if (await control.validate?.(next)) {
 				return;

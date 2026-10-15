@@ -10,6 +10,8 @@ export const THEME_CLASS: Record<ThemeChoice, string> = {
 export interface TaskmapSettings {
 	zoomSensitivityTouchpad: string;
 	zoomSensitivityMouse: string;
+	zoomSensitivityKeyboard: string;
+	reversePan: boolean;
 	newNoteFolder: string;
 	theme: ThemeChoice;
 }
@@ -17,6 +19,8 @@ export interface TaskmapSettings {
 export const DEFAULT_SETTINGS: TaskmapSettings = {
 	zoomSensitivityTouchpad: "100",
 	zoomSensitivityMouse: "100",
+	zoomSensitivityKeyboard: "100",
+	reversePan: true,
 	newNoteFolder: "",
 	theme: "obsidian",
 };

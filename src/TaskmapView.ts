@@ -16,8 +16,10 @@ import { THEME_CLASS, type ThemeChoice } from "./TaskmapSettings";
 
 export const TASKMAP_VIEW_TYPE = "taskmap-view";
 
+type TaskmapContainerExports = { focusViewport: () => void };
+
 export class TaskmapView extends TextFileView {
-	taskmapContainer: ReturnType<typeof TaskmapContainer> | undefined;
+	taskmapContainer: TaskmapContainerExports | undefined;
 	plugin: TaskmapPlugin;
 	data: string = DEFAULT_DATA;
 	projectData: ProjectData;
@@ -72,15 +74,26 @@ export class TaskmapView extends TextFileView {
 		);
 		this.contentEl.addClass("taskmap-view-container");
 		this.applyTheme();
-		this.taskmapContainer = mount(TaskmapContainer, {
+		const container = mount(TaskmapContainer, {
 			target: this.contentEl,
 			props: {
 				context: this.context,
 			},
-		});
+		}) as TaskmapContainerExports;
+		this.taskmapContainer = container;
+		if (this.app.workspace.getActiveViewOfType(TaskmapView) === this) {
+			container.focusViewport();
+		}
 	}
 
 	protected onOpen(): Promise<void> {
+		this.registerEvent(
+			this.app.workspace.on("active-leaf-change", (leaf) => {
+				if (leaf === this.leaf) {
+					this.taskmapContainer?.focusViewport();
+				}
+			}),
+		);
 		this.registerEvent(
 			this.app.vault.on("modify", async (file) => {
 				if (

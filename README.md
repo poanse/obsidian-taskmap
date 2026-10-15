@@ -54,7 +54,7 @@ Hover a task and click the eye icon to collapse its descendants. Hidden tasks st
 
 ### Pan and zoom
 
-Drag an empty area of the map with the left or middle mouse button to pan. Scroll with a mouse wheel or touchpad to zoom, from 10% to 300%.
+Drag an empty area of the map with the left or middle mouse button to pan. Swipe with two fingers on a trackpad to pan. Scroll the mouse wheel, or pinch on a trackpad, to zoom. Press **Ctrl+Up arrow** to zoom in and **Ctrl+Down arrow** to zoom out (**Cmd+Up arrow** and **Cmd+Down arrow** on macOS). Zoom ranges from 10% to 300%.
 
 ### Toolbar
 
@@ -130,7 +130,7 @@ A parent's **Status** menu offers only **Draft** and its calculated status. A ta
 
 ### Undo and redo
 
-Use the undo and redo controls in the bottom-left corner of the map, or press **Ctrl+Z** to undo and **Ctrl+R** to redo. The shortcuts use Ctrl on macOS too.
+Use the undo and redo controls in the bottom-left corner of the map, or press **Ctrl+Z** to undo and **Ctrl+R** to redo (**Cmd+Z** and **Cmd+R** on macOS).
 
 Undo history is cleared when you close the file.
 
@@ -139,7 +139,8 @@ Undo history is cleared when you close the file.
 Plugin settings are in **Settings → Taskmap**:
 
 - **Theme**: **Obsidian** (default) uses the active Obsidian theme's red, yellow, and green, and its faint text color for drafts, so community themes can change the exact shades. **Light** and **Dark** force Taskmap's own light and dark shades.
-- Zoom sensitivity, set separately for mouse and touchpad
+- Zoom sensitivity, set separately for mouse, touchpad, and keyboard
+- **Reverse two-finger pan** (on by default): moves the map opposite to your fingers when you swipe on a touchpad
 - Default folder for linked notes
 
 Project settings override the note folder for a single map. To open them, click **Settings** next to the undo and redo controls.
