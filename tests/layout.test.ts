@@ -25,9 +25,11 @@ function calculate(
 	layout: LayoutChoice,
 	tasks: TaskData[] = layoutTasks,
 	sizes: Map<TaskId, Vector2> = layoutSizes,
+	focusedTaskId: TaskId = RootTaskId,
 ) {
 	const calculator = new NodePositionsCalculator();
 	calculator.Layout = layout;
+	calculator.FocusedTaskId = focusedTaskId;
 	return calculator.CalculatePositionsInGlobalFrame(
 		tasks,
 		layoutRootPosition,
@@ -326,4 +328,49 @@ void test("double-row: a branch with many sibling parents keeps to its row", () 
 	const positions = calculate(LayoutChoice.DoubleRow, tasks, sizes);
 	assertBranchesKeepToTheirCells(tasks, positions, sizes);
 	assertNoOverlaps(tasks, positions, sizes);
+});
+
+void test("double-row: a missing priority leaves later tasks on their rows", () => {
+	// Priorities 1 and 2: the even task stays above the root, the odd one below.
+	const tasks = [
+		task(0, NoTaskId, 0, 0),
+		task(2, 0, 1, 1),
+		task(3, 0, 1, 2),
+	];
+	const sizes = new Map<TaskId, Vector2>();
+	const calculator = new NodePositionsCalculator();
+	const positions = calculate(LayoutChoice.DoubleRow, tasks, sizes);
+	const rootTop = layoutRootPosition.y;
+	const rootBottom = rootTop + TASK_SIZE.height;
+	const gap = calculator.SiblingVerticalGap;
+
+	assert.ok(positions.get(3)!.y + TASK_SIZE.height <= rootTop - gap);
+	assert.ok(positions.get(2)!.y >= rootBottom + gap);
+	assertNoOverlaps(tasks, positions, sizes);
+});
+
+void test("focus lines the task up with its ancestors", () => {
+	// Bottom-row child B, then G (taller), then C.
+	const tasks = [
+		task(0, NoTaskId, 0, 0),
+		task(1, 0, 1, 1),
+		task(2, 1, 2, 0),
+		task(3, 2, 3, 0),
+	];
+	const sizes = new Map<TaskId, Vector2>([
+		[2, { x: TASK_SIZE.width, y: 160 }],
+	]);
+	const natural = calculate(LayoutChoice.DoubleRow, tasks, sizes);
+	const focused = calculate(LayoutChoice.DoubleRow, tasks, sizes, 2);
+	const rootY = focused.get(RootTaskId)!.y;
+
+	assert.equal(focused.get(1)!.y, rootY);
+	assert.equal(focused.get(2)!.y, rootY);
+	assert.equal(
+		focused.get(3)!.y - focused.get(2)!.y,
+		natural.get(3)!.y - natural.get(2)!.y,
+	);
+	assert.ok(
+		natural.get(1)!.y > natural.get(RootTaskId)!.y + TASK_SIZE.height,
+	);
 });

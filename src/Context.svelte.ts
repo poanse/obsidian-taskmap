@@ -354,6 +354,7 @@ export class Context {
 		if (!draggingOnly) {
 			this.nodePositionsCalculator.Layout =
 				this.versionedData.getLayout();
+			this.nodePositionsCalculator.FocusedTaskId = this.focusedTaskId;
 			const newPositions =
 				this.nodePositionsCalculator.CalculatePositionsInGlobalFrame(
 					this.versionedData

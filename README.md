@@ -27,7 +27,7 @@ Obsidian Sync skips `.taskmap` files by default. To sync them, turn on **Sync al
 - Hover a task and click **+** to add a child. The new task is named `task` and starts as **Ready**.
 - Select a task to open its toolbar. Hover a toolbar button to see its name.
 - Select a task, then click its name to rename it.
-- Drag a task vertically to reorder it among its siblings.
+- Drag a task to reorder it among its siblings.
 - Hover a task and click the eye icon to hide its children.
 
 ## Feature reference
@@ -35,6 +35,13 @@ Obsidian Sync skips `.taskmap` files by default. To sync them, turn on **Sync al
 ### Root task
 
 Every map starts with a task named `root`, with status **Draft**. Like any parent set to **Draft**, it stays a draft after you add children, until you click its calculated status in its **Status** menu. Rename it to your project's name. The root can't be reparented, removed, or used as a blocker.
+
+### Layouts
+
+To choose a layout for a map, click **Settings** next to the undo and redo controls, then choose a **Layout**:
+
+- **Tree** (default): the root's children sit in one column to the right of the root.
+- **Double row**: the root's children alternate between a row above the root and a row below it. Use it when the root has many children and one column gets too tall.
 
 ### Rename a task
 
@@ -110,7 +117,7 @@ Blocker connections are drawn as orange lines. They appear while **Add blocker t
 
 #### Focus
 
-Focus temporarily shows only the selected branch and its ancestors; click **Focus** again to return to the full map.
+Click **Focus** to work on one task and its subtree without distractions. Everything else is hidden for a while, except the chain of parents that leads from the task up to the root. Click **Focus** again to bring back the full map.
 
 #### Statuses
 
@@ -157,7 +164,7 @@ Plugin settings are in **Settings → Taskmap**:
 - **Reverse two-finger pan** (on by default): moves the map opposite to your fingers when you swipe on a touchpad
 - Default folder for linked notes
 
-Project settings override the note folder for a single map. To open them, click **Settings** next to the undo and redo controls.
+Project settings override the note folder for a single map and set its **Layout** (see [Layouts](#layouts)). To open them, click **Settings** next to the undo and redo controls.
 
 ## Files
 
@@ -177,7 +184,6 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 
 - **Obsidian sync support**
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
-- **Alternative layouts.** The root's direct children are always stacked in a single column to its right. Other arrangements aren't available yet.
 - **Zoom buttons.** You can zoom only with the mouse, trackpad, or keyboard. On-screen buttons to zoom in, zoom out, and reset the zoom are planned.
 - **Shortcut reference.** The map doesn't list its keyboard shortcuts. A help panel that describes them, like the one in Canvas, is planned.
 - **Multi-select.** You can select only one task at a time. Selecting several tasks by dragging a box around them with the left mouse button is planned.

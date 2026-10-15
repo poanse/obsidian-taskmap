@@ -11,6 +11,35 @@ export interface Action {
 	undo(data: ProjectData): void;
 }
 
+type SavedPriorities = Array<{ id: TaskId; priority: number }>;
+
+function saveChildPriorities(
+	data: ProjectData,
+	parentId: TaskId,
+): SavedPriorities {
+	return data.getChildren(parentId).map((id) => ({
+		id,
+		priority: data.getTask(id).priority,
+	}));
+}
+
+/**
+ * Packing priorities after a removal can move a task to the other row of a
+ * double row, so undo restores the saved priorities rather than reinserting.
+ */
+function restoreChildPriorities(
+	data: ProjectData,
+	parentId: TaskId,
+	saved: SavedPriorities,
+) {
+	for (const { id, priority } of saved) {
+		const child = data.getTask(id);
+		if (child.parentId === parentId && !child.deleted) {
+			child.priority = priority;
+		}
+	}
+}
+
 export class AddTaskAction implements Action {
 	private parentId: TaskId;
 	private addedTaskId?: TaskId;
@@ -20,7 +49,11 @@ export class AddTaskAction implements Action {
 	}
 
 	do(data: ProjectData): void {
-		const childrenCount = data.getChildren(this.parentId).length;
+		const siblings = data.getChildren(this.parentId);
+		const priority = siblings.reduce(
+			(max, id) => Math.max(max, data.getTask(id).priority + 1),
+			0,
+		);
 		this.addedTaskId = data.curTaskId;
 		const task = {
 			taskId: this.addedTaskId,
@@ -29,7 +62,7 @@ export class AddTaskAction implements Action {
 			name: "task",
 			deleted: false,
 			hidden: false,
-			priority: childrenCount,
+			priority,
 			depth: data.getTask(this.parentId).depth + 1,
 		};
 		data.addTask(task);
@@ -51,6 +84,8 @@ export class AddTaskAction implements Action {
 export class RemoveTaskSingleAction implements Action {
 	private taskId: TaskId;
 	private children?: TaskId[] = undefined;
+	private parentId?: TaskId;
+	private savedPriorities?: SavedPriorities;
 
 	constructor(taskId: TaskId) {
 		this.taskId = taskId;
@@ -59,14 +94,12 @@ export class RemoveTaskSingleAction implements Action {
 	do(data: ProjectData): void {
 		const task = data.getTask(this.taskId);
 		const parentId = task.parentId;
+		this.parentId = parentId;
+		this.savedPriorities = saveChildPriorities(data, parentId);
 		task.deleted = true;
 		this.children = data.getChildren(this.taskId);
 		// Promote the children into the deleted task's slot, or recalc the parent.
-		data.reparentChildren(
-			this.children,
-			parentId,
-			task.priority,
-		);
+		data.reparentChildren(this.children, parentId, task.priority);
 		data.updateTasksView();
 	}
 
@@ -77,13 +110,18 @@ export class RemoveTaskSingleAction implements Action {
 		const task = data.getTask(this.taskId);
 		task.deleted = false;
 		data.reparentChildren(this.children, task.taskId);
+		if (this.savedPriorities !== undefined && this.parentId !== undefined) {
+			restoreChildPriorities(data, this.parentId, this.savedPriorities);
+		}
 		this.children = undefined;
+		this.savedPriorities = undefined;
 	}
 }
 
 export class RemoveTaskBranchAction implements Action {
 	private taskId: TaskId;
 	private descendants?: TaskId[] = undefined;
+	private savedPriorities?: SavedPriorities;
 
 	constructor(taskId: TaskId) {
 		this.taskId = taskId;
@@ -94,15 +132,28 @@ export class RemoveTaskBranchAction implements Action {
 		this.descendants = data
 			.getDescendantIds(this.taskId)
 			.filter((id) => !data.isTaskDeleted(id));
+		this.savedPriorities = saveChildPriorities(
+			data,
+			data.getTask(this.taskId).parentId,
+		);
 		this.toggleDeleted(this.descendants, true, data);
 	}
 
 	undo(data: ProjectData) {
-		if (this.descendants === undefined) {
+		if (
+			this.descendants === undefined ||
+			this.savedPriorities === undefined
+		) {
 			throw new Error();
 		}
 		this.toggleDeleted(this.descendants, false, data);
+		restoreChildPriorities(
+			data,
+			data.getTask(this.taskId).parentId,
+			this.savedPriorities,
+		);
 		this.descendants = undefined;
+		this.savedPriorities = undefined;
 	}
 
 	private toggleDeleted(
@@ -229,6 +280,7 @@ export class ChangeParentAction implements Action {
 	private newParentId: TaskId;
 	private oldParentId?: TaskId;
 	private oldPriority?: number;
+	private oldSiblingPriorities?: SavedPriorities;
 
 	constructor(taskId: TaskId, newParentId: number) {
 		this.taskId = taskId;
@@ -238,18 +290,29 @@ export class ChangeParentAction implements Action {
 	do(data: ProjectData) {
 		this.oldParentId = data.getTask(this.taskId).parentId;
 		this.oldPriority = data.getTask(this.taskId).priority;
+		this.oldSiblingPriorities = saveChildPriorities(data, this.oldParentId);
 		// Append as the last child, matching a newly added task.
 		data.reparentChild(this.taskId, this.newParentId);
 	}
 
 	undo(data: ProjectData) {
-		if (this.oldParentId === undefined || this.oldPriority === undefined) {
+		if (
+			this.oldParentId === undefined ||
+			this.oldPriority === undefined ||
+			this.oldSiblingPriorities === undefined
+		) {
 			throw new Error();
 		}
 		// Restore the task to its exact original slot among its old siblings.
 		data.reparentChild(this.taskId, this.oldParentId, this.oldPriority);
+		restoreChildPriorities(
+			data,
+			this.oldParentId,
+			this.oldSiblingPriorities,
+		);
 		this.oldParentId = undefined;
 		this.oldPriority = undefined;
+		this.oldSiblingPriorities = undefined;
 	}
 }
 

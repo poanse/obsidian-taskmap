@@ -8,11 +8,17 @@ export type GridPlacement = (i: number) => GridCell;
 
 export const GRID_PLACEMENTS: Record<LayoutChoice, GridPlacement> = {
 	[LayoutChoice.Tree]: (i) => ({ row: i - 1, column: 0 }),
+	// Dense priorities 0..n-1. A gap keeps its row: even priorities stay on top.
 	[LayoutChoice.DoubleRow]: (i) => ({
 		row: (i - 1) % 2,
 		column: Math.floor((i - 1) / 2),
 	}),
 };
+
+/** Top row is even priorities, bottom row is odd priorities. */
+export function doubleRowOfPriority(priority: number): number {
+	return ((priority % 2) + 2) % 2;
+}
 
 export type GridItem = {
 	cell: GridCell;

@@ -8,8 +8,10 @@ import {
 import { TASK_SIZE } from "./Constants";
 import {
 	arrangeGrid,
+	doubleRowOfPriority,
 	GRID_PLACEMENTS,
 	type GridArrangement,
+	type GridCell,
 } from "./layoutGrid";
 
 export const NoTaskId = -1 as TaskId;
@@ -66,6 +68,12 @@ export class NodePositionsCalculator {
 		y: TASK_SIZE.height,
 	};
 	public Layout: LayoutChoice = LayoutChoice.Tree;
+	/**
+	 * When this is a task other than the root, that task and its ancestors share
+	 * the root's Y. Root means the full map.
+	 */
+	public FocusedTaskId: TaskId = RootTaskId;
+	private priorityById = new Map<TaskId, number>();
 
 	public RootFramePositions: Map<TaskId, Vector2> = new Map<
 		TaskId,
@@ -93,6 +101,7 @@ export class NodePositionsCalculator {
 		tasks: TaskData[],
 		sizes: Map<TaskId, Vector2> | undefined = undefined,
 	): Map<TaskId, Vector2> {
+		this.priorityById = new Map(tasks.map((t) => [t.taskId, t.priority]));
 		const parentFramePositions = this.CalculatePositionsInParentFrame(
 			tasks,
 			sizes,
@@ -134,10 +143,74 @@ export class NodePositionsCalculator {
 				);
 			});
 		}
-		this.separateDoubleRowBranches(tasks, positions, sizes);
+		if (
+			this.FocusedTaskId === RootTaskId ||
+			this.FocusedTaskId === NoTaskId
+		) {
+			this.separateDoubleRowBranches(tasks, positions, sizes);
+		} else {
+			this.alignFocusedChain(tasks, positions);
+		}
 
 		this.RootFramePositions = positions;
 		return positions;
+	}
+
+	/**
+	 * The focused task and each ancestor share the root's top edge. Descendants
+	 * of the focused task keep their offset from it.
+	 */
+	private alignFocusedChain(
+		tasks: TaskData[],
+		positions: Map<TaskId, Vector2>,
+	): void {
+		const rootPos = positions.get(RootTaskId);
+		const focusedPos = positions.get(this.FocusedTaskId);
+		if (rootPos === undefined || focusedPos === undefined) {
+			return;
+		}
+		const parentById = new Map(tasks.map((t) => [t.taskId, t.parentId]));
+		const chain = new Set<TaskId>();
+		let current: TaskId | undefined = this.FocusedTaskId;
+		while (current !== undefined && current !== NoTaskId) {
+			chain.add(current);
+			if (current === RootTaskId) {
+				break;
+			}
+			current = parentById.get(current);
+		}
+
+		const focusedDelta = rootPos.y - focusedPos.y;
+		for (const task of tasks) {
+			if (task.taskId === RootTaskId || chain.has(task.taskId)) {
+				continue;
+			}
+			let cursor: TaskId | undefined = task.parentId;
+			let underFocused = false;
+			while (cursor !== undefined && cursor !== NoTaskId) {
+				if (cursor === this.FocusedTaskId) {
+					underFocused = true;
+					break;
+				}
+				cursor = parentById.get(cursor);
+			}
+			if (!underFocused) {
+				continue;
+			}
+			const pos = positions.get(task.taskId);
+			if (pos !== undefined) {
+				pos.y += focusedDelta;
+			}
+		}
+		for (const id of chain) {
+			if (id === RootTaskId) {
+				continue;
+			}
+			const pos = positions.get(id);
+			if (pos !== undefined) {
+				pos.y = rootPos.y;
+			}
+		}
 	}
 
 	/**
@@ -164,9 +237,8 @@ export class NodePositionsCalculator {
 			.filter((t) => t.parentId === RootTaskId)
 			.sort((a, b) => a.priority - b.priority);
 		const rowByBranch = new Map<TaskId, number>();
-		const place = GRID_PLACEMENTS[LayoutChoice.DoubleRow];
-		children.forEach((child, index) => {
-			rowByBranch.set(child.taskId, place(index + 1).row);
+		children.forEach((child) => {
+			rowByBranch.set(child.taskId, doubleRowOfPriority(child.priority));
 		});
 
 		const parentById = new Map(tasks.map((t) => [t.taskId, t.parentId]));
@@ -348,13 +420,12 @@ export class NodePositionsCalculator {
 		childrenIds: TaskId[],
 		childrenIdsByParentId: Map<TaskId, TaskId[]>,
 	): GridArrangement {
-		const placement =
-			GRID_PLACEMENTS[
-				parentId === RootTaskId ? this.Layout : LayoutChoice.Tree
-			];
+		const layout =
+			parentId === RootTaskId ? this.Layout : LayoutChoice.Tree;
+		const columnInRow = [0, 0];
 		return arrangeGrid(
 			childrenIds.map((id, idx) => ({
-				cell: placement(idx + 1),
+				cell: this.childCell(layout, id, idx, columnInRow),
 				size: nodes.get(id)!.subtreeSize!,
 				hasChildren: (childrenIdsByParentId.get(id)?.length ?? 0) > 0,
 			})),
@@ -364,6 +435,27 @@ export class NodePositionsCalculator {
 				column: GridColumnGap,
 			},
 		);
+	}
+
+	/**
+	 * Double row keeps a task on the row of its priority, so a missing priority
+	 * does not move the later tasks onto the other row. Tree still packs by index.
+	 */
+	private childCell(
+		layout: LayoutChoice,
+		childId: TaskId,
+		index: number,
+		columnInRow: number[],
+	): GridCell {
+		if (layout !== LayoutChoice.DoubleRow) {
+			return GRID_PLACEMENTS[layout](index + 1);
+		}
+		const row = doubleRowOfPriority(
+			this.priorityById.get(childId) ?? index,
+		);
+		const column = columnInRow[row] ?? 0;
+		columnInRow[row] = column + 1;
+		return { row, column };
 	}
 
 	/**

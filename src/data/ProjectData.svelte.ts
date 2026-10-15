@@ -9,6 +9,7 @@
 } from "../types";
 import { SvelteMap } from "svelte/reactivity";
 import { NoTaskId, RootTaskId } from "../NodePositionsCalculator";
+import { doubleRowOfPriority } from "../layoutGrid";
 import {
 	TASKMAP_FILE_SCHEMA_VERSION,
 	type ProjectFileParsed,
@@ -66,10 +67,9 @@ export class ProjectData {
 		this.rebuildCaches();
 		// older versions never recalculated the root's status
 		this.recalcStatusRecursive(RootTaskId);
-		// fix broken priorities in old project versions
-		if ((obj.schemaVersion ?? 0) < TASKMAP_FILE_SCHEMA_VERSION) {
-			this.tasks.forEach((t) => this.recalcPriorities(t.taskId));
-		}
+		// Priorities run 0..n-1 under every parent. Older versions and hand
+		// edits can leave gaps or duplicates.
+		this.tasks.forEach((t) => this.recalcPriorities(t.taskId));
 	}
 
 	public updateTasksView() {
@@ -298,15 +298,22 @@ export class ProjectData {
 					(max, id) => Math.max(max, this.getTask(id).priority + 1),
 					0,
 				);
-			siblings.forEach((id) => {
-				const sibling = this.getTask(id);
-				if (sibling.priority >= insertAt) {
-					sibling.priority += taskIds.length;
-				}
-			});
-			ordered.forEach((id, idx) => {
-				this.getTask(id).priority = insertAt + idx;
-			});
+			if (
+				insertPriority !== undefined &&
+				this.isDoubleRowRoot(newParentId)
+			) {
+				this.insertOnDoubleRow(siblings, ordered, insertAt);
+			} else {
+				siblings.forEach((id) => {
+					const sibling = this.getTask(id);
+					if (sibling.priority >= insertAt) {
+						sibling.priority += taskIds.length;
+					}
+				});
+				ordered.forEach((id, idx) => {
+					this.getTask(id).priority = insertAt + idx;
+				});
+			}
 		}
 		const parentsToRecalc: TaskId[] = [];
 		const addParent = (parentId: TaskId) => {
@@ -429,13 +436,81 @@ export class ProjectData {
 			});
 	}
 
+	/** Pack the children's priorities to 0..n-1, keeping their order. */
 	public recalcPriorities(parentId: TaskId) {
+		if (this.isDoubleRowRoot(parentId)) {
+			this.packDoubleRow(parentId);
+			return;
+		}
 		this.getChildren(parentId)
 			.map((tId) => this.getTask(tId))
 			.sort((a, b) => a.priority - b.priority)
 			.forEach((t, idx) => {
 				t.priority = idx;
 			});
+	}
+
+	private isDoubleRowRoot(parentId: TaskId): boolean {
+		return (
+			this.layout === LayoutChoice.DoubleRow && parentId === RootTaskId
+		);
+	}
+
+	/**
+	 * Pack to 0..n-1 while keeping each task on its row and in its order.
+	 * Packed priorities give the top row ceil(n/2) tasks, so when a row is too
+	 * long its last tasks move to the end of the other row.
+	 */
+	private packDoubleRow(parentId: TaskId) {
+		const children = this.getChildren(parentId)
+			.map((id) => this.getTask(id))
+			.sort((a, b) => a.priority - b.priority);
+		const top = children.filter(
+			(t) => doubleRowOfPriority(t.priority) === 0,
+		);
+		const bottom = children.filter(
+			(t) => doubleRowOfPriority(t.priority) === 1,
+		);
+		const topCount = Math.ceil(children.length / 2);
+		if (top.length > topCount) {
+			bottom.push(...top.splice(topCount));
+		} else if (top.length < topCount) {
+			top.push(...bottom.splice(children.length - topCount));
+		}
+		top.forEach((t, column) => (t.priority = column * 2));
+		bottom.forEach((t, column) => (t.priority = column * 2 + 1));
+	}
+
+	/**
+	 * Insert into one row. Shift that row only when a new priority is already
+	 * taken, so taking the slot of a removed task does not move the others.
+	 * The caller packs the priorities afterwards.
+	 */
+	private insertOnDoubleRow(
+		siblingIds: TaskId[],
+		ordered: TaskId[],
+		insertAt: number,
+	) {
+		const stride = 2;
+		const row = doubleRowOfPriority(insertAt);
+		const wanted = ordered.map((_, idx) => insertAt + idx * stride);
+		const collides = wanted.some((priority) =>
+			siblingIds.some((id) => this.getTask(id).priority === priority),
+		);
+		if (collides) {
+			for (const id of siblingIds) {
+				const sibling = this.getTask(id);
+				if (
+					doubleRowOfPriority(sibling.priority) === row &&
+					sibling.priority >= insertAt
+				) {
+					sibling.priority += ordered.length * stride;
+				}
+			}
+		}
+		ordered.forEach((id, idx) => {
+			this.getTask(id).priority = insertAt + idx * stride;
+		});
 	}
 
 	public containsBlockerPair = (blockerPair: BlockerPair) => {
