@@ -12,6 +12,7 @@
 	import {parseNumber} from "../Constants";
 	import SettingsPanel from "./SettingsPanel.svelte";
 	import {
+		historyKeyAction,
 		panDeltaFromWheel,
 		scaleAfterKeyboardZoom,
 		usesCommandModifier,
@@ -77,9 +78,9 @@
 				context.versionedData.removeTaskSingle(context.selectedTaskId);
 				context.selectedTaskId = NoTaskId;
 			}
-		} else if (usesCommandModifier(e, Platform.isMacOS) && e.key === "z") {
+		} else if (historyKeyAction(e, Platform.isMacOS) === "undo") {
 			context.versionedData.undo();
-		} else if (usesCommandModifier(e, Platform.isMacOS) && e.key === "r") {
+		} else if (historyKeyAction(e, Platform.isMacOS) === "redo") {
 			context.versionedData.redo();
 		} else {
 			return;

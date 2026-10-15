@@ -38,7 +38,7 @@ Every map starts with a task named `root`, with status **Draft**. Like any paren
 
 ### Rename a task
 
-Select a task, then click its name. Press **Escape** or click somewhere else to apply the name. **Enter** adds a line break. This works the same way for every task, including the root.
+Select a task, then click its name. Click somewhere else to apply the name. This works the same way for every task, including the root.
 
 Long names wrap, and the box grows with the text. The tree lays itself out again to fit.
 
@@ -54,7 +54,7 @@ Hover a task and click the eye icon to collapse its descendants. Hidden tasks st
 
 ### Pan and zoom
 
-Drag an empty area of the map with the left or middle mouse button to pan. Swipe with two fingers on a trackpad to pan. Scroll the mouse wheel, or pinch on a trackpad, to zoom. Press **Ctrl+Up arrow** to zoom in and **Ctrl+Down arrow** to zoom out (**Cmd+Up arrow** and **Cmd+Down arrow** on macOS). Zoom ranges from 10% to 300%.
+Drag an empty area of the map with the left or middle mouse button to pan. Swipe with two fingers on a trackpad to pan. Scroll the mouse wheel, or pinch on a trackpad, to zoom. Zoom ranges from 10% to 300%.
 
 ### Toolbar
 
@@ -66,7 +66,7 @@ Click **Add link** to create a note named after the task and link the two. If a 
 
 New notes go to the project's note folder, then the plugin's default note folder. If neither is set, they follow Obsidian's **Default location for new notes** setting.
 
-To link an existing note, type `[[` in the task name and choose a note from the suggestions. Typing `[[Meeting notes]]` renames the task to that note and links it. Press **Tab** to choose the highlighted suggestion.
+To link an existing note, type `[[` in the task name and choose a note from the suggestions. Typing `[[Meeting notes]]` renames the task to that note and links it.
 
 Click the link while the task is not selected to open or focus the note. Hover the link to show Obsidian's link preview. If the task is already selected, clicking its name starts editing, and the link is not followed.
 
@@ -86,11 +86,9 @@ Select a task, click **Remove** in its toolbar, then choose:
 - **Remove single task** removes only the selected task. Its children move up and take its place under its parent.
 - **Remove task branch** removes the selected task and all its descendants.
 
-Pressing **Delete** removes the selected task the same way as **Remove single task**.
-
 #### Move a task to another parent
 
-Select a task, click **Reparent**, then click the new parent on the map. The task moves with all its children and becomes the last child of the new parent. The new parent can't be the task itself, its current parent, or one of its descendants. Press **Escape** or click an empty area to cancel.
+Select a task, click **Reparent**, then click the new parent on the map. The task moves with all its children and becomes the last child of the new parent. The new parent can't be the task itself, its current parent, or one of its descendants. Click an empty area to cancel.
 
 #### Blockers
 
@@ -99,7 +97,7 @@ Select a task, then:
 - Click **Add blocker task**, then click the task that blocks the selected one.
 - Click **Block another task**, then click the task that the selected one blocks.
 
-Press **Escape** or click an empty area to cancel.
+Click an empty area to cancel.
 
 While **Add blocker task** or **Block another task** is active, click a task that is already connected to remove that connection. A task can't be connected to itself, to an ancestor, to a descendant, or to a task that is **Done**.
 
@@ -130,9 +128,25 @@ A parent's **Status** menu offers only **Draft** and its calculated status. A ta
 
 ### Undo and redo
 
-Use the undo and redo controls in the bottom-left corner of the map, or press **Ctrl+Z** to undo and **Ctrl+R** to redo (**Cmd+Z** and **Cmd+R** on macOS).
+Use the undo and redo controls in the bottom-left corner of the map.
 
 Undo history is cleared when you close the file.
+
+### Keyboard shortcuts
+
+Shortcuts work while the map has focus.
+
+| Action | Windows and Linux | macOS |
+| --- | --- | --- |
+| Zoom in | **Ctrl+Up arrow** | **Cmd+Up arrow** |
+| Zoom out | **Ctrl+Down arrow** | **Cmd+Down arrow** |
+| Undo | **Ctrl+Z** | **Cmd+Z** |
+| Redo | **Ctrl+R** or **Ctrl+Shift+Z** | **Cmd+R** or **Cmd+Shift+Z** |
+| Remove the selected task, like **Remove single task** | **Delete** | **Fn+Delete** |
+| Clear the selection, or cancel **Reparent**, **Add blocker task**, or **Block another task** | **Escape** | **Escape** |
+| Apply a task name while renaming | **Escape** | **Escape** |
+| Add a line break while renaming | **Enter** | **Enter** |
+| Choose the highlighted note suggestion | **Tab** | **Tab** |
 
 ### Settings
 

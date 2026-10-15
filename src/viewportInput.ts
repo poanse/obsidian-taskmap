@@ -78,6 +78,27 @@ export function usesCommandModifier(
 	return event.ctrlKey && !event.metaKey;
 }
 
+/**
+ * Cmd/Ctrl+Z undoes; Cmd/Ctrl+R and Cmd/Ctrl+Shift+Z redo. The key is
+ * lowercased because Shift makes it "Z" on most platforms but not with Cmd on macOS.
+ */
+export function historyKeyAction(
+	event: { key: string; shiftKey: boolean; ctrlKey: boolean; metaKey: boolean },
+	isMac: boolean,
+): "undo" | "redo" | null {
+	if (!usesCommandModifier(event, isMac)) {
+		return null;
+	}
+	const key = event.key.toLowerCase();
+	if (key === "z") {
+		return event.shiftKey ? "redo" : "undo";
+	}
+	if (key === "r" && !event.shiftKey) {
+		return "redo";
+	}
+	return null;
+}
+
 /** 1 zooms in, -1 zooms out, null is not a zoom key. */
 export function zoomKeyDirection(event: { key: string }): 1 | -1 | null {
 	if (event.key === "ArrowUp") {

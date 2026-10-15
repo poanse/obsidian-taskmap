@@ -1,6 +1,7 @@
 import * as assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+	historyKeyAction,
 	panDeltaFromWheel,
 	scaleAfterKeyboardZoom,
 	usesCommandModifier,
@@ -130,6 +131,31 @@ void test("command shortcuts use Cmd on macOS and Ctrl elsewhere", () => {
 	assert.equal(
 		usesCommandModifier({ ctrlKey: false, metaKey: false }, true),
 		false,
+	);
+});
+
+void test("undo is Cmd/Ctrl+Z; redo is Cmd/Ctrl+R or Cmd/Ctrl+Shift+Z", () => {
+	const keys = (key: string, mods: { shift?: boolean; ctrl?: boolean; meta?: boolean }) => ({
+		key,
+		shiftKey: mods.shift ?? false,
+		ctrlKey: mods.ctrl ?? false,
+		metaKey: mods.meta ?? false,
+	});
+	assert.equal(historyKeyAction(keys("z", { ctrl: true }), false), "undo");
+	assert.equal(historyKeyAction(keys("r", { ctrl: true }), false), "redo");
+	assert.equal(
+		historyKeyAction(keys("Z", { ctrl: true, shift: true }), false),
+		"redo",
+	);
+	assert.equal(historyKeyAction(keys("z", { meta: true }), true), "undo");
+	assert.equal(
+		historyKeyAction(keys("z", { meta: true, shift: true }), true),
+		"redo",
+	);
+	assert.equal(historyKeyAction(keys("z", {}), false), null);
+	assert.equal(
+		historyKeyAction(keys("r", { ctrl: true, shift: true }), false),
+		null,
 	);
 });
 
