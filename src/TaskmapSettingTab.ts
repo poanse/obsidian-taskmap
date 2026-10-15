@@ -13,6 +13,7 @@ import {
 	isSettingKey,
 	isThemeChoice,
 	type TaskmapSettings,
+	ThemeChoice,
 } from "./TaskmapSettings";
 
 type SettingKey = keyof TaskmapSettings;
@@ -48,9 +49,9 @@ export class TaskmapSettingTab extends PluginSettingTab {
 					type: "dropdown",
 					key: "theme",
 					options: {
-						obsidian: "Obsidian",
-						light: "Light",
-						dark: "Dark",
+						[ThemeChoice.Obsidian]: "Obsidian",
+						[ThemeChoice.Light]: "Light",
+						[ThemeChoice.Dark]: "Dark",
 					},
 				},
 			},
