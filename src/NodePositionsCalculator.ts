@@ -1,6 +1,16 @@
 ﻿// Assumed types and constants based on usage
-import type { TaskData, TaskId, Vector2 } from "./types";
+import {
+	LayoutChoice,
+	type TaskData,
+	type TaskId,
+	type Vector2,
+} from "./types";
 import { TASK_SIZE } from "./Constants";
+import {
+	arrangeGrid,
+	GRID_PLACEMENTS,
+	type GridArrangement,
+} from "./layoutGrid";
 
 export const NoTaskId = -1 as TaskId;
 export const RootTaskId = 0 as TaskId;
@@ -23,14 +33,10 @@ export const V2 = {
 	},
 };
 
-export enum AlgorithmEnum {
-	DefaultTree,
-	SingleRow,
-	DoubleRow,
-}
-
 // Horizontal shift between parent and child: width + gap
 export const ParentToChildHorizontalGap = 120;
+// Horizontal gap between neighbouring columns of a children grid
+export const GridColumnGap = 120;
 
 type Node = {
 	id: TaskId;
@@ -59,12 +65,7 @@ export class NodePositionsCalculator {
 		x: TASK_SIZE.width,
 		y: TASK_SIZE.height,
 	};
-	public Algorithm: AlgorithmEnum = AlgorithmEnum.DefaultTree;
-	public subtreeWidthByHalfPriority: Map<number, number> = new Map<
-		number,
-		number
-	>();
-	public xshift = 0.25;
+	public Layout: LayoutChoice = LayoutChoice.Tree;
 
 	public RootFramePositions: Map<TaskId, Vector2> = new Map<
 		TaskId,
@@ -188,10 +189,21 @@ export class NodePositionsCalculator {
 			}),
 		);
 
-		this.CalculateSubtreeSizes(nodes, sortedTasks, childrenIdsByParentId);
+		const grids = new Map<TaskId, GridArrangement>();
+		this.CalculateSubtreeSizes(
+			nodes,
+			sortedTasks,
+			childrenIdsByParentId,
+			grids,
+		);
 
 		// Shift of children nodes relative to the top-left point of the subtree rectangle
-		this.CalculateSiblingShift(nodes, parentIds, childrenIdsByParentId);
+		this.CalculateSiblingShift(
+			nodes,
+			parentIds,
+			childrenIdsByParentId,
+			grids,
+		);
 
 		// Shift of the parent relative to the top-left point of the subtree rectangle.
 		// Subtract parentDelta, so that the parent is aligned with the children
@@ -214,6 +226,7 @@ export class NodePositionsCalculator {
 		nodes: Map<TaskId, Node>,
 		sortedTasks: TaskData[],
 		childrenIdsByParentId: Map<TaskId, TaskId[]>,
+		grids: Map<TaskId, GridArrangement>,
 	): void {
 		const allIdsToProcess = sortedTasks.map((t) => t.taskId);
 		allIdsToProcess.forEach((id) => {
@@ -225,70 +238,80 @@ export class NodePositionsCalculator {
 			if (childrenIds.length == 0) {
 				node.subtreeSize = node.size;
 			} else {
-				const childrenSizes = childrenIds.map(
-					(x) => nodes.get(x)!.subtreeSize!,
+				const grid = this.ArrangeChildren(
+					id,
+					nodes,
+					childrenIds,
+					childrenIdsByParentId,
 				);
-				const maxSubtreeXSize = Math.max(
-					...childrenSizes.map((s) => s.x),
-				);
-				const nodeYsize =
-					childrenSizes.map((s) => s.y).reduce((a, b) => a + b, 0) +
-					(childrenSizes.length - 1) * this.SiblingVerticalGap;
+				grids.set(id, grid);
 				node.subtreeSize = {
-					x:
-						maxSubtreeXSize +
-						node.size.x +
-						ParentToChildHorizontalGap,
-					y: Math.max(nodeYsize, node.size.y),
+					x: node.size.x + ParentToChildHorizontalGap + grid.size.x,
+					y: Math.max(grid.size.y, node.size.y),
 				};
 			}
 		});
 	}
 
+	/**
+	 * Places a parent's children, in priority order, on a grid of their subtrees.
+	 * The root's children follow the Layout choice; deeper tasks always use a single column.
+	 */
+	private ArrangeChildren(
+		parentId: TaskId,
+		nodes: Map<TaskId, Node>,
+		childrenIds: TaskId[],
+		childrenIdsByParentId: Map<TaskId, TaskId[]>,
+	): GridArrangement {
+		const placement =
+			GRID_PLACEMENTS[
+				parentId === RootTaskId ? this.Layout : LayoutChoice.Tree
+			];
+		return arrangeGrid(
+			childrenIds.map((id, idx) => ({
+				cell: placement(idx + 1),
+				size: nodes.get(id)!.subtreeSize!,
+				hasChildren: (childrenIdsByParentId.get(id)?.length ?? 0) > 0,
+			})),
+			{
+				row: this.SiblingVerticalGap,
+				parentsRow: this.SiblingParentsVerticalGap,
+				column: GridColumnGap,
+			},
+		);
+	}
+
+	/**
+	 * The children's grid sits to the right of the parent, vertically centred on
+	 * the parent when the parent is taller than the grid.
+	 */
 	private CalculateSiblingShift(
 		nodes: Map<TaskId, Node>,
 		parentIds: TaskId[],
 		childrenIdsByParentId: Map<TaskId, TaskId[]>,
+		grids: Map<TaskId, GridArrangement>,
 	): void {
 		parentIds.forEach((parentId) => {
 			const children = childrenIdsByParentId.get(parentId)!;
+			const grid =
+				grids.get(parentId) ??
+				this.ArrangeChildren(
+					parentId,
+					nodes,
+					children,
+					childrenIdsByParentId,
+				);
+			const parentNodeSize =
+				nodes.get(parentId)?.size ?? this.DefaultNodeSize; // in case of -1
+			const gridTop = Math.max(0, (parentNodeSize.y - grid.size.y) / 2);
 			children.forEach((childId, idx) => {
-				const childNode = nodes.get(childId)!;
-				const xShift = childNode.size.x + ParentToChildHorizontalGap;
-				if (idx == 0) {
-					const parentNodeSize =
-						nodes.get(parentId)?.size ?? this.DefaultNodeSize; // in case of -1
-					const childrenYSumWithGaps =
-						children
-							.map((x) => nodes.get(x)!.subtreeSize!.y)
-							.reduce((a, b) => a + b, 0) +
-						(children.length - 1) * this.SiblingVerticalGap;
-					childNode.siblingShift = {
-						x: xShift,
-						y: Math.max(
-							0,
-							(parentNodeSize.y - childrenYSumWithGaps) / 2,
-						),
-					};
-				} else if (idx > 0) {
-					const prevSiblingId = children[idx - 1];
-					const prevSiblingNode = nodes.get(prevSiblingId)!;
-					const siblingBranchesHaveChildren =
-						(childrenIdsByParentId.get(childId)?.length ?? 0) > 0 &&
-						(childrenIdsByParentId.get(prevSiblingId)?.length ??
-							0) > 0;
-
-					childNode.siblingShift = {
-						x: xShift,
-						y:
-							prevSiblingNode.siblingShift!.y +
-							prevSiblingNode.subtreeSize!.y +
-							this.SiblingVerticalGap +
-							(siblingBranchesHaveChildren
-								? this.SiblingParentsVerticalGap
-								: 0),
-					};
-				}
+				nodes.get(childId)!.siblingShift = {
+					x:
+						parentNodeSize.x +
+						ParentToChildHorizontalGap +
+						grid.offsets[idx].x,
+					y: gridTop + grid.offsets[idx].y,
+				};
 			});
 		});
 	}

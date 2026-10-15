@@ -1,5 +1,7 @@
 ﻿import {
 	type BlockerPair,
+	isLayoutChoice,
+	LayoutChoice,
 	StatusCode,
 	type TaskData,
 	type TaskId,
@@ -25,6 +27,7 @@ export class ProjectData {
 	folderPath: string | undefined;
 	curTaskId = RootTaskId;
 	taskSizeOverrides: SvelteMap<TaskId, Vector2>;
+	layout: LayoutChoice;
 
 	public static getDefault(): ProjectData {
 		return new ProjectData({
@@ -42,6 +45,9 @@ export class ProjectData {
 		this.tasks = $state(obj.tasks);
 		this.blockerPairs = $state(obj.blockerPairs ?? []);
 		this.folderPath = obj.folderPath;
+		this.layout = isLayoutChoice(obj.layout)
+			? obj.layout
+			: LayoutChoice.Tree;
 		this.curTaskId = obj.curTaskId;
 		this.taskSizeOverrides = new SvelteMap(
 			(obj.taskSizeOverrides ?? []).map(({ taskId, x, y }) => [
@@ -426,6 +432,14 @@ export class ProjectData {
 
 	public getFolderPath = (): string | undefined => {
 		return this.folderPath;
+	};
+
+	public getLayout = (): LayoutChoice => {
+		return this.layout;
+	};
+
+	public setLayout = (layout: LayoutChoice) => {
+		this.layout = layout;
 	};
 
 	public setFolderPath = (path: string | undefined) => {

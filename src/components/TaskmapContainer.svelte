@@ -48,6 +48,11 @@
 		});
 	});
 
+	$effect(() => {
+		document.body.classList.toggle('is-dragging-task', context.taskDraggingManager.isDragging);
+		return () => document.body.classList.remove('is-dragging-task');
+	});
+
 	/** Lets keyboard shortcuts reach the map without clicking it first. */
 	export function focusViewport() {
 		if (viewportEl && !viewportEl.contains(viewportEl.doc.activeElement)) {

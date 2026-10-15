@@ -55,6 +55,8 @@ export const projectFileSchema = v.object({
 	folderPath: v.optional(v.string()),
 	curTaskId: v.pipe(v.number(), v.integer()),
 	taskSizeOverrides: v.optional(v.array(taskSizeOverrideSchema)),
+	// A string rather than a picklist, so a layout added later doesn't make the file unreadable.
+	layout: v.optional(v.string()),
 });
 
 export type ProjectFileParsed = {
@@ -64,6 +66,7 @@ export type ProjectFileParsed = {
 	folderPath: string | undefined;
 	curTaskId: number;
 	taskSizeOverrides: TaskSizeOverrideEntry[];
+	layout?: string;
 };
 
 export class TaskmapDataError extends Error {
@@ -110,5 +113,6 @@ export function parseProjectFileJson(parsed: unknown): ProjectFileParsed {
 		folderPath: o.folderPath,
 		curTaskId: o.curTaskId,
 		taskSizeOverrides: o.taskSizeOverrides ?? [],
+		layout: o.layout,
 	};
 }
