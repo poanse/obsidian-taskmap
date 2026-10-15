@@ -134,9 +134,94 @@ export class NodePositionsCalculator {
 				);
 			});
 		}
+		this.separateDoubleRowBranches(tasks, positions, sizes);
 
 		this.RootFramePositions = positions;
 		return positions;
+	}
+
+	/**
+	 * First-row branches sit fully above the root and second-row branches fully
+	 * below it. Each branch keeps its shape; only its vertical position changes.
+	 */
+	private separateDoubleRowBranches(
+		tasks: TaskData[],
+		positions: Map<TaskId, Vector2>,
+		sizes: Map<TaskId, Vector2> | undefined,
+	): void {
+		if (this.Layout !== LayoutChoice.DoubleRow) {
+			return;
+		}
+		const rootPos = positions.get(RootTaskId);
+		if (rootPos === undefined) {
+			return;
+		}
+		const rootSize = sizes?.get(RootTaskId) ?? this.DefaultNodeSize;
+		const rootTop = rootPos.y;
+		const rootBottom = rootTop + rootSize.y;
+
+		const children = tasks
+			.filter((t) => t.parentId === RootTaskId)
+			.sort((a, b) => a.priority - b.priority);
+		const rowByBranch = new Map<TaskId, number>();
+		const place = GRID_PLACEMENTS[LayoutChoice.DoubleRow];
+		children.forEach((child, index) => {
+			rowByBranch.set(child.taskId, place(index + 1).row);
+		});
+
+		const parentById = new Map(tasks.map((t) => [t.taskId, t.parentId]));
+		const rowOf = (taskId: TaskId): number | undefined => {
+			let current = taskId;
+			while (current !== RootTaskId && current !== NoTaskId) {
+				const row = rowByBranch.get(current);
+				if (row !== undefined) {
+					return row;
+				}
+				const parent = parentById.get(current);
+				if (parent === undefined) {
+					return undefined;
+				}
+				current = parent;
+			}
+			return undefined;
+		};
+
+		const boundsByRow = new Map<number, { top: number; bottom: number }>();
+		const membersByRow = new Map<number, TaskId[]>();
+		for (const task of tasks) {
+			if (task.taskId === RootTaskId) {
+				continue;
+			}
+			const row = rowOf(task.taskId);
+			if (row === undefined) {
+				continue;
+			}
+			const pos = positions.get(task.taskId);
+			if (pos === undefined) {
+				continue;
+			}
+			const size = sizes?.get(task.taskId) ?? this.DefaultNodeSize;
+			const bounds = boundsByRow.get(row) ?? {
+				top: Infinity,
+				bottom: -Infinity,
+			};
+			bounds.top = Math.min(bounds.top, pos.y);
+			bounds.bottom = Math.max(bounds.bottom, pos.y + size.y);
+			boundsByRow.set(row, bounds);
+			const members = membersByRow.get(row) ?? [];
+			members.push(task.taskId);
+			membersByRow.set(row, members);
+		}
+
+		for (const [row, bounds] of boundsByRow) {
+			const delta =
+				row === 0
+					? rootTop - this.SiblingVerticalGap - bounds.bottom
+					: rootBottom + this.SiblingVerticalGap - bounds.top;
+			for (const id of membersByRow.get(row) ?? []) {
+				positions.get(id)!.y += delta;
+			}
+		}
 	}
 
 	/**

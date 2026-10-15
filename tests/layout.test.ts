@@ -227,7 +227,7 @@ const task = (taskId: TaskId, parentId: TaskId, depth: number, priority: number)
 	name: `task ${taskId}`,
 });
 
-void test("double-row: a single root child is level with the root", () => {
+void test("double-row: a single root child sits above the root", () => {
 	// root -> A -> B, C
 	const tasks = [
 		task(0, NoTaskId, 0, 0),
@@ -236,13 +236,78 @@ void test("double-row: a single root child is level with the root", () => {
 		task(3, 1, 2, 1),
 	];
 	const sizes = new Map<TaskId, Vector2>();
-	const positions = calculate(LayoutChoice.DoubleRow, tasks, sizes);
+	const calculator = new NodePositionsCalculator();
+	calculator.Layout = LayoutChoice.DoubleRow;
+	const positions = calculator.CalculatePositionsInGlobalFrame(
+		tasks,
+		layoutRootPosition,
+		sizes,
+	);
+	const branchBottom = Math.max(
+		...[1, 2, 3].map((id) => positions.get(id)!.y + TASK_SIZE.height),
+	);
 
-	assert.deepEqual(positions.get(1), {
-		x: layoutRootPosition.x + TASK_SIZE.width + ParentToChildHorizontalGap,
-		y: layoutRootPosition.y,
-	});
+	assert.equal(
+		positions.get(1)!.x,
+		layoutRootPosition.x + TASK_SIZE.width + ParentToChildHorizontalGap,
+	);
+	assert.equal(
+		branchBottom,
+		layoutRootPosition.y - calculator.SiblingVerticalGap,
+	);
 	assertNoOverlaps(tasks, positions, sizes);
+});
+
+void test("double-row: rows sit on opposite sides of the root", () => {
+	const tasks = [
+		task(0, NoTaskId, 0, 0),
+		task(1, 0, 1, 0),
+		task(2, 0, 1, 1),
+	];
+	const sizes = new Map<TaskId, Vector2>();
+	const calculator = new NodePositionsCalculator();
+	calculator.Layout = LayoutChoice.DoubleRow;
+	const positions = calculator.CalculatePositionsInGlobalFrame(
+		tasks,
+		layoutRootPosition,
+		sizes,
+	);
+	const gap = calculator.SiblingVerticalGap;
+	const rootTop = layoutRootPosition.y;
+	const rootBottom = rootTop + TASK_SIZE.height;
+
+	assert.equal(positions.get(1)!.y + TASK_SIZE.height, rootTop - gap);
+	assert.equal(positions.get(2)!.y, rootBottom + gap);
+	assertNoOverlaps(tasks, positions, sizes);
+});
+
+void test("double-row: a branch does not cross the root", () => {
+	const calculator = new NodePositionsCalculator();
+	const gap = calculator.SiblingVerticalGap;
+	const positions = calculate(LayoutChoice.DoubleRow);
+	const cells = doubleRowCells(layoutTasks);
+	const rootTop = layoutRootPosition.y;
+	const rootBottom = rootTop + sizeOf(RootTaskId).y;
+
+	for (const task of layoutTasks) {
+		if (task.taskId === RootTaskId) {
+			continue;
+		}
+		const row = cells.get(branchOf(layoutTasks, task.taskId))!.row;
+		const pos = positions.get(task.taskId)!;
+		const bottom = pos.y + sizeOf(task.taskId).y;
+		if (row === 0) {
+			assert.ok(
+				bottom <= rootTop - gap,
+				`task ${task.taskId} should stay above the root`,
+			);
+		} else {
+			assert.ok(
+				pos.y >= rootBottom + gap,
+				`task ${task.taskId} should stay below the root`,
+			);
+		}
+	}
 });
 
 void test("double-row: a branch with many sibling parents keeps to its row", () => {
