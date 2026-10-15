@@ -361,24 +361,70 @@ export class ProjectData {
 	public setPriority(taskId: TaskId, newPriority: number) {
 		const task = this.getTask(taskId);
 		const oldPriority = task.priority;
+		if (oldPriority === newPriority) {
+			return;
+		}
+		// Root children of a double row sit on a grid: even priorities are the
+		// first row, odd priorities the second. A move along one row or column
+		// must not push the other tasks onto a different row.
+		if (
+			this.layout === LayoutChoice.DoubleRow &&
+			task.parentId === RootTaskId
+		) {
+			if (oldPriority % 2 === newPriority % 2) {
+				this.shiftSiblingPriorities(task, oldPriority, newPriority, 2);
+				return;
+			}
+			this.swapPriority(task, newPriority);
+			return;
+		}
+		this.shiftSiblingPriorities(task, oldPriority, newPriority, 1);
+	}
+
+	/** Exchange places with the sibling that currently has `newPriority`. */
+	private swapPriority(task: TaskData, newPriority: number) {
+		const displacedId = this.getChildren(task.parentId).find(
+			(id) =>
+				id !== task.taskId && this.getTask(id).priority === newPriority,
+		);
+		const oldPriority = task.priority;
+		task.priority = newPriority;
+		if (displacedId !== undefined) {
+			this.getTask(displacedId).priority = oldPriority;
+		}
+	}
+
+	/**
+	 * Move `task` to `newPriority` and close the gap.
+	 * `stride` 1 shifts every sibling in between; `stride` 2 shifts only the same row.
+	 */
+	private shiftSiblingPriorities(
+		task: TaskData,
+		oldPriority: number,
+		newPriority: number,
+		stride: number,
+	) {
 		task.priority = newPriority;
 		this.getChildren(task.parentId)
-			.filter((t) => t != taskId)
-			.forEach((child) => {
-				const childTask = this.getTask(child);
-				const childPriority = childTask.priority;
+			.filter((id) => id !== task.taskId)
+			.forEach((childId) => {
+				const child = this.getTask(childId);
+				const childPriority = child.priority;
+				if ((childPriority - oldPriority) % stride !== 0) {
+					return;
+				}
 				if (
 					newPriority > oldPriority &&
 					childPriority >= oldPriority &&
 					childPriority <= newPriority
 				) {
-					childTask.priority -= 1;
+					child.priority -= stride;
 				} else if (
 					newPriority < oldPriority &&
 					childPriority >= newPriority &&
 					childPriority <= oldPriority
 				) {
-					childTask.priority += 1;
+					child.priority += stride;
 				}
 			});
 	}
