@@ -1,7 +1,7 @@
 {
 	"id": "taskmap",
 	"name": "Taskmap",
-	"version": "0.1.10",
+	"version": "0.2.1",
 	"minAppVersion": "1.12.4",
 	"description": "Plan projects as visual task trees with automatic layout.",
 	"author": "poanse",
