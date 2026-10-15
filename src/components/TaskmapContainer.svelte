@@ -15,6 +15,7 @@
 		historyKeyAction,
 		panDeltaFromWheel,
 		scaleAfterKeyboardZoom,
+		scaleAfterPinch,
 		usesCommandModifier,
 		wheelAction,
 		wheelDeltaYOf,
@@ -53,7 +54,10 @@
 		return () => document.body.classList.remove('is-dragging-task');
 	});
 
-	/** Lets keyboard shortcuts reach the map without clicking it first. */
+	/**
+	 * Keyboard shortcuts are handled on the viewport, so it needs focus. Panning
+	 * and zooming focus it too, since they don't end in a click.
+	 */
 	export function focusViewport() {
 		if (viewportEl && !viewportEl.contains(viewportEl.doc.activeElement)) {
 			viewportEl.focus({preventScroll: true});
@@ -121,6 +125,7 @@
 	
 	function onwheel(e: WheelEvent) {
 		e.preventDefault();
+		focusViewport();
 		const action = wheelAction({
 			ctrlKey: e.ctrlKey,
 			deltaMode: e.deltaMode,
@@ -141,20 +146,22 @@
 			e.stopPropagation();
 			return;
 		}
-		const sensitivity = action === "zoom-touchpad"
-			? context.plugin.settings.zoomSensitivityTouchpad
-			: context.plugin.settings.zoomSensitivityMouse;
-		const base = action === "zoom-touchpad" ? 0.1 : 0.5;
-		const scaleConstant = base * (parseNumber(sensitivity) ?? 100) / 100;
-
-		getPanzoom().zoomWithWheel(e, {step: scaleConstant});
-		syncScale(getPanzoom().getScale());
+		const panzoomEl = getPanzoom();
+		if (action === "zoom-touchpad") {
+			const sensitivity = parseNumber(context.plugin.settings.zoomSensitivityTouchpad) ?? 100;
+			panzoomEl.zoomToPoint(scaleAfterPinch(panzoomEl.getScale(), e.deltaY, sensitivity), e);
+		} else {
+			const sensitivity = parseNumber(context.plugin.settings.zoomSensitivityMouse) ?? 100;
+			panzoomEl.zoomWithWheel(e, {step: 0.5 * sensitivity / 100});
+		}
+		syncScale(panzoomEl.getScale());
 		e.stopPropagation();
 	}
 	
 	function onpointerdown(e: PointerEvent) {
 		// prevent auto-scroll
 		e.preventDefault();
+		focusViewport();
 		draggingManager.onPointerDown(e);
 		panstart = getPanzoom().getPan();
 		e.stopPropagation();

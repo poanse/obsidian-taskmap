@@ -4,6 +4,7 @@ import {
 	historyKeyAction,
 	panDeltaFromWheel,
 	scaleAfterKeyboardZoom,
+	scaleAfterPinch,
 	usesCommandModifier,
 	wheelAction,
 	zoomKeyDirection,
@@ -100,6 +101,40 @@ void test("trackpad scrolls pan and mouse wheels zoom", () => {
 			deltaY: 0,
 		}),
 		"pan",
+	);
+});
+
+void test("a pinch is touchpad zoom even though it reports a whole wheel tick", () => {
+	assert.equal(
+		wheelAction({
+			ctrlKey: true,
+			deltaMode: PIXEL,
+			deltaX: 0,
+			deltaY: -2.7,
+			wheelDeltaY: 120,
+		}),
+		"zoom-touchpad",
+	);
+	assert.equal(
+		wheelAction({
+			ctrlKey: true,
+			deltaMode: PIXEL,
+			deltaX: 0,
+			deltaY: 100,
+			wheelDeltaY: -120,
+		}),
+		"zoom-mouse",
+	);
+});
+
+void test("pinch zoom is proportional to the pinch and scaled by sensitivity", () => {
+	const full = scaleAfterPinch(1, -10, 100);
+	assert.ok(Math.abs(full - Math.exp(0.1)) < 1e-9);
+	assert.ok(Math.abs(scaleAfterPinch(1, -10, 50) - Math.exp(0.05)) < 1e-9);
+	assert.ok(scaleAfterPinch(1, 10, 100) < 1);
+	assert.ok(
+		Math.abs(scaleAfterPinch(1, -2, 100) - 1) <
+			Math.abs(scaleAfterPinch(1, -20, 100) - 1),
 	);
 });
 
