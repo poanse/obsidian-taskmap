@@ -164,6 +164,9 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 - **Obsidian sync support**
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
 - **Alternative layouts.** The root's direct children are always stacked in a single column to its right. Other arrangements aren't available yet.
+- **Zoom buttons.** You can zoom only with the mouse, trackpad, or keyboard. On-screen buttons to zoom in, zoom out, and reset the zoom are planned.
+- **Shortcut reference.** The map doesn't list its keyboard shortcuts. A help panel that describes them, like the one in Canvas, is planned.
+- **Multi-select.** You can select only one task at a time. Selecting several tasks by dragging a box around them with the left mouse button is planned.
 - **Plugin mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
 - **Standalone website.** Taskmap projects can only be viewed and edited in Obsidian. A website where you can work on them without Obsidian and share them with others via a link is planned.
 
