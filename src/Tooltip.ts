@@ -63,6 +63,12 @@ export function getTooltipTextSettings(code: SettingsIconCode) {
 			return "Redo";
 		case SettingsIconCode.SETTINGS_UNDO:
 			return "Undo";
+		case SettingsIconCode.ZOOM_OUT:
+			return "Zoom out";
+		case SettingsIconCode.ZOOM_RESET:
+			return "Reset zoom";
+		case SettingsIconCode.ZOOM_IN:
+			return "Zoom in";
 		default:
 			return "placeholder tooltip";
 	}

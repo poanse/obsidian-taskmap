@@ -2,7 +2,8 @@
 	import type {Context} from "../Context.svelte.js";
 	import {SettingsIconCode} from "../types";
 	import {getTooltipTextSettings, tooltip} from "../Tooltip";
-	import {Redo2, Settings, Undo2} from 'lucide-svelte';
+	import {canZoomInDirection, isDefaultZoomScale} from "../viewportInput";
+	import {Minus, Plus, Redo2, RotateCw, Settings, Undo2} from 'lucide-svelte';
 	import { ProjectSettingsModal } from "src/ProjectSettingsModal.js";
 
 	let { iconCode,	context }: { iconCode: SettingsIconCode, context: Context } = $props();
@@ -23,6 +24,9 @@
 		(iconCode == SettingsIconCode.NONE)
 		|| (iconCode == SettingsIconCode.SETTINGS_UNDO && !context.versionedData.canUndo())
 		|| (iconCode == SettingsIconCode.SETTINGS_REDO && !context.versionedData.canRedo())
+		|| (iconCode == SettingsIconCode.ZOOM_OUT && !canZoomInDirection(context.scale, -1))
+		|| (iconCode == SettingsIconCode.ZOOM_IN && !canZoomInDirection(context.scale, 1))
+		|| (iconCode == SettingsIconCode.ZOOM_RESET && isDefaultZoomScale(context.scale))
 	);
 	
 	function onpointerup(event: MouseEvent) {
@@ -45,6 +49,12 @@
 			context.updateTaskPositions();
 		} else if (iconCode == SettingsIconCode.SETTINGS_MENU) {
 			new ProjectSettingsModal(context).open();
+		} else if (iconCode == SettingsIconCode.ZOOM_OUT) {
+			context.zoomByStep(-1);
+		} else if (iconCode == SettingsIconCode.ZOOM_IN) {
+			context.zoomByStep(1);
+		} else if (iconCode == SettingsIconCode.ZOOM_RESET) {
+			context.resetZoom();
 		}
 	}
 
@@ -73,6 +83,12 @@
 		<Undo2 class={classString}/>
 	{:else if iconCode === SettingsIconCode.SETTINGS_REDO}
 		<Redo2 class={classString}/>
+	{:else if iconCode === SettingsIconCode.ZOOM_OUT}
+		<Minus class={classString}/>
+	{:else if iconCode === SettingsIconCode.ZOOM_RESET}
+		<RotateCw class={classString}/>
+	{:else if iconCode === SettingsIconCode.ZOOM_IN}
+		<Plus class={classString}/>
 	{/if}
 </div>
 

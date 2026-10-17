@@ -1,5 +1,5 @@
 ﻿<script lang="ts">
-	import {onMount, tick} from "svelte";
+	import {onDestroy, onMount, tick} from "svelte";
 	import {Platform} from "obsidian";
 	import Toolbar from "./Toolbar.svelte";
 	import Task from "./Task.svelte";
@@ -13,6 +13,8 @@
 	import SettingsPanel from "./SettingsPanel.svelte";
 	import {
 		historyKeyAction,
+		MAX_ZOOM_SCALE,
+		MIN_ZOOM_SCALE,
 		panDeltaFromWheel,
 		scaleAfterKeyboardZoom,
 		scaleAfterPinch,
@@ -31,6 +33,8 @@
 	let draggingManager = new DraggingManager([MouseDown.MIDDLE, MouseDown.LEFT]);
 	
 	onMount(async () => {
+		context.zoomByStep = zoomByStep;
+		context.resetZoom = () => zoomToScale(1);
 		if (!sceneEl) {
 			throw new Error('No scene element');
 		}
@@ -39,14 +43,19 @@
 		}
 		
 		panzoom = Panzoom(sceneEl, {
-			maxScale: 3,
-			minScale: 0.1,
+			maxScale: MAX_ZOOM_SCALE,
+			minScale: MIN_ZOOM_SCALE,
 			canvas: true,
 			excludeClass: 'no-pan',
 			cursor: 'default',
 			// animate: true,
 			noBind: true
 		});
+	});
+
+	onDestroy(() => {
+		context.zoomByStep = () => {};
+		context.resetZoom = () => {};
 	});
 
 	$effect(() => {
@@ -70,7 +79,7 @@
 			? zoomKeyDirection(e)
 			: null;
 		if (zoomDirection !== null) {
-			zoomByKeyboard(zoomDirection);
+			zoomByStep(zoomDirection);
 			e.preventDefault();
 			e.stopPropagation();
 			return;
@@ -102,18 +111,26 @@
 		await tick();
 	}
 
-	function zoomByKeyboard(direction: 1 | -1) {
-		if (!viewportEl) {
+	function zoomToScale(scale: number) {
+		if (!viewportEl || !panzoom) {
 			return;
 		}
-		const panzoomEl = getPanzoom();
 		const rect = viewportEl.getBoundingClientRect();
-		const sensitivity = parseNumber(context.plugin.settings.zoomSensitivityKeyboard) ?? 100;
-		panzoomEl.zoomToPoint(scaleAfterKeyboardZoom(panzoomEl.getScale(), direction, sensitivity), {
+		focusViewport();
+		panzoom.zoomToPoint(scale, {
 			clientX: rect.left + rect.width / 2,
 			clientY: rect.top + rect.height / 2,
 		});
-		syncScale(panzoomEl.getScale());
+		syncScale(panzoom.getScale());
+	}
+
+	/** Arrow keys and the zoom buttons share this step and the keyboard sensitivity. */
+	function zoomByStep(direction: 1 | -1) {
+		if (!panzoom) {
+			return;
+		}
+		const sensitivity = parseNumber(context.plugin.settings.zoomSensitivityKeyboard) ?? 100;
+		zoomToScale(scaleAfterKeyboardZoom(panzoom.getScale(), direction, sensitivity));
 	}
 
 	function syncScale(scale: number) {

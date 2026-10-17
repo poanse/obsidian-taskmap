@@ -63,6 +63,8 @@ Hover a task and click the eye icon to collapse its descendants. Hidden tasks st
 
 Drag an empty area of the map with the left or middle mouse button to pan. Swipe with two fingers on a trackpad to pan. Scroll the mouse wheel, or pinch on a trackpad, to zoom. Zoom ranges from 10% to 300%.
 
+**Zoom in**, **Reset zoom**, and **Zoom out** sit to the right of undo and redo. **Reset zoom** returns the map to 100%.
+
 ### Toolbar
 
 Select a task to open its toolbar. Hover a button to see its name. The root's toolbar has only **Add link**, **Focus**, and **Status**.
@@ -160,7 +162,7 @@ Shortcuts work while the map has focus.
 Plugin settings are in **Settings → Taskmap**:
 
 - **Theme**: **Obsidian** (default) uses the active Obsidian theme's red, yellow, and green, and its faint text color for drafts, so community themes can change the exact shades. **Light** and **Dark** force Taskmap's own light and dark shades.
-- Zoom sensitivity, set separately for mouse, touchpad, and keyboard
+- Zoom sensitivity, set separately for mouse, touchpad, and keyboard. Keyboard sensitivity also applies to the zoom buttons
 - **Reverse two-finger pan** (on by default): moves the map opposite to your fingers when you swipe on a touchpad
 - Default folder for linked notes
 
@@ -184,7 +186,6 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 
 - **Obsidian sync support**
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
-- **Zoom buttons.** You can zoom only with the mouse, trackpad, or keyboard. On-screen buttons to zoom in, zoom out, and reset the zoom are planned.
 - **Shortcut reference.** The map doesn't list its keyboard shortcuts. A help panel that describes them, like the one in Canvas, is planned.
 - **Multi-select.** You can select only one task at a time. Selecting several tasks by dragging a box around them with the left mouse button is planned.
 - **Plugin mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.

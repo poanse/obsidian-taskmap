@@ -1,6 +1,8 @@
 ﻿export const TOOLBAR_BUTTON_SIZE = 18 * 2;
 export const SUBTOOLBAR_BUTTON_SIZE = 18 * 2;
 export const TOOLBAR_GAP = 2;
+/** Space between settings, undo/redo, and zoom in the bottom bar. */
+export const SETTINGS_PANEL_GROUP_GAP = 8;
 export const SUBTOOLBAR_GAP = 2;
 export const TOOLBAR_PADDING = { x: 4, y: 4 };
 export const SUBTOOLBAR_PADDING = { x: 4, y: 4 };
