@@ -190,6 +190,10 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 - **Plugin mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
 - **Standalone website.** Taskmap projects can only be viewed and edited in Obsidian. A website where you can work on them without Obsidian and share them with others via a link is planned.
 
+## Contributions
+
+Blocker UX and most of the UI were designed by [Mulcere](https://www.behance.net/mulcere).
+
 ## Development
 
 Clone the repository into your vault's `.obsidian/plugins/` folder, then install dependencies and start the watcher:
