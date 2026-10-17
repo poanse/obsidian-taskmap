@@ -36,13 +36,6 @@ Obsidian Sync skips `.taskmap` files by default. To sync them, turn on **Sync al
 
 Every map starts with a task named `root`, with status **Draft**. Like any parent set to **Draft**, it stays a draft after you add children, until you click its calculated status in its **Status** menu. Rename it to your project's name. The root can't be reparented, removed, or used as a blocker.
 
-### Layouts
-
-To choose a layout for a map, click **Settings** next to the undo and redo controls, then choose a **Layout**:
-
-- **Tree** (default): the root's children sit in one column to the right of the root.
-- **Double row**: the root's children alternate between a row above the root and a row below it. Use it when the root has many children and one column gets too tall.
-
 ### Rename a task
 
 Select a task, then click its name. Click somewhere else to apply the name. This works the same way for every task, including the root.
@@ -61,13 +54,11 @@ Hover a task and click the eye icon to collapse its descendants. Hidden tasks st
 
 ### Pan and zoom
 
-Drag an empty area of the map with the left or middle mouse button to pan. Swipe with two fingers on a trackpad to pan. Scroll the mouse wheel, or pinch on a trackpad, to zoom. Zoom ranges from 10% to 300%.
+Drag an empty area of the map with the left or middle mouse button to pan. Swipe with two fingers on a trackpad to pan. Scroll the mouse wheel, or pinch on a trackpad, to zoom. Zoom ranges from 10% to 300%. You can also zoom with the buttons in the [settings panel](#settings-panel).
 
-**Zoom in**, **Reset zoom**, and **Zoom out** sit to the right of undo and redo. **Reset zoom** returns the map to 100%.
+### Task toolbar
 
-### Toolbar
-
-Select a task to open its toolbar. Hover a button to see its name. The root's toolbar has only **Add link**, **Focus**, and **Status**.
+Select a task to open its toolbar. From left to right, it has **Add link**, **Remove**, **Reparent**, **Add blocker task**, **Block another task**, **Focus**, and **Status**. Hover a button to see its name. The root's toolbar has only **Add link**, **Focus**, and **Status**.
 
 #### Linked notes
 
@@ -135,38 +126,41 @@ Leaf tasks (tasks without children) can be set to any status. A parent task's st
 
 A parent's **Status** menu offers only **Draft** and its calculated status. A task you set to **Draft** stays a draft whatever its children do, until you click its calculated status.
 
-### Undo and redo
+### Settings panel
 
-Use the undo and redo controls in the bottom-left corner of the map.
+The settings panel sits in the bottom-left corner of the map. From left to right, it has **Settings**; **Undo** and **Redo**; **Zoom in**, **Reset zoom**, and **Zoom out**; and **Keyboard shortcuts**. Hover a button to see its name.
 
-Undo history is cleared when you close the file.
+#### Project settings
 
-### Keyboard shortcuts
+Click **Settings** to open the current map's settings:
 
-Shortcuts work while the map has focus.
+- **Note folder**: where new linked notes for this map go. It overrides the plugin's default note folder.
+- **Layout**:
+  - **Tree** (default): the root's children sit in one column to the right of the root.
+  - **Double row**: the root's children alternate between a row above the root and a row below it. Use it when the root has many children and one column gets too tall.
 
-| Action | Windows and Linux | macOS |
-| --- | --- | --- |
-| Zoom in | **Ctrl+Up arrow** | **Cmd+Up arrow** |
-| Zoom out | **Ctrl+Down arrow** | **Cmd+Down arrow** |
-| Undo | **Ctrl+Z** | **Cmd+Z** |
-| Redo | **Ctrl+R** or **Ctrl+Shift+Z** | **Cmd+R** or **Cmd+Shift+Z** |
-| Remove the selected task, like **Remove single task** | **Delete** | **Fn+Delete** |
-| Clear the selection, or cancel **Reparent**, **Add blocker task**, or **Block another task** | **Escape** | **Escape** |
-| Apply a task name while renaming | **Escape** | **Escape** |
-| Add a line break while renaming | **Enter** | **Enter** |
-| Choose the highlighted note suggestion | **Tab** | **Tab** |
+#### Undo and redo
 
-### Settings
+Click **Undo** or **Redo**. Undo history is cleared when you close the file.
+
+#### Zoom
+
+- **Zoom in** zooms in by one step. **Zoom sensitivity (keyboard)** in [plugin settings](#plugin-settings) sets the step size.
+- **Reset zoom** returns the map to 100%.
+- **Zoom out** zooms out by one step.
+
+#### Keyboard shortcuts
+
+Click **Keyboard shortcuts** to see the map's keyboard shortcuts.
+
+### Plugin settings
 
 Plugin settings are in **Settings → Taskmap**:
 
 - **Theme**: **Obsidian** (default) uses the active Obsidian theme's red, yellow, and green, and its faint text color for drafts, so community themes can change the exact shades. **Light** and **Dark** force Taskmap's own light and dark shades.
 - Zoom sensitivity, set separately for mouse, touchpad, and keyboard. Keyboard sensitivity also applies to the zoom buttons
 - **Reverse two-finger pan** (on by default): moves the map opposite to your fingers when you swipe on a touchpad
-- Default folder for linked notes
-
-Project settings override the note folder for a single map and set its **Layout** (see [Layouts](#layouts)). To open them, click **Settings** next to the undo and redo controls.
+- Default folder for linked notes. A map's [project settings](#project-settings) can override it.
 
 ## Files
 
@@ -184,9 +178,10 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 
 ## Bugs and missing features
 
+- **Compact layout option for sibling tasks**
+- **Text view for .taskmap files**
 - **Obsidian sync support**
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).
-- **Shortcut reference.** The map doesn't list its keyboard shortcuts. A help panel that describes them, like the one in Canvas, is planned.
 - **Multi-select.** You can select only one task at a time. Selecting several tasks by dragging a box around them with the left mouse button is planned.
 - **Plugin mobile support.** Taskmap works only in the desktop app. Support for Obsidian on phones and tablets is planned.
 - **Standalone website.** Taskmap projects can only be viewed and edited in Obsidian. A website where you can work on them without Obsidian and share them with others via a link is planned.
