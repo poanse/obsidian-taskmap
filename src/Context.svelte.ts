@@ -65,6 +65,10 @@ export class Context {
 	// svg elements are pixelated zooming from scale < 1 to scale > 1, so we force a redraw manually
 	updateOnZoomCounter = $state(0);
 	scale = $state(1);
+	/** Installed by the open map. One step matches the keyboard zoom step. */
+	zoomByStep: (direction: 1 | -1) => void = () => {};
+	/** Installed by the open map. Returns the scale to 100%. */
+	resetZoom: () => void = () => {};
 
 	// parameters for animating task movement
 	private springOptions = { stiffness: 0.07, damping: 0.7 };

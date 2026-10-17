@@ -21,6 +21,10 @@ export enum SettingsIconCode {
 	SETTINGS_MENU,
 	SETTINGS_UNDO,
 	SETTINGS_REDO,
+	ZOOM_OUT,
+	ZOOM_RESET,
+	ZOOM_IN,
+	SHORTCUTS,
 }
 
 export enum StatusCode {

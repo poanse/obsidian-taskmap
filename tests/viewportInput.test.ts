@@ -1,7 +1,12 @@
 import * as assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+	canZoomInDirection,
+	clampZoomScale,
 	historyKeyAction,
+	isDefaultZoomScale,
+	MAX_ZOOM_SCALE,
+	MIN_ZOOM_SCALE,
 	panDeltaFromWheel,
 	scaleAfterKeyboardZoom,
 	scaleAfterPinch,
@@ -208,4 +213,21 @@ void test("keyboard zoom sensitivity scales the zoom step", () => {
 		scaleAfterKeyboardZoom(1, 1, 200) > scaleAfterKeyboardZoom(1, 1, 100),
 	);
 	assert.equal(scaleAfterKeyboardZoom(1.5, 1, 0), 1.5);
+});
+
+void test("on-screen zoom uses the keyboard zoom step and its limits", () => {
+	for (const sensitivity of [50, 100, 200]) {
+		for (const direction of [1, -1] as const) {
+			const next = scaleAfterKeyboardZoom(1, direction, sensitivity);
+			assert.equal(clampZoomScale(next), next);
+		}
+	}
+	assert.equal(canZoomInDirection(1, 1), true);
+	assert.equal(canZoomInDirection(1, -1), true);
+	assert.equal(canZoomInDirection(MAX_ZOOM_SCALE, 1), false);
+	assert.equal(canZoomInDirection(MAX_ZOOM_SCALE, -1), true);
+	assert.equal(canZoomInDirection(MIN_ZOOM_SCALE, -1), false);
+	assert.equal(canZoomInDirection(MIN_ZOOM_SCALE, 1), true);
+	assert.equal(isDefaultZoomScale(1), true);
+	assert.equal(isDefaultZoomScale(scaleAfterKeyboardZoom(1, 1, 100)), false);
 });

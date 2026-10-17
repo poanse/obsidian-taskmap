@@ -1,0 +1,53 @@
+.taskmap-shortcuts-list {
+	border-top: 1px solid var(--background-modifier-border);
+	padding-top: 6px;
+}
+
+.taskmap-shortcut {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	padding: 6px 0;
+}
+
+.taskmap-shortcuts-note {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	margin-top: 8px;
+}
+
+.taskmap-shortcut-action {
+	color: var(--text-normal);
+}
+
+.taskmap-shortcut-keys {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.taskmap-shortcut-combo {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.taskmap-shortcut-key {
+	background-color: var(--background-primary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+	line-height: 1;
+	padding: 4px 8px;
+	white-space: nowrap;
+}
+
+.taskmap-shortcut-or {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}

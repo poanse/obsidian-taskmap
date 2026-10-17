@@ -1,5 +1,9 @@
-/** Log-scale zoom step for one Ctrl/Cmd + Up or Down arrow press at 100% sensitivity. */
+/** Log-scale zoom step for one arrow-key or on-screen zoom click at 100% sensitivity. */
 export const KEYBOARD_ZOOM_STEP = 0.2;
+
+/** Matches the panzoom limits in the viewport. */
+export const MIN_ZOOM_SCALE = 0.1;
+export const MAX_ZOOM_SCALE = 3;
 
 export type WheelAction = "pan" | "zoom-mouse" | "zoom-touchpad";
 
@@ -137,11 +141,29 @@ export function zoomKeyDirection(event: { key: string }): 1 | -1 | null {
 	return null;
 }
 
-/** sensitivity is a percentage of KEYBOARD_ZOOM_STEP. */
+/**
+ * One zoom step for the arrow keys and the on-screen zoom buttons.
+ * sensitivity is a percentage of KEYBOARD_ZOOM_STEP.
+ */
 export function scaleAfterKeyboardZoom(
 	scale: number,
 	direction: 1 | -1,
 	sensitivity: number,
 ): number {
 	return scale * Math.exp((direction * KEYBOARD_ZOOM_STEP * sensitivity) / 100);
+}
+
+export function clampZoomScale(scale: number): number {
+	return Math.min(MAX_ZOOM_SCALE, Math.max(MIN_ZOOM_SCALE, scale));
+}
+
+/** True when the scale hasn't reached the zoom limit in this direction. */
+export function canZoomInDirection(scale: number, direction: 1 | -1): boolean {
+	return direction === 1
+		? scale < MAX_ZOOM_SCALE - 1e-6
+		: scale > MIN_ZOOM_SCALE + 1e-6;
+}
+
+export function isDefaultZoomScale(scale: number): boolean {
+	return Math.abs(clampZoomScale(scale) - 1) <= 1e-4;
 }

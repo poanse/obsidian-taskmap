@@ -75,7 +75,7 @@ export class TaskmapSettingTab extends PluginSettingTab {
 			},
 			{
 				name: "Zoom sensitivity (keyboard)",
-				desc: "Ctrl/Cmd + Up and Down arrow zoom, as a percentage",
+				desc: "Ctrl/Cmd + Up and Down arrow zoom and the zoom buttons, as a percentage",
 				control: {
 					type: "text",
 					key: "zoomSensitivityKeyboard",

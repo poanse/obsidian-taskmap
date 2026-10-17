@@ -1,5 +1,7 @@
 ﻿<script lang="ts">
-	import {onMount, tick} from "svelte";
+	import {onDestroy, onMount, tick} from "svelte";
+	import {Tween} from "svelte/motion";
+	import {cubicOut} from "svelte/easing";
 	import {Platform} from "obsidian";
 	import Toolbar from "./Toolbar.svelte";
 	import Task from "./Task.svelte";
@@ -12,7 +14,10 @@
 	import {parseNumber} from "../Constants";
 	import SettingsPanel from "./SettingsPanel.svelte";
 	import {
+		clampZoomScale,
 		historyKeyAction,
+		MAX_ZOOM_SCALE,
+		MIN_ZOOM_SCALE,
 		panDeltaFromWheel,
 		scaleAfterKeyboardZoom,
 		scaleAfterPinch,
@@ -29,8 +34,23 @@
 	let panzoom: PanzoomObject | null = null;
 	let panstart: Vector2 = {x: 0, y: 0};
 	let draggingManager = new DraggingManager([MouseDown.MIDDLE, MouseDown.LEFT]);
+
+	/** Tweens the log of the scale, so each zoom step animates at the same speed. */
+	const logScaleTween = new Tween(0, {duration: 200, easing: cubicOut});
+	/** Bumped to start or cancel a zoom animation; frames from older animations are ignored. */
+	let zoomAnimationId = 0;
+	let isZoomAnimating = false;
+
+	$effect(() => {
+		const scale = Math.exp(logScaleTween.current);
+		if (isZoomAnimating) {
+			applyZoomAtCenter(scale);
+		}
+	});
 	
 	onMount(async () => {
+		context.zoomByStep = zoomByStep;
+		context.resetZoom = () => zoomToScale(1);
 		if (!sceneEl) {
 			throw new Error('No scene element');
 		}
@@ -39,14 +59,19 @@
 		}
 		
 		panzoom = Panzoom(sceneEl, {
-			maxScale: 3,
-			minScale: 0.1,
+			maxScale: MAX_ZOOM_SCALE,
+			minScale: MIN_ZOOM_SCALE,
 			canvas: true,
 			excludeClass: 'no-pan',
 			cursor: 'default',
 			// animate: true,
 			noBind: true
 		});
+	});
+
+	onDestroy(() => {
+		context.zoomByStep = () => {};
+		context.resetZoom = () => {};
 	});
 
 	$effect(() => {
@@ -70,7 +95,7 @@
 			? zoomKeyDirection(e)
 			: null;
 		if (zoomDirection !== null) {
-			zoomByKeyboard(zoomDirection);
+			zoomByStep(zoomDirection);
 			e.preventDefault();
 			e.stopPropagation();
 			return;
@@ -102,18 +127,54 @@
 		await tick();
 	}
 
-	function zoomByKeyboard(direction: 1 | -1) {
-		if (!viewportEl) {
+	/** Animates to the scale around the viewport center. */
+	function zoomToScale(scale: number) {
+		if (!panzoom) {
 			return;
 		}
-		const panzoomEl = getPanzoom();
+		focusViewport();
+		if (!isZoomAnimating) {
+			void logScaleTween.set(Math.log(panzoom.getScale()), {duration: 0});
+		}
+		const animationId = ++zoomAnimationId;
+		isZoomAnimating = true;
+		void logScaleTween.set(Math.log(clampZoomScale(scale))).then(() => {
+			if (animationId === zoomAnimationId) {
+				isZoomAnimating = false;
+				syncScale(getPanzoom().getScale());
+			}
+		});
+	}
+
+	function stopZoomAnimation() {
+		if (isZoomAnimating) {
+			zoomAnimationId++;
+			isZoomAnimating = false;
+			syncScale(getPanzoom().getScale());
+		}
+	}
+
+	/** One animation frame. Text is re-rendered only when the animation ends, in syncScale. */
+	function applyZoomAtCenter(scale: number) {
+		if (!viewportEl || !panzoom) {
+			return;
+		}
 		const rect = viewportEl.getBoundingClientRect();
-		const sensitivity = parseNumber(context.plugin.settings.zoomSensitivityKeyboard) ?? 100;
-		panzoomEl.zoomToPoint(scaleAfterKeyboardZoom(panzoomEl.getScale(), direction, sensitivity), {
+		panzoom.zoomToPoint(scale, {
 			clientX: rect.left + rect.width / 2,
 			clientY: rect.top + rect.height / 2,
 		});
-		syncScale(panzoomEl.getScale());
+		context.setScale(panzoom.getScale());
+	}
+
+	/** Arrow keys and the zoom buttons share this step and the keyboard sensitivity. */
+	function zoomByStep(direction: 1 | -1) {
+		if (!panzoom) {
+			return;
+		}
+		const sensitivity = parseNumber(context.plugin.settings.zoomSensitivityKeyboard) ?? 100;
+		const from = isZoomAnimating ? Math.exp(logScaleTween.target) : panzoom.getScale();
+		zoomToScale(scaleAfterKeyboardZoom(from, direction, sensitivity));
 	}
 
 	function syncScale(scale: number) {
@@ -126,6 +187,7 @@
 	function onwheel(e: WheelEvent) {
 		e.preventDefault();
 		focusViewport();
+		stopZoomAnimation();
 		const action = wheelAction({
 			ctrlKey: e.ctrlKey,
 			deltaMode: e.deltaMode,
@@ -162,6 +224,7 @@
 		// prevent auto-scroll
 		e.preventDefault();
 		focusViewport();
+		stopZoomAnimation();
 		draggingManager.onPointerDown(e);
 		panstart = getPanzoom().getPan();
 		e.stopPropagation();
