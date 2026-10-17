@@ -19,13 +19,22 @@ const DOM_DELTA_PIXEL = 0;
  * is exactly -3 times deltaY. A mouse wheel tick has a wheelDeltaY that is a
  * multiple of 120; on macOS its deltaY is accelerated and fractional (about 4
  * for a slow tick), so deltaY alone can't tell it from a trackpad.
- * Pinch-to-zoom arrives as a wheel event with ctrlKey set.
+ * Pinch-to-zoom arrives as a wheel event with ctrlKey set and a wheelDeltaY of
+ * ±120, so wheelDeltaY can't tell it from a mouse wheel either.
  */
 export function wheelAction(event: WheelSample): WheelAction {
-	if (!isMouseWheel(event)) {
-		return event.ctrlKey ? "zoom-touchpad" : "pan";
+	if (event.ctrlKey) {
+		return isWholeWheelTick(event) ? "zoom-mouse" : "zoom-touchpad";
 	}
-	return "zoom-mouse";
+	return isMouseWheel(event) ? "zoom-mouse" : "pan";
+}
+
+/** Line or page deltas, or the 100-pixel ticks of a Windows mouse wheel. */
+function isWholeWheelTick(event: WheelSample): boolean {
+	return (
+		event.deltaMode !== DOM_DELTA_PIXEL ||
+		(Number.isInteger(event.deltaY) && Math.abs(event.deltaY) >= 50)
+	);
 }
 
 function isMouseWheel(event: WheelSample): boolean {
@@ -43,7 +52,25 @@ function isMouseWheel(event: WheelSample): boolean {
 	if (event.deltaX !== 0) {
 		return false;
 	}
-	return Number.isInteger(event.deltaY) && Math.abs(event.deltaY) >= 50;
+	return isWholeWheelTick(event);
+}
+
+/** Chromium reports a pinch as deltaY = -100 * ln(change in scale). */
+const PINCH_DELTA_PER_LOG_SCALE = 100;
+
+/**
+ * At 100% sensitivity the map follows the fingers. Each pinch event is scaled
+ * by its delta, because a pinch sends many small events rather than ticks.
+ */
+export function scaleAfterPinch(
+	scale: number,
+	deltaY: number,
+	sensitivity: number,
+): number {
+	return (
+		scale *
+		Math.exp((-deltaY * sensitivity) / 100 / PINCH_DELTA_PER_LOG_SCALE)
+	);
 }
 
 export function wheelDeltaYOf(event: WheelEvent): number | undefined {

@@ -1,6 +1,18 @@
 ﻿// Assumed types and constants based on usage
-import type { TaskData, TaskId, Vector2 } from "./types";
+import {
+	LayoutChoice,
+	type TaskData,
+	type TaskId,
+	type Vector2,
+} from "./types";
 import { TASK_SIZE } from "./Constants";
+import {
+	arrangeGrid,
+	doubleRowOfPriority,
+	GRID_PLACEMENTS,
+	type GridArrangement,
+	type GridCell,
+} from "./layoutGrid";
 
 export const NoTaskId = -1 as TaskId;
 export const RootTaskId = 0 as TaskId;
@@ -23,14 +35,10 @@ export const V2 = {
 	},
 };
 
-export enum AlgorithmEnum {
-	DefaultTree,
-	SingleRow,
-	DoubleRow,
-}
-
 // Horizontal shift between parent and child: width + gap
 export const ParentToChildHorizontalGap = 120;
+// Horizontal gap between neighbouring columns of a children grid
+export const GridColumnGap = 120;
 
 type Node = {
 	id: TaskId;
@@ -59,12 +67,13 @@ export class NodePositionsCalculator {
 		x: TASK_SIZE.width,
 		y: TASK_SIZE.height,
 	};
-	public Algorithm: AlgorithmEnum = AlgorithmEnum.DefaultTree;
-	public subtreeWidthByHalfPriority: Map<number, number> = new Map<
-		number,
-		number
-	>();
-	public xshift = 0.25;
+	public Layout: LayoutChoice = LayoutChoice.Tree;
+	/**
+	 * When this is a task other than the root, that task and its ancestors share
+	 * the root's Y. Root means the full map.
+	 */
+	public FocusedTaskId: TaskId = RootTaskId;
+	private priorityById = new Map<TaskId, number>();
 
 	public RootFramePositions: Map<TaskId, Vector2> = new Map<
 		TaskId,
@@ -92,6 +101,7 @@ export class NodePositionsCalculator {
 		tasks: TaskData[],
 		sizes: Map<TaskId, Vector2> | undefined = undefined,
 	): Map<TaskId, Vector2> {
+		this.priorityById = new Map(tasks.map((t) => [t.taskId, t.priority]));
 		const parentFramePositions = this.CalculatePositionsInParentFrame(
 			tasks,
 			sizes,
@@ -133,9 +143,157 @@ export class NodePositionsCalculator {
 				);
 			});
 		}
+		if (
+			this.FocusedTaskId === RootTaskId ||
+			this.FocusedTaskId === NoTaskId
+		) {
+			this.separateDoubleRowBranches(tasks, positions, sizes);
+		} else {
+			this.alignFocusedChain(tasks, positions);
+		}
 
 		this.RootFramePositions = positions;
 		return positions;
+	}
+
+	/**
+	 * The focused task and each ancestor share the root's top edge. Descendants
+	 * of the focused task keep their offset from it.
+	 */
+	private alignFocusedChain(
+		tasks: TaskData[],
+		positions: Map<TaskId, Vector2>,
+	): void {
+		const rootPos = positions.get(RootTaskId);
+		const focusedPos = positions.get(this.FocusedTaskId);
+		if (rootPos === undefined || focusedPos === undefined) {
+			return;
+		}
+		const parentById = new Map(tasks.map((t) => [t.taskId, t.parentId]));
+		const chain = new Set<TaskId>();
+		let current: TaskId | undefined = this.FocusedTaskId;
+		while (current !== undefined && current !== NoTaskId) {
+			chain.add(current);
+			if (current === RootTaskId) {
+				break;
+			}
+			current = parentById.get(current);
+		}
+
+		const focusedDelta = rootPos.y - focusedPos.y;
+		for (const task of tasks) {
+			if (task.taskId === RootTaskId || chain.has(task.taskId)) {
+				continue;
+			}
+			let cursor: TaskId | undefined = task.parentId;
+			let underFocused = false;
+			while (cursor !== undefined && cursor !== NoTaskId) {
+				if (cursor === this.FocusedTaskId) {
+					underFocused = true;
+					break;
+				}
+				cursor = parentById.get(cursor);
+			}
+			if (!underFocused) {
+				continue;
+			}
+			const pos = positions.get(task.taskId);
+			if (pos !== undefined) {
+				pos.y += focusedDelta;
+			}
+		}
+		for (const id of chain) {
+			if (id === RootTaskId) {
+				continue;
+			}
+			const pos = positions.get(id);
+			if (pos !== undefined) {
+				pos.y = rootPos.y;
+			}
+		}
+	}
+
+	/**
+	 * First-row branches sit fully above the root and second-row branches fully
+	 * below it. Each branch keeps its shape; only its vertical position changes.
+	 */
+	private separateDoubleRowBranches(
+		tasks: TaskData[],
+		positions: Map<TaskId, Vector2>,
+		sizes: Map<TaskId, Vector2> | undefined,
+	): void {
+		if (this.Layout !== LayoutChoice.DoubleRow) {
+			return;
+		}
+		const rootPos = positions.get(RootTaskId);
+		if (rootPos === undefined) {
+			return;
+		}
+		const rootSize = sizes?.get(RootTaskId) ?? this.DefaultNodeSize;
+		const rootTop = rootPos.y;
+		const rootBottom = rootTop + rootSize.y;
+
+		const children = tasks
+			.filter((t) => t.parentId === RootTaskId)
+			.sort((a, b) => a.priority - b.priority);
+		const rowByBranch = new Map<TaskId, number>();
+		children.forEach((child) => {
+			rowByBranch.set(child.taskId, doubleRowOfPriority(child.priority));
+		});
+
+		const parentById = new Map(tasks.map((t) => [t.taskId, t.parentId]));
+		const rowOf = (taskId: TaskId): number | undefined => {
+			let current = taskId;
+			while (current !== RootTaskId && current !== NoTaskId) {
+				const row = rowByBranch.get(current);
+				if (row !== undefined) {
+					return row;
+				}
+				const parent = parentById.get(current);
+				if (parent === undefined) {
+					return undefined;
+				}
+				current = parent;
+			}
+			return undefined;
+		};
+
+		const boundsByRow = new Map<number, { top: number; bottom: number }>();
+		const membersByRow = new Map<number, TaskId[]>();
+		for (const task of tasks) {
+			if (task.taskId === RootTaskId) {
+				continue;
+			}
+			const row = rowOf(task.taskId);
+			if (row === undefined) {
+				continue;
+			}
+			const pos = positions.get(task.taskId);
+			if (pos === undefined) {
+				continue;
+			}
+			const size = sizes?.get(task.taskId) ?? this.DefaultNodeSize;
+			const bounds = boundsByRow.get(row) ?? {
+				top: Infinity,
+				bottom: -Infinity,
+			};
+			bounds.top = Math.min(bounds.top, pos.y);
+			bounds.bottom = Math.max(bounds.bottom, pos.y + size.y);
+			boundsByRow.set(row, bounds);
+			const members = membersByRow.get(row) ?? [];
+			members.push(task.taskId);
+			membersByRow.set(row, members);
+		}
+
+		for (const [row, bounds] of boundsByRow) {
+			const delta =
+				row === 0
+					? rootTop - this.SiblingVerticalGap - bounds.bottom
+					: rootBottom + this.SiblingVerticalGap - bounds.top;
+			for (const id of membersByRow.get(row) ?? []) {
+				positions.get(id)!.y += delta;
+			}
+		}
 	}
 
 	/**
@@ -188,10 +346,21 @@ export class NodePositionsCalculator {
 			}),
 		);
 
-		this.CalculateSubtreeSizes(nodes, sortedTasks, childrenIdsByParentId);
+		const grids = new Map<TaskId, GridArrangement>();
+		this.CalculateSubtreeSizes(
+			nodes,
+			sortedTasks,
+			childrenIdsByParentId,
+			grids,
+		);
 
 		// Shift of children nodes relative to the top-left point of the subtree rectangle
-		this.CalculateSiblingShift(nodes, parentIds, childrenIdsByParentId);
+		this.CalculateSiblingShift(
+			nodes,
+			parentIds,
+			childrenIdsByParentId,
+			grids,
+		);
 
 		// Shift of the parent relative to the top-left point of the subtree rectangle.
 		// Subtract parentDelta, so that the parent is aligned with the children
@@ -214,6 +383,7 @@ export class NodePositionsCalculator {
 		nodes: Map<TaskId, Node>,
 		sortedTasks: TaskData[],
 		childrenIdsByParentId: Map<TaskId, TaskId[]>,
+		grids: Map<TaskId, GridArrangement>,
 	): void {
 		const allIdsToProcess = sortedTasks.map((t) => t.taskId);
 		allIdsToProcess.forEach((id) => {
@@ -225,70 +395,100 @@ export class NodePositionsCalculator {
 			if (childrenIds.length == 0) {
 				node.subtreeSize = node.size;
 			} else {
-				const childrenSizes = childrenIds.map(
-					(x) => nodes.get(x)!.subtreeSize!,
+				const grid = this.ArrangeChildren(
+					id,
+					nodes,
+					childrenIds,
+					childrenIdsByParentId,
 				);
-				const maxSubtreeXSize = Math.max(
-					...childrenSizes.map((s) => s.x),
-				);
-				const nodeYsize =
-					childrenSizes.map((s) => s.y).reduce((a, b) => a + b, 0) +
-					(childrenSizes.length - 1) * this.SiblingVerticalGap;
+				grids.set(id, grid);
 				node.subtreeSize = {
-					x:
-						maxSubtreeXSize +
-						node.size.x +
-						ParentToChildHorizontalGap,
-					y: Math.max(nodeYsize, node.size.y),
+					x: node.size.x + ParentToChildHorizontalGap + grid.size.x,
+					y: Math.max(grid.size.y, node.size.y),
 				};
 			}
 		});
 	}
 
+	/**
+	 * Places a parent's children, in priority order, on a grid of their subtrees.
+	 * The root's children follow the Layout choice; deeper tasks always use a single column.
+	 */
+	private ArrangeChildren(
+		parentId: TaskId,
+		nodes: Map<TaskId, Node>,
+		childrenIds: TaskId[],
+		childrenIdsByParentId: Map<TaskId, TaskId[]>,
+	): GridArrangement {
+		const layout =
+			parentId === RootTaskId ? this.Layout : LayoutChoice.Tree;
+		const columnInRow = [0, 0];
+		return arrangeGrid(
+			childrenIds.map((id, idx) => ({
+				cell: this.childCell(layout, id, idx, columnInRow),
+				size: nodes.get(id)!.subtreeSize!,
+				hasChildren: (childrenIdsByParentId.get(id)?.length ?? 0) > 0,
+			})),
+			{
+				row: this.SiblingVerticalGap,
+				parentsRow: this.SiblingParentsVerticalGap,
+				column: GridColumnGap,
+			},
+		);
+	}
+
+	/**
+	 * Double row keeps a task on the row of its priority, so a missing priority
+	 * does not move the later tasks onto the other row. Tree still packs by index.
+	 */
+	private childCell(
+		layout: LayoutChoice,
+		childId: TaskId,
+		index: number,
+		columnInRow: number[],
+	): GridCell {
+		if (layout !== LayoutChoice.DoubleRow) {
+			return GRID_PLACEMENTS[layout](index + 1);
+		}
+		const row = doubleRowOfPriority(
+			this.priorityById.get(childId) ?? index,
+		);
+		const column = columnInRow[row] ?? 0;
+		columnInRow[row] = column + 1;
+		return { row, column };
+	}
+
+	/**
+	 * The children's grid sits to the right of the parent, vertically centred on
+	 * the parent when the parent is taller than the grid.
+	 */
 	private CalculateSiblingShift(
 		nodes: Map<TaskId, Node>,
 		parentIds: TaskId[],
 		childrenIdsByParentId: Map<TaskId, TaskId[]>,
+		grids: Map<TaskId, GridArrangement>,
 	): void {
 		parentIds.forEach((parentId) => {
 			const children = childrenIdsByParentId.get(parentId)!;
+			const grid =
+				grids.get(parentId) ??
+				this.ArrangeChildren(
+					parentId,
+					nodes,
+					children,
+					childrenIdsByParentId,
+				);
+			const parentNodeSize =
+				nodes.get(parentId)?.size ?? this.DefaultNodeSize; // in case of -1
+			const gridTop = Math.max(0, (parentNodeSize.y - grid.size.y) / 2);
 			children.forEach((childId, idx) => {
-				const childNode = nodes.get(childId)!;
-				const xShift = childNode.size.x + ParentToChildHorizontalGap;
-				if (idx == 0) {
-					const parentNodeSize =
-						nodes.get(parentId)?.size ?? this.DefaultNodeSize; // in case of -1
-					const childrenYSumWithGaps =
-						children
-							.map((x) => nodes.get(x)!.subtreeSize!.y)
-							.reduce((a, b) => a + b, 0) +
-						(children.length - 1) * this.SiblingVerticalGap;
-					childNode.siblingShift = {
-						x: xShift,
-						y: Math.max(
-							0,
-							(parentNodeSize.y - childrenYSumWithGaps) / 2,
-						),
-					};
-				} else if (idx > 0) {
-					const prevSiblingId = children[idx - 1];
-					const prevSiblingNode = nodes.get(prevSiblingId)!;
-					const siblingBranchesHaveChildren =
-						(childrenIdsByParentId.get(childId)?.length ?? 0) > 0 &&
-						(childrenIdsByParentId.get(prevSiblingId)?.length ??
-							0) > 0;
-
-					childNode.siblingShift = {
-						x: xShift,
-						y:
-							prevSiblingNode.siblingShift!.y +
-							prevSiblingNode.subtreeSize!.y +
-							this.SiblingVerticalGap +
-							(siblingBranchesHaveChildren
-								? this.SiblingParentsVerticalGap
-								: 0),
-					};
-				}
+				nodes.get(childId)!.siblingShift = {
+					x:
+						parentNodeSize.x +
+						ParentToChildHorizontalGap +
+						grid.offsets[idx].x,
+					y: gridTop + grid.offsets[idx].y,
+				};
 			});
 		});
 	}

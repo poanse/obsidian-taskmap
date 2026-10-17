@@ -1,6 +1,7 @@
 import TaskmapPlugin from "./main";
 import {
 	type BlockerPair,
+	LayoutChoice,
 	MouseDown,
 	StatusCode,
 	type TaskId,
@@ -33,7 +34,6 @@ import type { ProjectData } from "./data/ProjectData.svelte.js";
 import { VersionedData } from "./data/VersionedData";
 import { innerHeight } from "svelte/reactivity/window";
 import { TASK_SIZE } from "./Constants";
-import { SvelteSet } from "svelte/reactivity";
 
 const DEFAULT_TOOLBAR_STATUS = StatusCode.DRAFT;
 
@@ -55,11 +55,13 @@ export class Context {
 	reparentingTaskId = $state(NoTaskId);
 	versionedData = $state(null! as VersionedData);
 	positions: Map<TaskId, Vector2>;
-	taskPositions: Array<{
-		taskId: TaskId;
-		tween: Spring<{ x: number; y: number }> | null;
-	}>;
+	/** Animated position of each task that has been laid out. */
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- each Spring is reactive; the map itself needn't be
+	readonly taskPositions = new Map<TaskId, Spring<Vector2>>();
 	taskDraggingManager = new DraggingManager([MouseDown.LEFT]);
+	/** Centres of the dragged task's siblings at drag start, when they're on a grid. */
+	private dragSlots: Array<{ priority: number; centre: Vector2 }> | null =
+		null;
 	// svg elements are pixelated zooming from scale < 1 to scale > 1, so we force a redraw manually
 	updateOnZoomCounter = $state(0);
 	scale = $state(1);
@@ -78,13 +80,6 @@ export class Context {
 		this.app = app;
 		this.versionedData = projectData;
 		this.linkManager = new LinkManager(app);
-
-		this.taskPositions = projectData.getTasks().map((task) => {
-			return {
-				taskId: task.taskId,
-				tween: null,
-			};
-		});
 		this.updateTaskPositions();
 	}
 
@@ -99,6 +94,7 @@ export class Context {
 		);
 		this.taskDraggingManager.reset();
 		this.draggedTaskId = NoTaskId;
+		this.dragSlots = null;
 		this.reparentingTaskId = NoTaskId;
 		this.chosenBlockerId = NoTaskId;
 		this.chosenBlockedId = NoTaskId;
@@ -130,10 +126,7 @@ export class Context {
 			this.editingTaskId = NoTaskId;
 		}
 
-		this.taskPositions = this.versionedData.getTasks().map((task) => ({
-			taskId: task.taskId,
-			tween: null,
-		}));
+		this.taskPositions.clear();
 		this.updateTaskPositions();
 		this.incrementUpdateOnZoomCounter();
 	}
@@ -186,9 +179,37 @@ export class Context {
 	public startTaskDragging = (e: PointerEvent, taskId: TaskId) => {
 		this.draggedTaskId = taskId;
 		this.taskDraggingManager.onPointerDown(e);
+		this.dragSlots = this.gridDragSlots(taskId);
 	};
 
+	/**
+	 * The slots stay fixed for the whole drag. Reordering resizes rows and
+	 * columns, so slots taken from the live layout could move under the pointer
+	 * and trigger a reorder on every pointer move.
+	 */
+	private gridDragSlots(taskId: TaskId) {
+		const parentId = this.versionedData.getTask(taskId).parentId;
+		if (
+			parentId !== RootTaskId ||
+			this.versionedData.getLayout() === LayoutChoice.Tree
+		) {
+			return null;
+		}
+		return this.versionedData
+			.getChildren(parentId)
+			.filter((id) => this.positions.has(id))
+			.map((id) => ({
+				priority: this.versionedData.getTask(id).priority,
+				centre: this.taskCentre(this.positions.get(id)!, id),
+			}));
+	}
+
+	private taskCentre(position: Vector2, taskId: TaskId): Vector2 {
+		return V2.add(position, V2.mult(this.getTaskSize(taskId), 0.5));
+	}
+
 	public finishTaskDragging = (e: PointerEvent, updatePositions = false) => {
+		this.dragSlots = null;
 		this.draggedTaskId = NoTaskId;
 		this.taskDraggingManager.onPointerUp();
 		if (updatePositions) {
@@ -297,6 +318,9 @@ export class Context {
 	}
 
 	public setTaskHeightOverride(taskId: TaskId, heightPx: number) {
+		if (this.versionedData.getTaskSizeOverride(taskId)?.y === heightPx) {
+			return;
+		}
 		this.versionedData.setTaskSizeOverride(taskId, {
 			x: TASK_SIZE.width,
 			y: heightPx,
@@ -328,6 +352,9 @@ export class Context {
 
 	public updateTaskPositions(draggingOnly = false) {
 		if (!draggingOnly) {
+			this.nodePositionsCalculator.Layout =
+				this.versionedData.getLayout();
+			this.nodePositionsCalculator.FocusedTaskId = this.focusedTaskId;
 			const newPositions =
 				this.nodePositionsCalculator.CalculatePositionsInGlobalFrame(
 					this.versionedData
@@ -352,33 +379,26 @@ export class Context {
 				});
 			}
 			this.positions = newPositions;
-			// no need for reactivity here, but eslint issues a warning upon using plain Set
-			const taskIdSet: ReadonlySet<TaskId> = new SvelteSet<TaskId>(
-				this.taskPositions.map((t) => t.taskId),
-			);
-			this.positions.forEach((_v, k) => {
-				if (k != NoTaskId && !taskIdSet.has(k)) {
-					this.taskPositions.push({
-						taskId: k,
-						tween: null,
-					});
+			for (const taskId of this.taskPositions.keys()) {
+				if (this.versionedData.getTaskOption(taskId)?.deleted) {
+					this.taskPositions.delete(taskId);
 				}
-			});
-			this.taskPositions = this.taskPositions.filter(
-				(t) => !this.versionedData.getTaskOption(t.taskId)?.deleted,
-			);
-			this.taskPositions.forEach((taskPos) => {
-				const newPos = this.positions.get(taskPos.taskId);
-				if (newPos === undefined) {
+			}
+			this.positions.forEach((newPos, taskId) => {
+				if (taskId === NoTaskId) {
 					return;
 				}
-				if (taskPos.tween === null) {
-					taskPos.tween = new Spring(newPos, this.springOptions);
+				const tween = this.taskPositions.get(taskId);
+				if (tween === undefined) {
+					this.taskPositions.set(
+						taskId,
+						new Spring(newPos, this.springOptions),
+					);
+					return;
 				}
-
-				taskPos.tween.stiffness = this.springOptions.stiffness;
-				taskPos.tween.damping = this.springOptions.damping;
-				taskPos.tween.target = newPos;
+				tween.stiffness = this.springOptions.stiffness;
+				tween.damping = this.springOptions.damping;
+				tween.target = newPos;
 			});
 		}
 
@@ -391,25 +411,15 @@ export class Context {
 				},
 				1 / this.scale,
 			);
-			const draggedTaskIds = this.versionedData.getDescendantIds(
-				this.draggedTaskId,
-			);
-			this.taskPositions
-				.filter((t) => draggedTaskIds.includes(t.taskId))
-				.forEach((t) => {
-					if (
-						t.tween !== null &&
-						t.tween !== undefined &&
-						this.positions.has(t.taskId)
-					) {
-						t.tween.stiffness = 1;
-						t.tween.damping = 1;
-						void t.tween.set(
-							V2.add(
-								this.positions.get(t.taskId)!,
-								draggingDelta,
-							),
-						);
+			this.versionedData
+				.getDescendantIds(this.draggedTaskId)
+				.forEach((taskId) => {
+					const tween = this.taskPositions.get(taskId);
+					const position = this.positions.get(taskId);
+					if (tween !== undefined && position !== undefined) {
+						tween.stiffness = 1;
+						tween.damping = 1;
+						void tween.set(V2.add(position, draggingDelta));
 					}
 				});
 			const updated = this.updateDraggedTaskPriority();
@@ -422,25 +432,10 @@ export class Context {
 
 	private updateDraggedTaskPriority() {
 		// If task positions are different from priorities, change priorities and recalculate order
-		const draggedParentId = this.versionedData.getTask(
-			this.draggedTaskId,
-		).parentId;
-		const orderedSiblings = this.taskPositions
-			.filter((t) =>
-				this.versionedData
-					.getChildren(draggedParentId)
-					.includes(t.taskId),
-			)
-			.sort((left, right) => {
-				if (left.tween !== null && right.tween !== null) {
-					return left.tween?.target.y - right.tween?.target.y;
-				}
-				return 0;
-			})
-			.map((t) => t.taskId);
-		const newPriority = orderedSiblings.findIndex(
-			(t) => t == this.draggedTaskId,
-		);
+		const newPriority =
+			this.dragSlots === null
+				? this.draggedTaskPriorityInColumn()
+				: this.draggedTaskPriorityOnGrid(this.dragSlots);
 		const oldPriority = this.versionedData.getTask(
 			this.draggedTaskId,
 		).priority;
@@ -449,6 +444,35 @@ export class Context {
 			return true;
 		}
 		return false;
+	}
+
+	/** Place among the siblings ordered top to bottom. */
+	private draggedTaskPriorityInColumn() {
+		const draggedParentId = this.versionedData.getTask(
+			this.draggedTaskId,
+		).parentId;
+		const targetY = (taskId: TaskId) =>
+			this.taskPositions.get(taskId)!.target.y;
+		return this.versionedData
+			.getChildren(draggedParentId)
+			.filter((taskId) => this.taskPositions.has(taskId))
+			.sort((left, right) => targetY(left) - targetY(right))
+			.findIndex((t) => t == this.draggedTaskId);
+	}
+
+	/** Priority of the drag-start slot nearest to the dragged task's centre. */
+	private draggedTaskPriorityOnGrid(
+		slots: Array<{ priority: number; centre: Vector2 }>,
+	) {
+		const centre = this.taskCentre(
+			this.taskPositions.get(this.draggedTaskId)!.target,
+			this.draggedTaskId,
+		);
+		const distance = (slot: { centre: Vector2 }) =>
+			Math.hypot(slot.centre.x - centre.x, slot.centre.y - centre.y);
+		return slots.reduce((best, slot) =>
+			distance(slot) < distance(best) ? slot : best,
+		).priority;
 	}
 
 	public isSelected(taskId: number) {
@@ -505,27 +529,25 @@ export class Context {
 	}
 
 	public getCurrentTaskPosition(taskId: number) {
-		return this.taskPositions.find((t) => t.taskId === taskId)!.tween!
-			.current;
+		return this.taskPositions.get(taskId)!.current;
 	}
 
+	/**
+	 * Checks ancestor lists, which are as long as the tree is deep, rather than
+	 * the focused task's descendants, which can be every task.
+	 */
 	public isTaskHidden(taskId: TaskId): boolean {
 		const task = this.versionedData.getTask(taskId);
-		const ancestorTasks = this.versionedData.getAncestors(taskId);
-
-		const focusedAncestorIds = this.versionedData.getAncestorIds(
-			this.focusedTaskId,
-		);
-		const focusedDescendantIds = this.versionedData.getDescendantIds(
-			this.focusedTaskId,
-		);
+		const ancestorIds = this.versionedData.getAncestorIds(taskId);
 		return (
 			task.deleted ||
-			ancestorTasks.some((t) => t.hidden) ||
+			ancestorIds.some((id) => this.versionedData.getTask(id).hidden) ||
 			!(
 				task.taskId == this.focusedTaskId ||
-				focusedAncestorIds.includes(task.taskId) ||
-				focusedDescendantIds.includes(task.taskId)
+				ancestorIds.includes(this.focusedTaskId) ||
+				this.versionedData
+					.getAncestorIds(this.focusedTaskId)
+					.includes(task.taskId)
 			)
 		);
 	}

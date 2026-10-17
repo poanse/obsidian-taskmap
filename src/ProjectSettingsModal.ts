@@ -1,6 +1,12 @@
 import { Modal, Setting, TFolder } from "obsidian";
 import type { Context } from "./Context.svelte.js";
 import { FolderSuggest } from "./helpers/FolderSuggest";
+import { isLayoutChoice, LayoutChoice } from "./types";
+
+const LAYOUT_OPTIONS: Record<LayoutChoice, string> = {
+	[LayoutChoice.Tree]: "Tree",
+	[LayoutChoice.DoubleRow]: "Double row",
+};
 
 export class ProjectSettingsModal extends Modal {
 	constructor(private readonly context: Context) {
@@ -33,6 +39,24 @@ export class ProjectSettingsModal extends Modal {
 						}
 					});
 			});
+
+		new Setting(contentEl)
+			.setName("Layout")
+			.setDesc(
+				"How the root's children are placed: in a column, or alternating between rows above and below the root.",
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOptions(LAYOUT_OPTIONS)
+					.setValue(this.context.versionedData.getLayout())
+					.onChange((value) => {
+						if (isLayoutChoice(value)) {
+							this.context.versionedData.setLayout(value);
+							this.context.updateTaskPositions();
+							this.context.save();
+						}
+					}),
+			);
 
 		// Modal.open focuses the first control after onOpen returns. That
 		// focuses the note folder field and opens its suggestions.
