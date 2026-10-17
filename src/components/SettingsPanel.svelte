@@ -28,6 +28,7 @@
 			<SettingsButton iconCode={SettingsIconCode.ZOOM_RESET} {context}/>
 			<SettingsButton iconCode={SettingsIconCode.ZOOM_OUT} {context}/>
 		</div>
+		<SettingsButton iconCode={SettingsIconCode.SHORTCUTS} {context}/>
 	</div>
 {/if}
 

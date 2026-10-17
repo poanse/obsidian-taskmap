@@ -24,6 +24,7 @@ export enum SettingsIconCode {
 	ZOOM_OUT,
 	ZOOM_RESET,
 	ZOOM_IN,
+	SHORTCUTS,
 }
 
 export enum StatusCode {

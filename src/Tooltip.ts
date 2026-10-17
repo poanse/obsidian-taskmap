@@ -69,6 +69,8 @@ export function getTooltipTextSettings(code: SettingsIconCode) {
 			return "Reset zoom";
 		case SettingsIconCode.ZOOM_IN:
 			return "Zoom in";
+		case SettingsIconCode.SHORTCUTS:
+			return "Keyboard shortcuts";
 		default:
 			return "placeholder tooltip";
 	}

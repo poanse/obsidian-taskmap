@@ -3,8 +3,9 @@
 	import {SettingsIconCode} from "../types";
 	import {getTooltipTextSettings, tooltip} from "../Tooltip";
 	import {canZoomInDirection, isDefaultZoomScale} from "../viewportInput";
-	import {Minus, Plus, Redo2, RotateCw, Settings, Undo2} from 'lucide-svelte';
+	import {CircleQuestionMark, Minus, Plus, Redo2, RotateCw, Settings, Undo2} from 'lucide-svelte';
 	import { ProjectSettingsModal } from "src/ProjectSettingsModal.js";
+	import { ShortcutsModal } from "src/ShortcutsModal.js";
 
 	let { iconCode,	context }: { iconCode: SettingsIconCode, context: Context } = $props();
 
@@ -55,6 +56,8 @@
 			context.zoomByStep(1);
 		} else if (iconCode == SettingsIconCode.ZOOM_RESET) {
 			context.resetZoom();
+		} else if (iconCode == SettingsIconCode.SHORTCUTS) {
+			new ShortcutsModal(context).open();
 		}
 	}
 
@@ -89,6 +92,8 @@
 		<RotateCw class={classString}/>
 	{:else if iconCode === SettingsIconCode.ZOOM_IN}
 		<Plus class={classString}/>
+	{:else if iconCode === SettingsIconCode.SHORTCUTS}
+		<CircleQuestionMark class={classString}/>
 	{/if}
 </div>
 
