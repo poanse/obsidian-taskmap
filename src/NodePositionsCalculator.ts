@@ -12,6 +12,7 @@ import {
 	GRID_PLACEMENTS,
 	type GridArrangement,
 	type GridCell,
+	type Profile,
 } from "./layoutGrid";
 
 export const NoTaskId = -1 as TaskId;
@@ -44,6 +45,7 @@ type Node = {
 	id: TaskId;
 	size: Vector2;
 	subtreeSize: Vector2 | undefined;
+	profile: Profile | undefined;
 	siblingShift: Vector2 | undefined;
 	parentAlignmentShift: Vector2 | undefined;
 	finalShiftInParentFrame: Vector2 | undefined;
@@ -68,6 +70,11 @@ export class NodePositionsCalculator {
 		y: TASK_SIZE.height,
 	};
 	public Layout: LayoutChoice = LayoutChoice.Tree;
+	/**
+	 * Siblings in a column are packed by the outline of their subtrees, so a
+	 * task without subtasks sits next to a sibling's card, not its whole subtree.
+	 */
+	public Compact = false;
 	/**
 	 * When this is a task other than the root, that task and its ancestors share
 	 * the root's Y. Root means the full map.
@@ -340,6 +347,7 @@ export class NodePositionsCalculator {
 				id: t.taskId,
 				size: sizes?.get(t.taskId) ?? this.DefaultNodeSize,
 				subtreeSize: undefined,
+				profile: undefined,
 				finalShiftInParentFrame: undefined,
 				parentAlignmentShift: undefined,
 				siblingShift: undefined,
@@ -394,6 +402,7 @@ export class NodePositionsCalculator {
 			}
 			if (childrenIds.length == 0) {
 				node.subtreeSize = node.size;
+				node.profile = [{ top: 0, bottom: node.size.y }];
 			} else {
 				const grid = this.ArrangeChildren(
 					id,
@@ -406,6 +415,15 @@ export class NodePositionsCalculator {
 					x: node.size.x + ParentToChildHorizontalGap + grid.size.x,
 					y: Math.max(grid.size.y, node.size.y),
 				};
+				const nodeTop = (node.subtreeSize.y - node.size.y) / 2;
+				const gridTop = this.GridTop(node.size, grid);
+				node.profile = [
+					{ top: nodeTop, bottom: nodeTop + node.size.y },
+					...grid.profile.map((span) => ({
+						top: span.top + gridTop,
+						bottom: span.bottom + gridTop,
+					})),
+				];
 			}
 		});
 	}
@@ -427,6 +445,7 @@ export class NodePositionsCalculator {
 			childrenIds.map((id, idx) => ({
 				cell: this.childCell(layout, id, idx, columnInRow),
 				size: nodes.get(id)!.subtreeSize!,
+				profile: nodes.get(id)!.profile!,
 				hasChildren: (childrenIdsByParentId.get(id)?.length ?? 0) > 0,
 			})),
 			{
@@ -434,7 +453,13 @@ export class NodePositionsCalculator {
 				parentsRow: this.SiblingParentsVerticalGap,
 				column: GridColumnGap,
 			},
+			this.Compact,
 		);
+	}
+
+	/** Top of the children's grid in the parent's subtree. */
+	private GridTop(parentNodeSize: Vector2, grid: GridArrangement): number {
+		return Math.max(0, (parentNodeSize.y - grid.size.y) / 2);
 	}
 
 	/**
@@ -480,7 +505,7 @@ export class NodePositionsCalculator {
 				);
 			const parentNodeSize =
 				nodes.get(parentId)?.size ?? this.DefaultNodeSize; // in case of -1
-			const gridTop = Math.max(0, (parentNodeSize.y - grid.size.y) / 2);
+			const gridTop = this.GridTop(parentNodeSize, grid);
 			children.forEach((childId, idx) => {
 				nodes.get(childId)!.siblingShift = {
 					x:

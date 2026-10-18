@@ -166,6 +166,14 @@ export class VersionedData {
 		this.data.setLayout(layout);
 	};
 
+	public getCompact = (): boolean => {
+		return this.data.getCompact();
+	};
+
+	public setCompact = (compact: boolean) => {
+		this.data.setCompact(compact);
+	};
+
 	public getTasks = (includeDeleted = false) => {
 		return this.data.getTasks(includeDeleted);
 	};

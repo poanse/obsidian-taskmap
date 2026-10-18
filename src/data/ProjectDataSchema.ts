@@ -57,6 +57,7 @@ export const projectFileSchema = v.object({
 	taskSizeOverrides: v.optional(v.array(taskSizeOverrideSchema)),
 	// A string rather than a picklist, so a layout added later doesn't make the file unreadable.
 	layout: v.optional(v.string()),
+	compact: v.optional(v.boolean()),
 });
 
 export type ProjectFileParsed = {
@@ -67,6 +68,7 @@ export type ProjectFileParsed = {
 	curTaskId: number;
 	taskSizeOverrides: TaskSizeOverrideEntry[];
 	layout?: string;
+	compact?: boolean;
 };
 
 export class TaskmapDataError extends Error {
@@ -114,5 +116,6 @@ export function parseProjectFileJson(parsed: unknown): ProjectFileParsed {
 		curTaskId: o.curTaskId,
 		taskSizeOverrides: o.taskSizeOverrides ?? [],
 		layout: o.layout,
+		compact: o.compact,
 	};
 }

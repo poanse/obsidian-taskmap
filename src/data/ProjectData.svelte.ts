@@ -29,6 +29,7 @@ export class ProjectData {
 	curTaskId = RootTaskId;
 	taskSizeOverrides: SvelteMap<TaskId, Vector2>;
 	layout: LayoutChoice;
+	compact: boolean;
 
 	public static getDefault(): ProjectData {
 		return new ProjectData({
@@ -49,6 +50,7 @@ export class ProjectData {
 		this.layout = isLayoutChoice(obj.layout)
 			? obj.layout
 			: LayoutChoice.Tree;
+		this.compact = obj.compact ?? true;
 		this.curTaskId = obj.curTaskId;
 		this.taskSizeOverrides = new SvelteMap(
 			(obj.taskSizeOverrides ?? []).map(({ taskId, x, y }) => [
@@ -561,6 +563,14 @@ export class ProjectData {
 
 	public setLayout = (layout: LayoutChoice) => {
 		this.layout = layout;
+	};
+
+	public getCompact = (): boolean => {
+		return this.compact;
+	};
+
+	public setCompact = (compact: boolean) => {
+		this.compact = compact;
 	};
 
 	public setFolderPath = (path: string | undefined) => {
