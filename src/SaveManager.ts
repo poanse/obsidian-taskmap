@@ -20,6 +20,7 @@ export function serializeProjectData(projectData: ProjectData) {
 				([taskId, { x, y }]) => ({ taskId, x, y }),
 			),
 			layout: projectData.layout,
+			compact: projectData.compact,
 		},
 		null,
 		2,

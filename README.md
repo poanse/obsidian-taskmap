@@ -138,6 +138,7 @@ Click **Settings** to open the current map's settings:
 - **Layout**:
   - **Tree** (default): the root's children sit in one column to the right of the root.
   - **Double row**: the root's children alternate between a row above the root and a row below it. Use it when the root has many children and one column gets too tall.
+- **Compact layout** (on by default): reduces empty space between tasks.
 
 #### Undo and redo
 
@@ -178,7 +179,6 @@ Obsidian Sync skips `.taskmap` files unless **Sync all other types** is turned o
 
 ## Bugs and missing features
 
-- **Compact layout option for sibling tasks**
 - **Text view for .taskmap files**
 - **Obsidian sync support**
 - **Documentation is incomplete.** Some behavior isn't described here yet. If something is unclear, [open an issue](https://github.com/poanse/obsidian-taskmap/issues).

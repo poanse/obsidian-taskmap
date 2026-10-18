@@ -58,6 +58,19 @@ export class ProjectSettingsModal extends Modal {
 					}),
 			);
 
+		new Setting(contentEl)
+			.setName("Compact layout")
+			.setDesc("Reduce empty space between tasks.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.context.versionedData.getCompact())
+					.onChange((value) => {
+						this.context.versionedData.setCompact(value);
+						this.context.updateTaskPositions();
+						this.context.save();
+					}),
+			);
+
 		// Modal.open focuses the first control after onOpen returns. That
 		// focuses the note folder field and opens its suggestions.
 		this.suppressInitialFocus();

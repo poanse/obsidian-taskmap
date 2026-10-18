@@ -26,10 +26,12 @@ function calculate(
 	tasks: TaskData[] = layoutTasks,
 	sizes: Map<TaskId, Vector2> = layoutSizes,
 	focusedTaskId: TaskId = RootTaskId,
+	compact = false,
 ) {
 	const calculator = new NodePositionsCalculator();
 	calculator.Layout = layout;
 	calculator.FocusedTaskId = focusedTaskId;
+	calculator.Compact = compact;
 	return calculator.CalculatePositionsInGlobalFrame(
 		tasks,
 		layoutRootPosition,
@@ -373,4 +375,94 @@ void test("focus lines the task up with its ancestors", () => {
 	assert.ok(
 		natural.get(1)!.y > natural.get(RootTaskId)!.y + TASK_SIZE.height,
 	);
+});
+
+const calculateCompact = (
+	layout: LayoutChoice,
+	tasks: TaskData[] = layoutTasks,
+	sizes: Map<TaskId, Vector2> = layoutSizes,
+) => calculate(layout, tasks, sizes, RootTaskId, true);
+
+void test("compact: no tasks overlap", () => {
+	for (const layout of [LayoutChoice.Tree, LayoutChoice.DoubleRow]) {
+		assertNoOverlaps(layoutTasks, calculateCompact(layout));
+	}
+});
+
+void test("compact: double-row branches keep to their own rows and columns", () => {
+	assertBranchesKeepToTheirCells(
+		layoutTasks,
+		calculateCompact(LayoutChoice.DoubleRow),
+	);
+});
+
+void test("compact: a leaf sits a row gap from a sibling parent's card", () => {
+	// root -> A -> A1, A2, A3; root -> B
+	const tasks = [
+		task(0, NoTaskId, 0, 0),
+		task(1, 0, 1, 0),
+		task(2, 0, 1, 1),
+		task(3, 1, 2, 0),
+		task(4, 1, 2, 1),
+		task(5, 1, 2, 2),
+	];
+	const sizes = new Map<TaskId, Vector2>();
+	const gap = new NodePositionsCalculator().SiblingVerticalGap;
+
+	const loose = calculate(LayoutChoice.Tree, tasks, sizes);
+	assert.ok(loose.get(2)!.y - loose.get(1)!.y > TASK_SIZE.height + gap);
+
+	const compact = calculateCompact(LayoutChoice.Tree, tasks, sizes);
+	assert.equal(compact.get(2)!.y - compact.get(1)!.y, TASK_SIZE.height + gap);
+	assertNoOverlaps(tasks, compact, sizes);
+});
+
+void test("compact: a leaf above a sibling parent sits a row gap from its card", () => {
+	// root -> B; root -> A -> A1, A2, A3
+	const tasks = [
+		task(0, NoTaskId, 0, 0),
+		task(1, 0, 1, 0),
+		task(2, 0, 1, 1),
+		task(3, 2, 2, 0),
+		task(4, 2, 2, 1),
+		task(5, 2, 2, 2),
+	];
+	const sizes = new Map<TaskId, Vector2>();
+	const gap = new NodePositionsCalculator().SiblingVerticalGap;
+
+	const compact = calculateCompact(LayoutChoice.Tree, tasks, sizes);
+	assert.equal(compact.get(2)!.y - compact.get(1)!.y, TASK_SIZE.height + gap);
+	assert.ok(compact.get(3)!.y < compact.get(1)!.y + TASK_SIZE.height);
+	assertNoOverlaps(tasks, compact, sizes);
+});
+
+void test("compact: a leaf between two sibling parents is centred between their cards", () => {
+	// root -> A -> A1, A2, A3; root -> B; root -> C -> C1, C2, C3
+	const tasks = [
+		task(0, NoTaskId, 0, 0),
+		task(1, 0, 1, 0),
+		task(2, 0, 1, 1),
+		task(3, 0, 1, 2),
+		task(4, 1, 2, 0),
+		task(5, 1, 2, 1),
+		task(6, 1, 2, 2),
+		task(7, 3, 2, 0),
+		task(8, 3, 2, 1),
+		task(9, 3, 2, 2),
+	];
+	const sizes = new Map<TaskId, Vector2>();
+	const positions = calculateCompact(LayoutChoice.Tree, tasks, sizes);
+	const y = (id: TaskId) => positions.get(id)!.y;
+
+	const calculator = new NodePositionsCalculator();
+
+	assert.equal(
+		y(2) - (y(1) + TASK_SIZE.height),
+		y(3) - (y(2) + TASK_SIZE.height),
+	);
+	assert.equal(
+		y(7) - (y(6) + TASK_SIZE.height),
+		calculator.SiblingVerticalGap + calculator.SiblingParentsVerticalGap,
+	);
+	assertNoOverlaps(tasks, positions, sizes);
 });
