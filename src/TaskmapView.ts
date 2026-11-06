@@ -118,26 +118,38 @@ export class TaskmapView extends TextFileView {
 		this.data = data;
 	}
 
-	async save() {
+	async save(clear = false) {
+		this.debouncedSave.cancel();
 		try {
-			await updateFile(this.app, this.file!, this.projectData);
+			if (
+				this.file &&
+				this.projectData &&
+				this.app.vault.getAbstractFileByPath(this.file.path) ===
+					this.file
+			) {
+				await updateFile(this.app, this.file, this.projectData);
+			}
 		} catch (err) {
 			console.error("Save failed: ", err);
 			throw new Error(`Save failed: ${String(err)}`);
+		} finally {
+			if (clear) {
+				this.clear();
+			}
 		}
 	}
 
 	clear(): void {
 		this.debouncedSave.cancel();
+		if (this.taskmapContainer) {
+			void unmount(this.taskmapContainer);
+			this.taskmapContainer = undefined;
+		}
 		this.setViewData(DEFAULT_DATA);
 		this.contentEl.empty();
 	}
 
 	onunload() {
 		this.clear();
-		if (this.taskmapContainer) {
-			void unmount(this.taskmapContainer);
-			this.taskmapContainer = undefined;
-		}
 	}
 }

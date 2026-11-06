@@ -32,7 +32,11 @@ export async function updateFile(
 	file: TFile,
 	projectData: ProjectData,
 ) {
+	if (app.vault.getAbstractFileByPath(file.path) !== file) {
+		return false;
+	}
 	await app.vault.modify(file, serializeProjectData(projectData));
+	return true;
 }
 
 export async function loadProjectData(app: App, taskmapFile: TFile) {
