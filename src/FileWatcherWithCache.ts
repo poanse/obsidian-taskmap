@@ -125,7 +125,7 @@ export class FileWatcherWithCache {
 				t.name = delink(t.name);
 				t.path = undefined;
 			}
-			if (affectedTasks) {
+			if (affectedTasks.length > 0) {
 				console.debug(`${taskmapFile.path} changed`);
 				await this.updateFileAndRefreshActiveView(
 					app,
@@ -138,6 +138,9 @@ export class FileWatcherWithCache {
 
 	async handleNoteFolderDelete(app: App, folder: TFolder) {
 		for (const taskmapFile of [...this.cachedTaskmapFiles]) {
+			if (pathIsUnderFolder(taskmapFile.path, folder.path)) {
+				continue;
+			}
 			const projectData = await this.getProjectData(app, taskmapFile);
 			if (projectData && projectData.folderPath == folder.path) {
 				console.debug(`Removed folderPath for ${taskmapFile.name}`);
@@ -165,7 +168,7 @@ export class FileWatcherWithCache {
 				t.path = taskPathFromFile(changedMdFile);
 				t.name = taskNameFromFile(changedMdFile);
 			}
-			if (affectedTasks) {
+			if (affectedTasks.length > 0) {
 				console.debug(`${taskmapFile.path} changed`);
 				// resave file on the file system
 				await this.updateFileAndRefreshActiveView(
@@ -195,16 +198,19 @@ export class FileWatcherWithCache {
 	}
 
 	async getProjectData(app: App, taskmapFile: TFile) {
-		const viewByName = new Map<string, TaskmapView>();
+		if (app.vault.getAbstractFileByPath(taskmapFile.path) !== taskmapFile) {
+			return undefined;
+		}
+		const viewByPath = new Map<string, TaskmapView>();
 		app.workspace
 			.getLeavesOfType(TASKMAP_VIEW_TYPE)
 			.map((l) => l.view)
 			.forEach((v) => {
 				if (v instanceof TaskmapView && v.file) {
-					viewByName.set(v.file.name, v);
+					viewByPath.set(v.file.path, v);
 				}
 			});
-		const view = viewByName.get(taskmapFile.name);
+		const view = viewByPath.get(taskmapFile.path);
 		if (view) {
 			// ensure that view data is consistent with disk data
 			await view.debouncedSave.run();
@@ -221,13 +227,16 @@ export class FileWatcherWithCache {
 		taskmapFile: TFile,
 		projectData: ProjectData,
 	) {
-		await updateFile(app, taskmapFile, projectData);
+		const updated = await updateFile(app, taskmapFile, projectData);
+		if (!updated) {
+			return;
+		}
 		for (const view of app.workspace
 			.getLeavesOfType(TASKMAP_VIEW_TYPE)
 			.map((l) => l.view)) {
 			if (
 				view instanceof TaskmapView &&
-				view.file?.name === taskmapFile.name
+				view.file?.path === taskmapFile.path
 			) {
 				await view.refreshUi();
 			}
